@@ -1,0 +1,68 @@
+Tôi đã có giao diện cơ bản của website "Babee Store" trên PHP, giờ hãy hoàn thiện toàn bộ chức năng động sau bằng PHP thuần, có kết nối với database MySQL trên InfinityFree. Dưới đây là thông tin cụ thể:
+
+=== 🔗 Thông tin kết nối database ===
+- DB Hostname: sql202.infinityfree.com
+- DB Name: if0_38706403_XXX
+- Username: if0_38706403
+- Password: Haiyen2308
+
+Hãy viết code PHP đầy đủ cho từng phần như sau (tạo file cần thiết trong thư mục phù hợp nếu chưa có):
+
+== PHẦN NGƯỜI DÙNG ==
+
+1. **Trang chủ (`index.php`)**
+   - Hiển thị danh sách sản phẩm nổi bật, khuyến mãi, banner (dùng bảng `products`, `banners`).
+
+2. **Trang danh sách sản phẩm (`products.php`)**
+   - Hiển thị tất cả sản phẩm, có bộ lọc theo loại: Đồ bé trai, Đồ bé gái, Khuyến mãi (dựa vào cột `category` và `is_discount` trong DB).
+   - Có phân trang.
+
+3. **Trang chi tiết sản phẩm (`product_detail.php`)**
+   - Hiển thị thông tin chi tiết, ảnh, giá, mô tả.
+   - Nút “Thêm vào giỏ hàng”.
+
+4. **Giỏ hàng (`cart.php`)**
+   - Thêm, xoá, cập nhật số lượng.
+   - Lưu bằng SESSION.
+
+5. **Tài khoản người dùng (`login.php`, `register.php`, `profile.php`)**
+   - Đăng ký, đăng nhập.
+   - Trang cá nhân: xem đơn hàng, thông tin cá nhân.
+
+6. **Thanh toán (`checkout.php`)**
+   - Người dùng nhập thông tin giao hàng, xác nhận.
+   - Tạo bản ghi trong bảng `orders` và `order_items`.
+
+== PHẦN ADMIN (thư mục `admin/`) ==
+
+7. **Quản lý đăng nhập admin (`admin/login.php`)**
+   - Đăng nhập bằng tài khoản phân quyền `admin`.
+
+8. **Quản lý sản phẩm (`admin/products.php`)**
+   - Thêm, sửa, xoá sản phẩm.
+   - Dùng form và bảng trong MySQL (`products`).
+
+9. **Quản lý đơn hàng (`admin/orders.php`)**
+   - Xem danh sách đơn, cập nhật trạng thái (đang xử lý, đã giao, huỷ).
+
+10. **Doanh thu & biểu đồ (`admin/dashboard.php`)**
+    - Tổng số đơn hàng, tổng doanh thu theo ngày/tháng.
+    - Vẽ biểu đồ bằng Chart.js.
+
+11. **Khuyến mãi & voucher (`admin/discounts.php`)**
+    - Thêm/sửa voucher giảm giá, thiết lập ngày hết hạn, loại giảm.
+
+12. **Quản lý banner & theme (`admin/settings.php`)**
+    - Tải ảnh banner, chỉnh màu chủ đạo trang web (ghi vào bảng `settings`).
+
+13. **Quản lý người dùng, nhân sự (`admin/users.php`)**
+    - Danh sách user, phân quyền: admin, nhân viên, khách.
+
+== YÊU CẦU KHÁC ==
+
+- Giao diện responsive cơ bản bằng Bootstrap.
+- Kết nối CSDL bằng `config/database.php` duy nhất.
+- Dùng Session quản lý đăng nhập.
+- Mỗi trang nên dùng include để tách `header.php`, `footer.php`.
+
+=== Hãy viết mã lần lượt từng phần theo hướng dẫn trên. Bắt đầu bằng file kết nối CSDL và trang chủ.
