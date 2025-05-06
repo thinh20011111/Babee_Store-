@@ -2,7 +2,7 @@
 class Database {
     // Database credentials for InfinityFree
     private $host = "sql202.infinityfree.com";
-    private $db_name = "if0_38706403_XXX";
+    private $db_name = "if0_38706403_babee_store";
     private $username = "if0_38706403";
     private $password = "Haiyen2308";
     private $conn;
