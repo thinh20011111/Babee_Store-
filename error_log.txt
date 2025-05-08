@@ -1,0 +1,24 @@
+[06-May-2025 04:20:23 America/New_York] Starting test_controller.php
+[06-May-2025 04:20:23 America/New_York] Loaded config/database.php
+[06-May-2025 04:20:23 America/New_York] Loaded HomeController.php
+[06-May-2025 04:20:23 America/New_York] Database connected
+[06-May-2025 04:20:23 America/New_York] HomeController instantiated
+[06-May-2025 04:22:47 America/New_York] Starting test_controller.php
+[06-May-2025 04:22:47 America/New_York] Loaded config/database.php
+[06-May-2025 04:22:47 America/New_York] Loaded HomeController.php
+[06-May-2025 04:22:47 America/New_York] Database connected
+[06-May-2025 04:22:47 America/New_York] HomeController instantiated
+[06-May-2025 04:22:47 America/New_York] Missing required class in HomeController::index()
+[06-May-2025 04:22:47 America/New_York] Error in HomeController::index(): One or more required classes (Product, Banner, Category, Settings) not found.
+[06-May-2025 04:22:47 America/New_York] Called HomeController->index()
+[06-May-2025 04:27:04 America/New_York] Autoloader: Trying to load models/Product.php
+[06-May-2025 04:27:04 America/New_York] Autoloader: Loading models/Product.php
+[06-May-2025 04:27:04 America/New_York] Class found: Product
+[06-May-2025 04:27:04 America/New_York] Autoloader: Trying to load models/Banner.php
+[06-May-2025 04:27:04 America/New_York] Autoloader: Loading models/Banner.php
+[06-May-2025 04:29:06 America/New_York] Loaded Product.php
+[06-May-2025 04:30:11 America/New_York] Loaded Product.php
+[06-May-2025 04:30:17 America/New_York] Loaded Product.php
+[06-May-2025 04:30:17 America/New_York] Loaded Banner.php
+[06-May-2025 04:30:17 America/New_York] Loaded Category.php
+[06-May-2025 04:30:17 America/New_York] Loaded Settings.php

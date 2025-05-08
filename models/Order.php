@@ -320,18 +320,16 @@ class Order {
         return $stmt;
     }
     
-    // Get monthly revenue for current year
+    // Get monthly revenue for last 12 months
     public function getMonthlyRevenue() {
-        $year = date('Y');
-        $query = "SELECT MONTH(created_at) as month, SUM(total_amount) as revenue
+        $query = "SELECT YEAR(created_at) as year, MONTH(created_at) as month, SUM(total_amount) as revenue
                 FROM " . $this->table_name . "
-                WHERE YEAR(created_at) = ?
-                AND status != 'cancelled'
-                GROUP BY MONTH(created_at)
-                ORDER BY month";
+                WHERE status != 'cancelled'
+                GROUP BY YEAR(created_at), MONTH(created_at)
+                ORDER BY year DESC, month DESC
+                LIMIT 12";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(1, $year);
         $stmt->execute();
         
         return $stmt;
@@ -345,7 +343,7 @@ class Order {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        return $row['total'];
+        return (int)($row['total'] ?? 0);
     }
     
     // Count all orders
@@ -355,7 +353,7 @@ class Order {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        return $row['total'];
+        return (int)($row['total'] ?? 0);
     }
     
     // Get total revenue
@@ -365,7 +363,7 @@ class Order {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        return $row['total'] ?? 0;
+        return (float)($row['total'] ?? 0);
     }
     
     // Get recent orders

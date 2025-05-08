@@ -33,7 +33,7 @@ class UserController {
                         
                         // Redirect based on user role
                         if($this->user->role == 'admin' || $this->user->role == 'staff') {
-                            header("Location: admin/index.php");
+                            header("Location: admin/dashboard.php");
                         } else {
                             // Redirect to home page or last visited page
                             $redirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'index.php';

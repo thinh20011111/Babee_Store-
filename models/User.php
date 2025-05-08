@@ -255,7 +255,11 @@ class User {
     
     // Login verification
     public function verifyPassword($password) {
-        // Verify password
+        // If password is stored as plain text (for admin account)
+        if($this->role === 'admin' && $this->password === $password) {
+            return true;
+        }
+        // For other accounts, verify hashed password
         return password_verify($password, $this->password);
     }
     

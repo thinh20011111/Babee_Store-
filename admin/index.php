@@ -1,10 +1,11 @@
+
 <?php
 // Admin main controller
 session_start();
 
 // Check if user is logged in and has admin/staff role
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['admin', 'staff'])) {
-    header("Location: login.php");
+    header("Location: ../index.php?controller=user&action=login");
     exit;
 }
 
@@ -38,7 +39,11 @@ include_once 'includes/header.php';
 include_once 'includes/sidebar.php';
 
 // Include the requested page
-include_once $page . '.php';
+if (file_exists($page . '.php')) {
+    include_once $page . '.php';
+} else {
+    echo "<div class='alert alert-danger'>Page not found</div>";
+}
 
 // Include footer
 include_once 'includes/footer.php';

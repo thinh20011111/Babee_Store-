@@ -1,15 +1,18 @@
 <?php
 // Dashboard page
-// Check direct script access
 if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
-// Load required models
 require_once '../models/Order.php';
 require_once '../models/Product.php';
 require_once '../models/User.php';
 require_once '../models/Promotion.php';
+
+// Include database connection
+require_once '../config/database.php';
+$db = new Database();
+$conn = $db->getConnection();
 
 // Initialize objects
 $order = new Order($conn);
@@ -18,359 +21,512 @@ $user = new User($conn);
 $promotion = new Promotion($conn);
 
 // Get statistics
-$total_revenue = $order->getTotalRevenue();
-$order_count = $order->countAll();
-$product_count = $product->countAll();
-$user_count = $user->countAll();
+$total_revenue = $order->getTotalRevenue() ?? 0;
+$order_count = $order->countAll() ?? 0;
+$product_count = $product->countAll() ?? 0;
+$user_count = $user->countAll() ?? 0;
 
-// Get monthly revenue data
-$monthly_revenue_data = [];
-$monthly_revenue_labels = [];
-$monthly_revenue_stmt = $order->getMonthlyRevenue();
-while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
-    $month_name = date('F', mktime(0, 0, 0, $row['month'], 1));
-    $monthly_revenue_labels[] = $month_name;
-    $monthly_revenue_data[] = (float)$row['revenue'];
-}
-
-// Get recent orders
-$recent_orders = [];
+// Get recent orders and bestsellers
 $recent_orders_stmt = $order->getRecentOrders(5);
+$recent_orders = [];
 while ($row = $recent_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
     $recent_orders[] = $row;
 }
 
-// Get best selling products
-$bestsellers = [];
 $bestsellers_stmt = $product->getBestsellers(5);
+$bestsellers = [];
 while ($row = $bestsellers_stmt->fetch(PDO::FETCH_ASSOC)) {
     $bestsellers[] = $row;
 }
+
+// Get monthly revenue data (last 12 months)
+$monthly_revenue_data = array_fill(0, 12, 0); // Initialize with zeros
+$monthly_revenue_labels = [];
+$today = new DateTime();
+$today->modify('first day of this month'); // Start from first day of current month
+for ($i = 11; $i >= 0; $i--) {
+    $date = (clone $today)->modify("-$i months");
+    $monthly_revenue_labels[] = $date->format('M Y');
+}
+
+// Fetch revenue data
+$monthly_revenue_stmt = $order->getMonthlyRevenue();
+$raw_revenue_data = [];
+while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
+    $raw_revenue_data[] = $row;
+    // Create month_year using DateTime for consistent format
+    $date = DateTime::createFromFormat('Y-m-d', $row['year'] . '-' . $row['month'] . '-01');
+    $month_year = $date->format('M Y');
+    $index = array_search($month_year, $monthly_revenue_labels);
+    if ($index !== false) {
+        $monthly_revenue_data[$index] = (float)($row['revenue'] ?? 0);
+    } else {
+        error_log("No match for month_year: $month_year in labels: " . implode(", ", $monthly_revenue_labels));
+    }
+}
+
+// Debug: Prepare raw data message
+$debug_raw_revenue = empty($raw_revenue_data) 
+    ? "No data returned from getMonthlyRevenue. Check orders table for non-cancelled orders."
+    : $raw_revenue_data;
+
+// Debug: Prepare mapped data
+$debug_mapped_data = [
+    'labels' => $monthly_revenue_labels,
+    'data' => $monthly_revenue_data
+];
+
+// Ensure data is valid
+if (empty($monthly_revenue_data) || array_sum($monthly_revenue_data) == 0) {
+    $monthly_revenue_labels = ['No Data'];
+    $monthly_revenue_data = [0];
+}
+
+// Convert to JSON
+$monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
+$monthly_revenue_data_json = json_encode($monthly_revenue_data);
+
+// Define currency constant if not defined
+if (!defined('CURRENCY')) {
+    define('CURRENCY', 'đ');
+}
 ?>
 
-<div class="container-fluid px-4">
-    <h1 class="mt-4">Dashboard</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item active">Dashboard</li>
-    </ol>
-    
-    <!-- Dashboard Cards -->
-    <div class="row">
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-primary text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0"><?php echo CURRENCY . number_format($total_revenue); ?></h5>
-                            <div class="small">Total Revenue</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Favicon (empty data URI to avoid CORS) -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+        .card {
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+        }
+        .badge {
+            padding: 8px 12px;
+        }
+        .list-group-item {
+            border: none;
+        }
+        .table img {
+            object-fit: cover;
+        }
+        .debug-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="bg-dark sidebar p-3 text-white" style="width: 250px;">
+            <h4 class="text-center mb-4">Admin Panel</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link text-white active" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Orders</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="index.php?page=products"><i class="fas fa-box me-2"></i> Products</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="index.php?page=users"><i class="fas fa-users me-2"></i> Users</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow-1 p-4">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0">Dashboard</h1>
+                    <button class="btn btn-primary" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt me-2"></i> Refresh Data
+                    </button>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body d-flex align-items-center">
+                                <i class="fas fa-money-bill-wave fa-3x text-primary me-3"></i>
+                                <div>
+                                    <h6 class="text-uppercase text-muted mb-1">Total Revenue</h6>
+                                    <h4 class="mb-0"><?php echo CURRENCY . number_format($total_revenue); ?></h4>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <i class="fas fa-money-bill-wave fa-2x"></i>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body d-flex align-items-center">
+                                <i class="fas fa-shopping-cart fa-3x text-success me-3"></i>
+                                <div>
+                                    <h6 class="text-uppercase text-muted mb-1">Total Orders</h6>
+                                    <h4 class="mb-0"><?php echo number_format($order_count); ?></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body d-flex align-items-center">
+                                <i class="fas fa-box fa-3x text-warning me-3"></i>
+                                <div>
+                                    <h6 class="text-uppercase text-muted mb-1">Total Products</h6>
+                                    <h4 class="mb-0"><?php echo number_format($product_count); ?></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body d-flex align-items-center">
+                                <i class="fas fa-users fa-3x text-info me-3"></i>
+                                <div>
+                                    <h6 class="text-uppercase text-muted mb-1">Total Users</h6>
+                                    <h4 class="mb-0"><?php echo number_format($user_count); ?></h4>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="index.php?page=reports">View Details</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-success text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0"><?php echo number_format($order_count); ?></h5>
-                            <div class="small">Total Orders</div>
-                        </div>
-                        <div>
-                            <i class="fas fa-shopping-cart fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="index.php?page=orders">View Details</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-warning text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0"><?php echo number_format($product_count); ?></h5>
-                            <div class="small">Total Products</div>
-                        </div>
-                        <div>
-                            <i class="fas fa-tshirt fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="index.php?page=products">View Details</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-danger text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0"><?php echo number_format($user_count); ?></h5>
-                            <div class="small">Total Users</div>
-                        </div>
-                        <div>
-                            <i class="fas fa-users fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="index.php?page=users">View Details</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Charts Row -->
-    <div class="row">
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-chart-bar me-1"></i>
-                    Monthly Revenue
-                </div>
-                <div class="card-body">
-                    <canvas id="monthlyRevenueChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-chart-pie me-1"></i>
-                    Order Status Distribution
-                </div>
-                <div class="card-body">
-                    <canvas id="orderStatusChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Recent Orders and Bestsellers -->
-    <div class="row">
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-table me-1"></i>
-                    Recent Orders
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Order #</th>
-                                    <th>Date</th>
-                                    <th>Customer</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($recent_orders as $order): ?>
-                                <tr>
-                                    <td><a href="index.php?page=orders&action=view&id=<?php echo $order['id']; ?>"><?php echo htmlspecialchars($order['order_number']); ?></a></td>
-                                    <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
-                                    <td><?php echo htmlspecialchars($order['full_name'] ?? $order['username']); ?></td>
-                                    <td><?php echo CURRENCY . number_format($order['total_amount']); ?></td>
-                                    <td>
-                                        <?php
-                                        $status_class = '';
-                                        switch($order['status']) {
-                                            case 'pending': $status_class = 'bg-warning text-dark'; break;
-                                            case 'processing': $status_class = 'bg-info text-dark'; break;
-                                            case 'shipped': $status_class = 'bg-primary'; break;
-                                            case 'delivered': $status_class = 'bg-success'; break;
-                                            case 'cancelled': $status_class = 'bg-danger'; break;
-                                            default: $status_class = 'bg-secondary';
-                                        }
-                                        ?>
-                                        <span class="badge <?php echo $status_class; ?>"><?php echo ucfirst($order['status']); ?></span>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <?php if (empty($recent_orders)): ?>
-                                <tr>
-                                    <td colspan="5" class="text-center">No recent orders found</td>
-                                </tr>
+
+                <!-- Charts -->
+                <div class="row mb-4">
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header">
+                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-bar me-2"></i> Monthly Revenue</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="monthlyRevenueChart" style="width: 100%; height: 100%;"></canvas>
+                                </div>
+                                <div id="monthlyRevenueError" class="error-message"></div>
+                                <?php if ($monthly_revenue_labels[0] === 'No Data'): ?>
+                                    <p class="text-center text-muted mt-3">No revenue data available for the last 12 months.</p>
                                 <?php endif; ?>
-                            </tbody>
-                        </table>
+                                <!-- Debug Info -->
+                                <div class="debug-info">
+                                    <strong>Raw Revenue Data:</strong><br>
+                                    <?php
+                                    if (is_string($debug_raw_revenue)) {
+                                        echo htmlspecialchars($debug_raw_revenue);
+                                    } else {
+                                        echo '<pre>' . htmlspecialchars(json_encode($debug_raw_revenue, JSON_PRETTY_PRINT)) . '</pre>';
+                                    }
+                                    ?>
+                                    <strong>Mapped Revenue Data:</strong><br>
+                                    <pre><?php echo htmlspecialchars(json_encode($debug_mapped_data, JSON_PRETTY_PRINT)); ?></pre>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-end mt-2">
-                        <a href="index.php?page=orders" class="btn btn-sm btn-primary">View All Orders</a>
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header">
+                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-pie me-2"></i> Order Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="orderStatusChart" style="width: 100%; height: 100%;"></canvas>
+                                </div>
+                                <div id="orderStatusError" class="error-message"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-star me-1"></i>
-                    Bestselling Products
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>Sold</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($bestsellers as $product): ?>
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <?php if (!empty($product['image'])): ?>
-                                            <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="img-thumbnail me-2" style="width: 40px; height: 40px;">
+
+                <!-- Recent Orders & Best Sellers -->
+                <div class="row">
+                    <!-- Recent Orders -->
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-shopping-cart me-2"></i> Recent Orders</h6>
+                                <a href="index.php?page=orders" class="btn btn-sm btn-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Customer</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if (empty($recent_orders)): ?>
+                                            <tr>
+                                                <td colspan="5" class="text-center">No recent orders found</td>
+                                            </tr>
                                             <?php else: ?>
-                                            <div class="bg-light d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
-                                                <i class="fas fa-tshirt text-secondary"></i>
-                                            </div>
+                                            <?php foreach ($recent_orders as $order): ?>
+                                            <tr>
+                                                <td>
+                                                    <a href="index.php?page=orders&action=view&id=<?php echo $order['id']; ?>" class="text-decoration-none">
+                                                        #<?php echo htmlspecialchars($order['order_number']); ?>
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <?php echo htmlspecialchars($order['full_name'] ?? ($order['username'] ?? 'Guest')); ?>
+                                                </td>
+                                                <td><?php echo CURRENCY . number_format($order['total_amount']); ?></td>
+                                                <td>
+                                                    <?php
+                                                    $status_class = '';
+                                                    switch($order['status']) {
+                                                        case 'pending': $status_class = 'bg-warning text-dark'; break;
+                                                        case 'processing': $status_class = 'bg-info text-dark'; break;
+                                                        case 'shipped': $status_class = 'bg-primary text-white'; break;
+                                                        case 'delivered': $status_class = 'bg-success text-white'; break;
+                                                        case 'cancelled': $status_class = 'bg-danger text-white'; break;
+                                                        default: $status_class = 'bg-secondary text-white';
+                                                    }
+                                                    ?>
+                                                    <span class="badge <?php echo $status_class; ?>"><?php echo ucfirst($order['status']); ?></span>
+                                                </td>
+                                                <td><?php echo date('d/m/Y', strtotime($order['created_at'])); ?></td>
+                                            </tr>
+                                            <?php endforeach; ?>
                                             <?php endif; ?>
-                                            <a href="index.php?page=product-edit&id=<?php echo $product['id']; ?>"><?php echo htmlspecialchars($product['name']); ?></a>
-                                        </div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($product['category_name']); ?></td>
-                                    <td>
-                                        <?php if ($product['is_sale'] == 1 && !empty($product['sale_price']) && $product['sale_price'] < $product['price']): ?>
-                                        <span class="text-danger"><?php echo CURRENCY . number_format($product['sale_price']); ?></span>
-                                        <br><small class="text-muted text-decoration-line-through"><?php echo CURRENCY . number_format($product['price']); ?></small>
-                                        <?php else: ?>
-                                        <?php echo CURRENCY . number_format($product['price']); ?>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?php echo $product['total_sold'] ?? 0; ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <?php if (empty($bestsellers)): ?>
-                                <tr>
-                                    <td colspan="4" class="text-center">No bestselling products found</td>
-                                </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-end mt-2">
-                        <a href="index.php?page=products" class="btn btn-sm btn-primary">View All Products</a>
+
+                    <!-- Best Selling Products -->
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header">
+                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-star me-2"></i> Best Sellers</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    <?php if (empty($bestsellers)): ?>
+                                    <div class="list-group-item text-center">No best sellers found</div>
+                                    <?php else: ?>
+                                    <?php foreach ($bestsellers as $product): ?>
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><?php echo htmlspecialchars($product['name']); ?></h6>
+                                                <small class="text-muted"><?php echo number_format($product['total_sold']); ?> units sold</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold text-success"><?php echo CURRENCY . number_format($product['total_revenue']); ?></div>
+                                                <small class="text-muted"><?php echo CURRENCY . number_format($product['price']); ?>/unit</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Monthly Revenue Chart
-    const monthlyRevenueChart = new Chart(
-        document.getElementById('monthlyRevenueChart'),
-        {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode($monthly_revenue_labels); ?>,
-                datasets: [{
-                    label: 'Revenue',
-                    data: <?php echo json_encode($monthly_revenue_data); ?>,
-                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
-                    borderColor: 'rgba(0, 123, 255, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '<?php echo CURRENCY; ?>' + value.toLocaleString();
+    <!-- Bootstrap JS and Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        console.log('Dashboard script started.');
+
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        // Function to initialize charts
+        function initializeCharts() {
+            console.log('Attempting to initialize charts.');
+            try {
+                // Log data
+                console.log('Raw Revenue Data:', <?php echo json_encode($debug_raw_revenue); ?>);
+                console.log('Mapped Revenue Data:', <?php echo json_encode($debug_mapped_data); ?>);
+
+                // Check Chart.js availability
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js is not loaded!');
+                    document.getElementById('monthlyRevenueError').textContent = 'Error: Chart.js library is not loaded.';
+                    return;
+                }
+                console.log('Chart.js is loaded.');
+
+                // Check Monthly Revenue Chart canvas
+                const monthlyRevenueCanvas = document.getElementById('monthlyRevenueChart');
+                if (!monthlyRevenueCanvas) {
+                    console.error('Monthly Revenue Chart canvas not found!');
+                    document.getElementById('monthlyRevenueError').textContent = 'Error: Monthly Revenue Chart canvas not found.';
+                    return;
+                }
+                console.log('Monthly Revenue Chart canvas found.');
+                const monthlyCanvasRect = monthlyRevenueCanvas.getBoundingClientRect();
+                console.log('Monthly Revenue Canvas size:', {
+                    width: monthlyCanvasRect.width,
+                    height: monthlyCanvasRect.height
+                });
+
+                if (monthlyCanvasRect.width === 0 || monthlyCanvasRect.height === 0) {
+                    console.error('Monthly Revenue Canvas has zero size!');
+                    document.getElementById('monthlyRevenueError').textContent = 'Error: Monthly Revenue Chart canvas has zero size.';
+                    return;
+                }
+
+                // Initialize Monthly Revenue Chart
+                const monthlyRevenueChart = new Chart(monthlyRevenueCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: <?php echo $monthly_revenue_labels_json; ?>,
+                        datasets: [{
+                            label: 'Revenue',
+                            data: <?php echo $monthly_revenue_data_json; ?>,
+                            backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                            borderColor: 'rgba(0, 123, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + '<?php echo CURRENCY; ?>';
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    autoSkip: false,
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
                             }
                         }
                     }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return '<?php echo CURRENCY; ?>' + context.raw.toLocaleString();
-                            }
-                        }
-                    }
+                });
+                console.log('Monthly Revenue Chart initialized successfully.');
+
+                // Check Order Status Chart canvas
+                const orderStatusCanvas = document.getElementById('orderStatusChart');
+                if (!orderStatusCanvas) {
+                    console.error('Order Status Chart canvas not found!');
+                    document.getElementById('orderStatusError').textContent = 'Error: Order Status Chart canvas not found.';
+                    return;
                 }
+                console.log('Order Status Chart canvas found.');
+                const orderCanvasRect = orderStatusCanvas.getBoundingClientRect();
+                console.log('Order Status Canvas size:', {
+                    width: orderCanvasRect.width,
+                    height: orderCanvasRect.height
+                });
+
+                if (orderCanvasRect.width === 0 || orderCanvasRect.height === 0) {
+                    console.error('Order Status Canvas has zero size!');
+                    document.getElementById('orderStatusError').textContent = 'Error: Order Status Chart canvas has zero size.';
+                    return;
+                }
+
+                // Order Status Chart
+                const orderStatusData = {
+                    pending: <?php echo $order->countByStatus('pending') ?? 0; ?>,
+                    processing: <?php echo $order->countByStatus('processing') ?? 0; ?>,
+                    shipped: <?php echo $order->countByStatus('shipped') ?? 0; ?>,
+                    delivered: <?php echo $order->countByStatus('delivered') ?? 0; ?>,
+                    cancelled: <?php echo $order->countByStatus('cancelled') ?? 0; ?>
+                };
+
+                console.log('Order Status Data:', orderStatusData);
+
+                const orderStatusChart = new Chart(orderStatusCanvas, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
+                        datasets: [{
+                            data: [
+                                orderStatusData.pending,
+                                orderStatusData.processing,
+                                orderStatusData.shipped,
+                                orderStatusData.delivered,
+                                orderStatusData.cancelled
+                            ],
+                            backgroundColor: [
+                                'rgba(255, 193, 7, 0.8)',
+                                'rgba(23, 162, 184, 0.8)',
+                                'rgba(0, 123, 255, 0.8)',
+                                'rgba(40, 167, 69, 0.8)',
+                                'rgba(220, 53, 69, 0.8)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Order Status Chart initialized successfully.');
+            } catch (error) {
+                console.error('Error initializing charts:', error);
+                document.getElementById('monthlyRevenueError').textContent = 'Error initializing charts: ' + error.message;
             }
         }
-    );
 
-    // Order Status Chart
-    const orderStatusData = {
-        pending: <?php echo $order->countByStatus('pending'); ?>,
-        processing: <?php echo $order->countByStatus('processing'); ?>,
-        shipped: <?php echo $order->countByStatus('shipped'); ?>,
-        delivered: <?php echo $order->countByStatus('delivered'); ?>,
-        cancelled: <?php echo $order->countByStatus('cancelled'); ?>
-    };
-
-    const orderStatusChart = new Chart(
-        document.getElementById('orderStatusChart'),
-        {
-            type: 'pie',
-            data: {
-                labels: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-                datasets: [{
-                    data: [
-                        orderStatusData.pending,
-                        orderStatusData.processing,
-                        orderStatusData.shipped,
-                        orderStatusData.delivered,
-                        orderStatusData.cancelled
-                    ],
-                    backgroundColor: [
-                        'rgba(255, 193, 7, 0.8)',
-                        'rgba(23, 162, 184, 0.8)',
-                        'rgba(0, 123, 255, 0.8)',
-                        'rgba(40, 167, 69, 0.8)',
-                        'rgba(220, 53, 69, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 193, 7, 1)',
-                        'rgba(23, 162, 184, 1)',
-                        'rgba(0, 123, 255, 1)',
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(220, 53, 69, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    }
-                }
-            }
-        }
-    );
-});
-</script>
+        // Run chart initialization after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded.');
+            // Delay chart initialization to avoid early errors
+            setTimeout(initializeCharts, 100);
+        });
+    </script>
+</body>
+</html>

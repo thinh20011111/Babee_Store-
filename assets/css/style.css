@@ -1,3 +1,50 @@
+
+/* Admin Dashboard Custom Styles */
+.border-left-primary {
+    border-left: 4px solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 4px solid #1cc88a !important;
+}
+
+.border-left-warning {
+    border-left: 4px solid #f6c23e !important;
+}
+
+.border-left-info {
+    border-left: 4px solid #36b9cc !important;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.table > :not(caption) > * > * {
+    padding: 1rem 0.75rem;
+}
+
+.badge {
+    padding: 0.5em 0.8em;
+}
+
+.list-group-item {
+    border-left: 0;
+    border-right: 0;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.shadow {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+}
+
 /* 
 * Babee Store - Main Stylesheet
 * A cute and friendly design for the baby clothing e-commerce store
