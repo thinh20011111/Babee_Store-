@@ -55,17 +55,35 @@ $raw_revenue_data = [];
 while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
     $raw_revenue_data[] = $row;
     try {
+        // In PostgreSQL, EXTRACT returns decimal/float values, so we need to convert them to integers
+        $year = intval($row['year']);
+        $month = intval($row['month']);
+        
+        // Debug the values
+        error_log("Processing revenue data - Year: $year, Month: $month, Revenue: {$row['revenue']}");
+        
         // Create month_year using DateTime for consistent format
-        $date = DateTime::createFromFormat('Y-m-d', $row['year'] . '-' . str_pad($row['month'], 2, '0', STR_PAD_LEFT) . '-01');
+        $date_string = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01';
+        $date = DateTime::createFromFormat('Y-m-d', $date_string);
+        
         if ($date === false) {
-            // Handle format error
-            error_log("Invalid date format for year: {$row['year']}, month: {$row['month']}");
+            // Handle format error and provide detailed diagnostics
+            $errors = DateTime::getLastErrors();
+            $error_msg = "Invalid date format for year: $year, month: $month, date string: $date_string";
+            if ($errors) {
+                $error_msg .= " - DateTime errors: " . json_encode($errors);
+            }
+            error_log($error_msg);
             continue;
         }
+        
         $month_year = $date->format('M Y');
+        error_log("Formatted date: $month_year");
+        
         $index = array_search($month_year, $monthly_revenue_labels);
         if ($index !== false) {
             $monthly_revenue_data[$index] = (float)($row['revenue'] ?? 0);
+            error_log("Mapped revenue $month_year to index $index: {$monthly_revenue_data[$index]}");
         } else {
             error_log("No match for month_year: $month_year in labels: " . implode(", ", $monthly_revenue_labels));
         }
@@ -75,9 +93,22 @@ while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
 }
 
 // Debug: Prepare raw data message
-$debug_raw_revenue = empty($raw_revenue_data) 
-    ? "No data returned from getMonthlyRevenue. Check orders table for non-cancelled orders."
-    : $raw_revenue_data;
+if (empty($raw_revenue_data)) {
+    $debug_raw_revenue = "No data returned from getMonthlyRevenue. Check orders table for non-cancelled orders.";
+    // Additional debug query to check if we have any valid orders
+    $debug_orders_query = "SELECT id, status, total_amount, created_at FROM orders WHERE status != 'cancelled' LIMIT 5";
+    $debug_orders_stmt = $conn->prepare($debug_orders_query);
+    $debug_orders_stmt->execute();
+    $debug_orders = [];
+    while ($row = $debug_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
+        $debug_orders[] = $row;
+    }
+    if (!empty($debug_orders)) {
+        $debug_raw_revenue = "Found orders but no monthly revenue data. Sample orders: " . json_encode($debug_orders);
+    }
+} else {
+    $debug_raw_revenue = $raw_revenue_data;
+}
 
 // Debug: Prepare mapped data
 $debug_mapped_data = [
@@ -114,7 +145,16 @@ if (!defined('CURRENCY')) {
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <!-- Backup Chart.js source if the primary fails -->
+    <script>
+        // Check if Chart is loaded from primary source
+        if (typeof Chart === 'undefined') {
+            console.log('Attempting to load Chart.js from backup source');
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"><\/script>');
+            console.log('Backup Chart.js source loaded');
+        }
+    </script>
     <style>
         .sidebar {
             min-height: 100vh;
@@ -251,7 +291,18 @@ if (!defined('CURRENCY')) {
                                     <p class="text-center text-muted mt-3">No revenue data available for the last 12 months.</p>
                                 <?php endif; ?>
                                 <!-- Debug Info -->
-                                
+                                <div class="debug-info">
+                                    <strong>Raw Revenue Data:</strong><br>
+                                    <?php
+                                    if (is_string($debug_raw_revenue)) {
+                                        echo htmlspecialchars($debug_raw_revenue);
+                                    } else {
+                                        echo '<pre>' . htmlspecialchars(json_encode($debug_raw_revenue, JSON_PRETTY_PRINT)) . '</pre>';
+                                    }
+                                    ?>
+                                    <strong>Mapped Revenue Data:</strong><br>
+                                    <pre><?php echo htmlspecialchars(json_encode($debug_mapped_data, JSON_PRETTY_PRINT)); ?></pre>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -429,6 +480,8 @@ if (!defined('CURRENCY')) {
                 }
 
                 // Initialize Monthly Revenue Chart
+                console.log('Initializing Monthly Revenue Chart with data:', monthlyLabels, monthlyData);
+                try {
                 const monthlyRevenueChart = new Chart(monthlyRevenueCanvas, {
                     type: 'bar',
                     data: {
@@ -482,6 +535,10 @@ if (!defined('CURRENCY')) {
                     }
                 });
                 console.log('Monthly Revenue Chart initialized successfully.');
+                } catch (chartError) {
+                    console.error('Error creating monthly revenue chart:', chartError);
+                    document.getElementById('monthlyRevenueError').textContent = 'Error creating chart: ' + chartError.message;
+                }
 
                 // Check Order Status Chart canvas
                 const orderStatusCanvas = document.getElementById('orderStatusChart');
@@ -536,6 +593,8 @@ if (!defined('CURRENCY')) {
                     orderStatusCanvas.parentNode.appendChild(noDataMsg);
                 }
                 
+                console.log('Initializing Order Status Chart with data:', statusLabels, statusData);
+                try {
                 const orderStatusChart = new Chart(orderStatusCanvas, {
                     type: 'pie',
                     data: {
@@ -586,8 +645,12 @@ if (!defined('CURRENCY')) {
                     }
                 });
                 console.log('Order Status Chart initialized successfully.');
+                } catch (chartError) {
+                    console.error('Error creating order status chart:', chartError);
+                    document.getElementById('orderStatusError').textContent = 'Error creating chart: ' + chartError.message;
+                }
             } catch (error) {
-                console.error('Error initializing charts:', error);
+                console.error('Error in overall chart initialization:', error);
                 document.getElementById('monthlyRevenueError').textContent = 'Error initializing charts: ' + error.message;
             }
         }
