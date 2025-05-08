@@ -120,9 +120,14 @@ if (!defined('CURRENCY')) {
         }
         .chart-container {
             position: relative;
+            width: 100%;
             height: 400px;
             background-color: #f8f9fa;
             border: 2px solid #007bff;
+        }
+        #monthlyRevenueChart, #orderStatusChart {
+            width: 100% !important;
+            height: 100% !important;
         }
         .badge {
             padding: 8px 12px;
@@ -235,7 +240,7 @@ if (!defined('CURRENCY')) {
                             </div>
                             <div class="card-body">
                                 <div class="chart-container">
-                                    <canvas id="monthlyRevenueChart" style="width: 100%; height: 100%;"></canvas>
+                                    <canvas id="monthlyRevenueChart"></canvas>
                                 </div>
                                 <div id="monthlyRevenueError" class="error-message"></div>
                                 <?php if ($monthly_revenue_labels[0] === 'No Data'): ?>
@@ -264,7 +269,7 @@ if (!defined('CURRENCY')) {
                             </div>
                             <div class="card-body">
                                 <div class="chart-container">
-                                    <canvas id="orderStatusChart" style="width: 100%; height: 100%;"></canvas>
+                                    <canvas id="orderStatusChart"></canvas>
                                 </div>
                                 <div id="orderStatusError" class="error-message"></div>
                             </div>
@@ -379,153 +384,142 @@ if (!defined('CURRENCY')) {
             location.reload();
         }
 
-        // Function to initialize charts
-        function initializeCharts() {
-            console.log('Attempting to initialize charts.');
-            try {
-                // Log data
-                console.log('Raw Revenue Data:', <?php echo json_encode($debug_raw_revenue); ?>);
-                console.log('Mapped Revenue Data:', <?php echo json_encode($debug_mapped_data); ?>);
+        function initializeMonthlyRevenueChart() {
+            const canvas = document.getElementById('monthlyRevenueChart');
+            if (!canvas) {
+                console.error('Monthly Revenue Chart canvas not found.');
+                document.getElementById('monthlyRevenueError').textContent = 'Error: Canvas not found.';
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('Failed to get canvas context.');
+                document.getElementById('monthlyRevenueError').textContent = 'Error: Cannot get canvas context.';
+                return;
+            }
 
-                // Check Chart.js availability
-                if (typeof Chart === 'undefined') {
-                    console.error('Chart.js is not loaded!');
-                    document.getElementById('monthlyRevenueError').textContent = 'Error: Chart.js library is not loaded.';
-                    return;
-                }
-                console.log('Chart.js is loaded.');
+            const labels = <?php echo $monthly_revenue_labels_json; ?>;
+            const data = <?php echo $monthly_revenue_data_json; ?>;
+            console.log('Monthly Revenue Labels:', labels);
+            console.log('Monthly Revenue Data:', data);
 
-                // Check Monthly Revenue Chart canvas
-                const monthlyRevenueCanvas = document.getElementById('monthlyRevenueChart');
-                if (!monthlyRevenueCanvas) {
-                    console.error('Monthly Revenue Chart canvas not found!');
-                    document.getElementById('monthlyRevenueError').textContent = 'Error: Monthly Revenue Chart canvas not found.';
-                    return;
-                }
-                console.log('Monthly Revenue Chart canvas found.');
-                const monthlyCanvasRect = monthlyRevenueCanvas.getBoundingClientRect();
-                console.log('Monthly Revenue Canvas size:', {
-                    width: monthlyCanvasRect.width,
-                    height: monthlyCanvasRect.height
-                });
+            if (!Array.isArray(labels) || !Array.isArray(data)) {
+                console.error('Invalid chart data format.');
+                document.getElementById('monthlyRevenueError').textContent = 'Error: Invalid chart data format.';
+                return;
+            }
 
-                if (monthlyCanvasRect.width === 0 || monthlyCanvasRect.height === 0) {
-                    console.error('Monthly Revenue Canvas has zero size!');
-                    document.getElementById('monthlyRevenueError').textContent = 'Error: Monthly Revenue Chart canvas has zero size.';
-                    return;
-                }
-
-                // Initialize Monthly Revenue Chart
-                const monthlyRevenueChart = new Chart(monthlyRevenueCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: <?php echo $monthly_revenue_labels_json; ?>,
-                        datasets: [{
-                            label: 'Revenue',
-                            data: <?php echo $monthly_revenue_data_json; ?>,
-                            backgroundColor: 'rgba(0, 123, 255, 0.5)',
-                            borderColor: 'rgba(0, 123, 255, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value.toLocaleString() + '<?php echo CURRENCY; ?>';
-                                    }
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: data,
+                        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString() + '<?php echo CURRENCY; ?>';
                                 }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
                             },
-                            x: {
-                                ticks: {
-                                    autoSkip: false,
-                                    maxRotation: 45,
-                                    minRotation: 45
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Month'
-                                }
+                            title: {
+                                display: true,
+                                text: 'Month'
                             }
                         }
                     }
-                });
-                console.log('Monthly Revenue Chart initialized successfully.');
-
-                // Check Order Status Chart canvas
-                const orderStatusCanvas = document.getElementById('orderStatusChart');
-                if (!orderStatusCanvas) {
-                    console.error('Order Status Chart canvas not found!');
-                    document.getElementById('orderStatusError').textContent = 'Error: Order Status Chart canvas not found.';
-                    return;
                 }
-                console.log('Order Status Chart canvas found.');
-                const orderCanvasRect = orderStatusCanvas.getBoundingClientRect();
-                console.log('Order Status Canvas size:', {
-                    width: orderCanvasRect.width,
-                    height: orderCanvasRect.height
-                });
-
-                if (orderCanvasRect.width === 0 || orderCanvasRect.height === 0) {
-                    console.error('Order Status Canvas has zero size!');
-                    document.getElementById('orderStatusError').textContent = 'Error: Order Status Chart canvas has zero size.';
-                    return;
-                }
-
-                // Order Status Chart
-                const orderStatusData = {
-                    pending: <?php echo $order->countByStatus('pending') ?? 0; ?>,
-                    processing: <?php echo $order->countByStatus('processing') ?? 0; ?>,
-                    shipped: <?php echo $order->countByStatus('shipped') ?? 0; ?>,
-                    delivered: <?php echo $order->countByStatus('delivered') ?? 0; ?>,
-                    cancelled: <?php echo $order->countByStatus('cancelled') ?? 0; ?>
-                };
-
-                console.log('Order Status Data:', orderStatusData);
-
-                const orderStatusChart = new Chart(orderStatusCanvas, {
-                    type: 'pie',
-                    data: {
-                        labels: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-                        datasets: [{
-                            data: [
-                                orderStatusData.pending,
-                                orderStatusData.processing,
-                                orderStatusData.shipped,
-                                orderStatusData.delivered,
-                                orderStatusData.cancelled
-                            ],
-                            backgroundColor: [
-                                'rgba(255, 193, 7, 0.8)',
-                                'rgba(23, 162, 184, 0.8)',
-                                'rgba(0, 123, 255, 0.8)',
-                                'rgba(40, 167, 69, 0.8)',
-                                'rgba(220, 53, 69, 0.8)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-                console.log('Order Status Chart initialized successfully.');
-            } catch (error) {
-                console.error('Error initializing charts:', error);
-                document.getElementById('monthlyRevenueError').textContent = 'Error initializing charts: ' + error.message;
-            }
+            });
+            console.log('Monthly Revenue Chart initialized.');
         }
 
-        // Run chart initialization after DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM fully loaded.');
-            // Delay chart initialization to avoid early errors
-            setTimeout(initializeCharts, 100);
+        function initializeOrderStatusChart() {
+            const canvas = document.getElementById('orderStatusChart');
+            if (!canvas) {
+                console.error('Order Status Chart canvas not found.');
+                document.getElementById('orderStatusError').textContent = 'Error: Canvas not found.';
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('Failed to get canvas context.');
+                document.getElementById('orderStatusError').textContent = 'Error: Cannot get canvas context.';
+                return;
+            }
+
+            const orderStatusData = {
+                pending: <?php echo $order->countByStatus('pending') ?? 0; ?>,
+                processing: <?php echo $order->countByStatus('processing') ?? 0; ?>,
+                shipped: <?php echo $order->countByStatus('shipped') ?? 0; ?>,
+                delivered: <?php echo $order->countByStatus('delivered') ?? 0; ?>,
+                cancelled: <?php echo $order->countByStatus('cancelled') ?? 0; ?>
+            };
+            console.log('Order Status Data:', orderStatusData);
+
+            const totalOrders = Object.values(orderStatusData).reduce((sum, val) => sum + val, 0);
+            if (totalOrders === 0) {
+                console.warn('No order status data available.');
+                document.getElementById('orderStatusError').textContent = 'No order status data available.';
+                return;
+            }
+
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
+                    datasets: [{
+                        data: [
+                            orderStatusData.pending,
+                            orderStatusData.processing,
+                            orderStatusData.shipped,
+                            orderStatusData.delivered,
+                            orderStatusData.cancelled
+                        ],
+                        backgroundColor: [
+                            'rgba(255, 193, 7, 0.8)',
+                            'rgba(23, 162, 184, 0.8)',
+                            'rgba(0, 123, 255, 0.8)',
+                            'rgba(40, 167, 69, 0.8)',
+                            'rgba(220, 53, 69, 0.8)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            console.log('Order Status Chart initialized.');
+        }
+
+        window.addEventListener('load', function() {
+            console.log('Window fully loaded.');
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded!');
+                document.getElementById('monthlyRevenueError').textContent = 'Error: Chart.js library is not loaded.';
+                document.getElementById('orderStatusError').textContent = 'Error: Chart.js library is not loaded.';
+                return;
+            }
+            initializeMonthlyRevenueChart();
+            initializeOrderStatusChart();
         });
     </script>
 </body>
