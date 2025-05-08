@@ -300,19 +300,6 @@ if (!defined('CURRENCY')) {
                                     <?php endif; ?>
                                 </div>
                                 <div id="monthlyRevenueError" class="error-message"></div>
-                                <!-- Debug Info -->
-                                <div class="debug-info">
-                                    <strong>Raw Revenue Data:</strong><br>
-                                    <?php
-                                    if (is_string($debug_raw_revenue)) {
-                                        echo htmlspecialchars($debug_raw_revenue);
-                                    } else {
-                                        echo '<pre>' . htmlspecialchars(json_encode($debug_raw_revenue, JSON_PRETTY_PRINT)) . '</pre>';
-                                    }
-                                    ?>
-                                    <strong>Mapped Revenue Data:</strong><br>
-                                    <pre><?php echo htmlspecialchars(json_encode($debug_mapped_data, JSON_PRETTY_PRINT)); ?></pre>
-                                </div>
                             </div>
                         </div>
                     </div>
