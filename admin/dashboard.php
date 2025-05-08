@@ -144,17 +144,7 @@ if (!defined('CURRENCY')) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <!-- Backup Chart.js source if the primary fails -->
-    <script>
-        // Check if Chart is loaded from primary source
-        if (typeof Chart === 'undefined') {
-            console.log('Attempting to load Chart.js from backup source');
-            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"><\/script>');
-            console.log('Backup Chart.js source loaded');
-        }
-    </script>
+    <!-- No Chart.js needed anymore as we use Bootstrap 5 components -->
     <style>
         .sidebar {
             min-height: 100vh;
@@ -283,13 +273,33 @@ if (!defined('CURRENCY')) {
                                 <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-bar me-2"></i> Monthly Revenue</h6>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container">
-                                    <canvas id="monthlyRevenueChart" style="width: 100%; height: 100%;"></canvas>
+                                <div class="monthly-revenue-chart">
+                                    <?php if ($monthly_revenue_labels[0] === 'No Data'): ?>
+                                        <p class="text-center text-muted mt-3">No revenue data available for the last 12 months.</p>
+                                    <?php else: ?>
+                                        <!-- Bootstrap 5 based bar chart -->
+                                        <div class="row align-items-end mb-4" style="height: 300px;">
+                                            <?php foreach ($monthly_revenue_data as $index => $value): ?>
+                                                <?php 
+                                                    $month = $monthly_revenue_labels[$index] ?? 'Unknown';
+                                                    $height_percentage = 0;
+                                                    $max_value = max($monthly_revenue_data);
+                                                    if ($max_value > 0) {
+                                                        $height_percentage = ($value / $max_value) * 100;
+                                                    }
+                                                ?>
+                                                <div class="col px-1 text-center">
+                                                    <div class="d-flex flex-column align-items-center">
+                                                        <div class="text-primary fw-bold small mb-1"><?php echo CURRENCY . number_format($value); ?></div>
+                                                        <div class="bg-primary rounded-top" style="height: <?php echo $height_percentage; ?>%; width: 100%; min-height: 5px;"></div>
+                                                        <div class="small text-muted mt-2" style="writing-mode: vertical-rl; transform: rotate(180deg); height: 80px;"><?php echo $month; ?></div>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div id="monthlyRevenueError" class="error-message"></div>
-                                <?php if ($monthly_revenue_labels[0] === 'No Data'): ?>
-                                    <p class="text-center text-muted mt-3">No revenue data available for the last 12 months.</p>
-                                <?php endif; ?>
                                 <!-- Debug Info -->
                                 <div class="debug-info">
                                     <strong>Raw Revenue Data:</strong><br>
@@ -312,8 +322,83 @@ if (!defined('CURRENCY')) {
                                 <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-pie me-2"></i> Order Status</h6>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container">
-                                    <canvas id="orderStatusChart" style="width: 100%; height: 100%;"></canvas>
+                                <!-- Bootstrap 5 Order Status Chart -->
+                                <div class="order-status-chart">
+                                    <?php
+                                    $status_labels = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+                                    $status_counts = [
+                                        $order->countByStatus('pending'),
+                                        $order->countByStatus('processing'),
+                                        $order->countByStatus('shipped'),
+                                        $order->countByStatus('delivered'),
+                                        $order->countByStatus('cancelled')
+                                    ];
+                                    $status_colors = [
+                                        'warning',  // Pending - yellow
+                                        'info',     // Processing - blue
+                                        'primary',  // Shipped - dark blue
+                                        'success',  // Delivered - green
+                                        'danger'    // Cancelled - red
+                                    ];
+                                    $total_orders = array_sum($status_counts);
+                                    ?>
+                                    
+                                    <?php if ($total_orders == 0): ?>
+                                        <div class="text-center text-muted py-4">No order status data available.</div>
+                                    <?php else: ?>
+                                        <!-- Visual representation using colored cards -->
+                                        <div class="row mb-4">
+                                            <?php foreach ($status_labels as $index => $label): 
+                                                $count = $status_counts[$index];
+                                                $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
+                                                $color = $status_colors[$index];
+                                            ?>
+                                            <div class="col">
+                                                <div class="card border-<?php echo $color; ?> h-100">
+                                                    <div class="card-body p-2 text-center">
+                                                        <h6 class="text-<?php echo $color; ?>"><?php echo $label; ?></h6>
+                                                        <h3 class="mb-0"><?php echo $count; ?></h3>
+                                                        <div class="progress mt-2" style="height: 10px;">
+                                                            <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
+                                                                style="width: <?php echo $percentage; ?>%" 
+                                                                aria-valuenow="<?php echo $percentage; ?>" 
+                                                                aria-valuemin="0" 
+                                                                aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-muted"><?php echo $percentage; ?>%</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        
+                                        <!-- Visual representation as circular progress -->
+                                        <div class="row justify-content-center">
+                                            <div class="col-md-10">
+                                                <div class="progress" style="height: 25px;">
+                                                    <?php foreach ($status_labels as $index => $label): 
+                                                        $count = $status_counts[$index];
+                                                        $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
+                                                        $color = $status_colors[$index];
+                                                        if ($percentage > 0):
+                                                    ?>
+                                                    <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
+                                                        style="width: <?php echo $percentage; ?>%" 
+                                                        aria-valuenow="<?php echo $percentage; ?>" 
+                                                        aria-valuemin="0" 
+                                                        aria-valuemax="100" 
+                                                        title="<?php echo $label; ?>: <?php echo $count; ?> (<?php echo $percentage; ?>%)">
+                                                        <?php if ($percentage >= 10): ?>
+                                                            <?php echo $label; ?> <?php echo $percentage; ?>%
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <?php endif; ?>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div id="orderStatusError" class="error-message"></div>
                             </div>
@@ -422,244 +507,29 @@ if (!defined('CURRENCY')) {
     <!-- Bootstrap JS and Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        console.log('Dashboard script started.');
+        console.log("Dashboard script started with Bootstrap 5 visualizations.");
 
         function refreshDashboard() {
             location.reload();
         }
 
-        // Function to initialize charts
-        function initializeCharts() {
-            console.log('Attempting to initialize charts.');
-            try {
-                // Log data
-                console.log('Raw Revenue Data:', <?php echo json_encode($debug_raw_revenue); ?>);
-                console.log('Mapped Revenue Data:', <?php echo json_encode($debug_mapped_data); ?>);
-
-                // Check Chart.js availability
-                if (typeof Chart === 'undefined') {
-                    console.error('Chart.js is not loaded!');
-                    document.getElementById('monthlyRevenueError').textContent = 'Error: Chart.js library is not loaded.';
-                    return;
-                }
-                console.log('Chart.js is loaded.');
-
-                // Check Monthly Revenue Chart canvas
-                const monthlyRevenueCanvas = document.getElementById('monthlyRevenueChart');
-                if (!monthlyRevenueCanvas) {
-                    console.error('Monthly Revenue Chart canvas not found!');
-                    document.getElementById('monthlyRevenueError').textContent = 'Error: Monthly Revenue Chart canvas not found.';
-                    return;
-                }
-                console.log('Monthly Revenue Chart canvas found.');
-                const monthlyCanvasRect = monthlyRevenueCanvas.getBoundingClientRect();
-                console.log('Monthly Revenue Canvas size:', {
-                    width: monthlyCanvasRect.width,
-                    height: monthlyCanvasRect.height
-                });
-
-                if (monthlyCanvasRect.width === 0 || monthlyCanvasRect.height === 0) {
-                    console.error('Monthly Revenue Canvas has zero size!');
-                    document.getElementById('monthlyRevenueError').textContent = 'Error: Monthly Revenue Chart canvas has zero size.';
-                    return;
-                }
-
-                // Parse the data safely
-                let monthlyLabels = <?php echo $monthly_revenue_labels_json; ?>;
-                let monthlyData = <?php echo $monthly_revenue_data_json; ?>;
-                
-                console.log('Monthly labels:', monthlyLabels);
-                console.log('Monthly data:', monthlyData);
-                
-                // Safety check for data
-                if (!Array.isArray(monthlyLabels) || !Array.isArray(monthlyData) || 
-                    monthlyLabels.length === 0 || monthlyData.length === 0) {
-                    console.error('Invalid monthly revenue data format');
-                    monthlyLabels = ['No Data'];
-                    monthlyData = [0];
-                }
-
-                // Initialize Monthly Revenue Chart
-                console.log('Initializing Monthly Revenue Chart with data:', monthlyLabels, monthlyData);
-                try {
-                const monthlyRevenueChart = new Chart(monthlyRevenueCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: monthlyLabels,
-                        datasets: [{
-                            label: 'Revenue',
-                            data: monthlyData,
-                            backgroundColor: 'rgba(0, 123, 255, 0.5)',
-                            borderColor: 'rgba(0, 123, 255, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let value = context.raw || 0;
-                                        return 'Revenue: ' + value.toLocaleString() + ' <?php echo CURRENCY; ?>';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value.toLocaleString() + ' <?php echo CURRENCY; ?>';
-                                    }
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    autoSkip: false,
-                                    maxRotation: 45,
-                                    minRotation: 45
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Month'
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log('Monthly Revenue Chart initialized successfully.');
-                } catch (chartError) {
-                    console.error('Error creating monthly revenue chart:', chartError);
-                    document.getElementById('monthlyRevenueError').textContent = 'Error creating chart: ' + chartError.message;
-                }
-
-                // Check Order Status Chart canvas
-                const orderStatusCanvas = document.getElementById('orderStatusChart');
-                if (!orderStatusCanvas) {
-                    console.error('Order Status Chart canvas not found!');
-                    document.getElementById('orderStatusError').textContent = 'Error: Order Status Chart canvas not found.';
-                    return;
-                }
-                console.log('Order Status Chart canvas found.');
-                const orderCanvasRect = orderStatusCanvas.getBoundingClientRect();
-                console.log('Order Status Canvas size:', {
-                    width: orderCanvasRect.width,
-                    height: orderCanvasRect.height
-                });
-
-                if (orderCanvasRect.width === 0 || orderCanvasRect.height === 0) {
-                    console.error('Order Status Canvas has zero size!');
-                    document.getElementById('orderStatusError').textContent = 'Error: Order Status Chart canvas has zero size.';
-                    return;
-                }
-
-                // Order Status Chart
-                const orderStatusData = {
-                    pending: <?php echo $order->countByStatus('pending') ?? 0; ?>,
-                    processing: <?php echo $order->countByStatus('processing') ?? 0; ?>,
-                    shipped: <?php echo $order->countByStatus('shipped') ?? 0; ?>,
-                    delivered: <?php echo $order->countByStatus('delivered') ?? 0; ?>,
-                    cancelled: <?php echo $order->countByStatus('cancelled') ?? 0; ?>
-                };
-
-                console.log('Order Status Data:', orderStatusData);
-
-                // Check if we have any order data
-                const hasOrderData = Object.values(orderStatusData).some(value => value > 0);
-                
-                // Setup the order status data
-                let statusLabels = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-                let statusData = [
-                    orderStatusData.pending,
-                    orderStatusData.processing,
-                    orderStatusData.shipped,
-                    orderStatusData.delivered,
-                    orderStatusData.cancelled
-                ];
-                
-                // If no data, show a message
-                if (!hasOrderData) {
-                    // Add a note under the chart
-                    const noDataMsg = document.createElement('p');
-                    noDataMsg.className = 'text-center text-muted mt-3';
-                    noDataMsg.innerText = 'No order status data available.';
-                    orderStatusCanvas.parentNode.appendChild(noDataMsg);
-                }
-                
-                console.log('Initializing Order Status Chart with data:', statusLabels, statusData);
-                try {
-                const orderStatusChart = new Chart(orderStatusCanvas, {
-                    type: 'pie',
-                    data: {
-                        labels: statusLabels,
-                        datasets: [{
-                            data: statusData,
-                            backgroundColor: [
-                                'rgba(255, 193, 7, 0.8)',
-                                'rgba(23, 162, 184, 0.8)',
-                                'rgba(0, 123, 255, 0.8)',
-                                'rgba(40, 167, 69, 0.8)',
-                                'rgba(220, 53, 69, 0.8)'
-                            ],
-                            borderWidth: 1,
-                            borderColor: [
-                                'rgba(255, 193, 7, 1)',
-                                'rgba(23, 162, 184, 1)',
-                                'rgba(0, 123, 255, 1)',
-                                'rgba(40, 167, 69, 1)',
-                                'rgba(220, 53, 69, 1)'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    padding: 15,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle'
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.raw || 0;
-                                        const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                        return label + ': ' + value + ' đơn hàng (' + percentage + '%)';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log('Order Status Chart initialized successfully.');
-                } catch (chartError) {
-                    console.error('Error creating order status chart:', chartError);
-                    document.getElementById('orderStatusError').textContent = 'Error creating chart: ' + chartError.message;
-                }
-            } catch (error) {
-                console.error('Error in overall chart initialization:', error);
-                document.getElementById('monthlyRevenueError').textContent = 'Error initializing charts: ' + error.message;
-            }
-        }
-
-        // Run chart initialization after DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM fully loaded.');
-            // Delay chart initialization to avoid early errors
-            setTimeout(initializeCharts, 100);
+        // We are now using pure Bootstrap 5 for visualizations, no chart.js initialization needed
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("DOM fully loaded. Bootstrap 5 visualizations are static and dont require JavaScript initialization.");
+            
+            // Just log data for debugging purposes
+            console.log("Raw Revenue Data:", <?php echo json_encode($debug_raw_revenue); ?>);
+            console.log("Mapped Revenue Data:", <?php echo json_encode($debug_mapped_data); ?>);
+            
+            // Status counts for debugging
+            const statusCounts = {
+                "Pending": <?php echo $order->countByStatus("pending"); ?>,
+                "Processing": <?php echo $order->countByStatus("processing"); ?>,
+                "Shipped": <?php echo $order->countByStatus("shipped"); ?>,
+                "Delivered": <?php echo $order->countByStatus("delivered"); ?>,
+                "Cancelled": <?php echo $order->countByStatus("cancelled"); ?>
+            };
+            console.log("Order Status Data:", statusCounts);
         });
     </script>
 </body>
