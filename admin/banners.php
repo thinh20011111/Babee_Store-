@@ -1,4 +1,5 @@
 <?php
+//hihi
 // Banners management page
 // Check direct script access
 if (!defined('ADMIN_INCLUDED')) {
