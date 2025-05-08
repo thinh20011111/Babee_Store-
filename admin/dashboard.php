@@ -251,18 +251,7 @@ if (!defined('CURRENCY')) {
                                     <p class="text-center text-muted mt-3">No revenue data available for the last 12 months.</p>
                                 <?php endif; ?>
                                 <!-- Debug Info -->
-                                <div class="debug-info">
-                                    <strong>Raw Revenue Data:</strong><br>
-                                    <?php
-                                    if (is_string($debug_raw_revenue)) {
-                                        echo htmlspecialchars($debug_raw_revenue);
-                                    } else {
-                                        echo '<pre>' . htmlspecialchars(json_encode($debug_raw_revenue, JSON_PRETTY_PRINT)) . '</pre>';
-                                    }
-                                    ?>
-                                    <strong>Mapped Revenue Data:</strong><br>
-                                    <pre><?php echo htmlspecialchars(json_encode($debug_mapped_data, JSON_PRETTY_PRINT)); ?></pre>
-                                </div>
+                                
                             </div>
                         </div>
                     </div>
