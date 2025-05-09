@@ -2,44 +2,39 @@
 class UserController {
     private $conn;
     private $user;
-    
+
     public function __construct($db) {
         $this->conn = $db;
         $this->user = new User($db);
     }
-    
+
     // Login page
     public function login() {
         $error = '';
-        
-        if($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Get form data
-            $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-            $password = isset($_POST['password']) ? trim($_POST['password']) : '';
-            
-            // Validate form data
-            if(empty($email) || empty($password)) {
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Sanitize input
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_STRING);
+
+            // Validate input
+            if (empty($email) || empty($password)) {
                 $error = "Please enter both email and password.";
             } else {
-                // Check if email exists
                 $this->user->email = $email;
-                if($this->user->emailExists()) {
-                    // Verify password
-                    if($this->user->verifyPassword($password)) {
-                        // Password is correct, create session
+                if ($this->user->emailExists()) {
+                    if ($this->user->verifyPassword($password)) {
+                        // Set session variables
                         $_SESSION['user_id'] = $this->user->id;
                         $_SESSION['username'] = $this->user->username;
                         $_SESSION['user_role'] = $this->user->role;
-                        
-                        // Redirect based on user role
-                        if($this->user->role == 'admin' || $this->user->role == 'staff') {
-                            header("Location: admin/dashboard.php");
-                        } else {
-                            // Redirect to home page or last visited page
-                            $redirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'index.php';
-                            unset($_SESSION['redirect_after_login']);
-                            header("Location: $redirect");
-                        }
+
+                        // Redirect based on role
+                        $redirect = ($this->user->role === 'admin' || $this->user->role === 'staff')
+                            ? 'admin/dashboard.php'
+                            : (isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'index.php');
+                        unset($_SESSION['redirect_after_login']);
+                        header("Location: $redirect");
                         exit;
                     } else {
                         $error = "Invalid password.";
@@ -49,51 +44,50 @@ class UserController {
                 }
             }
         }
-        
-        // Load login view
-        include 'views/user/login.php';
+
+        // Load view
+        $this->loadView('user/login', ['error' => $error]);
     }
-    
+
     // Register page
     public function register() {
         $error = '';
         $success = '';
-        
-        if($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Get form data
-            $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-            $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-            $password = isset($_POST['password']) ? trim($_POST['password']) : '';
-            $confirm_password = isset($_POST['confirm_password']) ? trim($_POST['confirm_password']) : '';
-            $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
-            $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
-            $address = isset($_POST['address']) ? trim($_POST['address']) : '';
-            
-            // Validate form data
-            if(empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Sanitize input
+            $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_STRING);
+            $confirm_password = filter_input(INPUT_POST, 'confirm_password', FILTER_SANITIZE_STRING);
+            $full_name = filter_input(INPUT_POST, 'full_name', FILTER_SANITIZE_STRING);
+            $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
+            $address = filter_input(INPUT_POST, 'address', FILTER_SANITIZE_STRING);
+
+            // Validate input
+            if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
                 $error = "Please fill all required fields.";
-            } elseif($password !== $confirm_password) {
+            } elseif ($password !== $confirm_password) {
                 $error = "Passwords do not match.";
-            } elseif(strlen($password) < 6) {
+            } elseif (strlen($password) < 6) {
                 $error = "Password must be at least 6 characters.";
-            } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $error = "Invalid email format.";
             } else {
-                // Check if email exists
                 $this->user->email = $email;
-                if($this->user->emailExists()) {
+                if ($this->user->emailExists()) {
                     $error = "Email already exists.";
                 } else {
-                    // Create new user
+                    // Set user properties
                     $this->user->username = $username;
                     $this->user->email = $email;
                     $this->user->password = $password;
                     $this->user->full_name = $full_name;
                     $this->user->phone = $phone;
                     $this->user->address = $address;
-                    $this->user->role = 'customer'; // Default role
-                    
-                    if($this->user->create()) {
+                    $this->user->role = 'customer';
+
+                    if ($this->user->create()) {
                         $success = "Registration successful. Please login.";
                     } else {
                         $error = "Registration failed. Please try again.";
@@ -101,173 +95,194 @@ class UserController {
                 }
             }
         }
-        
-        // Load register view
-        include 'views/user/register.php';
+
+        // Load view
+        $this->loadView('user/register', ['error' => $error, '也不会success' => $success]);
     }
-    
+
     // Logout
     public function logout() {
-        // Clear user session
-        unset($_SESSION['user_id']);
-        unset($_SESSION['username']);
-        unset($_SESSION['user_role']);
+        // Clear session
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
         session_destroy();
-        
-        // Redirect to home page
+
+        // Redirect
         header("Location: index.php");
         exit;
     }
-    
+
     // Profile page
     public function profile() {
-        // Check if user is logged in
-        if(!isset($_SESSION['user_id'])) {
+        if (!isset($_SESSION['user_id'])) {
             $_SESSION['redirect_after_login'] = 'index.php?controller=user&action=profile';
             header("Location: index.php?controller=user&action=login");
             exit;
         }
-        
+
         $error = '';
         $success = '';
-        
-        // Get user data
+
+        // Load user data
         $this->user->id = $_SESSION['user_id'];
-        $this->user->readOne();
-        
-        if($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Get form data
-            $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-            $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-            $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
-            $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
-            $address = isset($_POST['address']) ? trim($_POST['address']) : '';
-            
-            // Validate form data
-            if(empty($username) || empty($email)) {
+        if (!$this->user->readOne()) {
+            $error = "Failed to load user data.";
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Sanitize input
+            $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $full_name = filter_input(INPUT_POST, 'full_name', FILTER_SANITIZE_STRING);
+            $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
+            $address = filter_input(INPUT_POST, 'address', FILTER_SANITIZE_STRING);
+
+            // Validate input
+            if (empty($username) || empty($email)) {
                 $error = "Please fill all required fields.";
-            } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $error = "Invalid email format.";
             } else {
-                // Update user data
+                // Update user
                 $this->user->username = $username;
                 $this->user->email = $email;
                 $this->user->full_name = $full_name;
                 $this->user->phone = $phone;
                 $this->user->address = $address;
-                
-                if($this->user->update()) {
+
+                if ($this->user->update()) {
                     $success = "Profile updated successfully.";
-                    // Refresh user data
-                    $this->user->readOne();
+                    $_SESSION['username'] = $username; // Update session
                 } else {
                     $error = "Profile update failed. Please try again.";
                 }
             }
         }
-        
-        // Load profile view
-        include 'views/user/profile.php';
+
+        // Load view
+        $this->loadView('user/profile', [
+            'error' => $error,
+            'success' => $success,
+            'user' => $this->user
+        ]);
     }
-    
+
     // Change password
     public function changePassword() {
-        // Check if user is logged in
-        if(!isset($_SESSION['user_id'])) {
-            $_SESSION['redirect_after_login'] = 'index.php?controller=user&action=profile';
+        if (!isset($_SESSION['user_id'])) {
+            $_SESSION['redirect_after_login'] = 'index.php?controller=user&action=changePassword';
             header("Location: index.php?controller=user&action=login");
             exit;
         }
-        
+
         $error = '';
         $success = '';
-        
-        if($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Get form data
-            $current_password = isset($_POST['current_password']) ? trim($_POST['current_password']) : '';
-            $new_password = isset($_POST['new_password']) ? trim($_POST['new_password']) : '';
-            $confirm_password = isset($_POST['confirm_password']) ? trim($_POST['confirm_password']) : '';
-            
-            // Validate form data
-            if(empty($current_password) || empty($new_password) || empty($confirm_password)) {
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Sanitize input
+            $current_password = filter_input(INPUT_POST, 'current_password', FILTER_SANITIZE_STRING);
+            $new_password = filter_input(INPUT_POST, 'new_password', FILTER_SANITIZE_STRING);
+            $confirm_password = filter_input(INPUT_POST, 'confirm_password', FILTER_SANITIZE_STRING);
+
+            // Validate input
+            if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
                 $error = "Please fill all required fields.";
-            } elseif($new_password !== $confirm_password) {
+            } elseif ($new_password !== $confirm_password) {
                 $error = "New passwords do not match.";
-            } elseif(strlen($new_password) < 6) {
+            } elseif (strlen($new_password) < 6) {
                 $error = "Password must be at least 6 characters.";
             } else {
-                // Get user data
+                // Load user
                 $this->user->id = $_SESSION['user_id'];
-                $this->user->readOne();
-                
-                // Verify current password
-                if(!$this->user->verifyPassword($current_password)) {
-                    $error = "Current password is incorrect.";
-                } else {
-                    // Update password
-                    $this->user->password = $new_password;
-                    
-                    if($this->user->updatePassword()) {
-                        $success = "Password changed successfully.";
+                if ($this->user->readOne()) {
+                    if ($this->user->verifyPassword($current_password)) {
+                        $this->user->password = $new_password;
+                        if ($this->user->updatePassword()) {
+                            $success = "Password changed successfully.";
+                        } else {
+                            $error = "Password change failed. Please try again.";
+                        }
                     } else {
-                        $error = "Password change failed. Please try again.";
+                        $error = "Current password is incorrect.";
                     }
+                } else {
+                    $error = "Failed to load user data.";
                 }
             }
         }
-        
-        // Load change password view
-        include 'views/user/change_password.php';
+
+        // Load view
+        $this->loadView('user/change_password', ['error' => $error, 'success' => $success]);
     }
-    
+
     // View orders
     public function orders() {
-        // Check if user is logged in
-        if(!isset($_SESSION['user_id'])) {
+        if (!isset($_SESSION['user_id'])) {
             $_SESSION['redirect_after_login'] = 'index.php?controller=user&action=orders';
             header("Location: index.php?controller=user&action=login");
             exit;
         }
-        
-        // Get user orders
+
+        // Get orders
         $order = new Order($this->conn);
-        $stmt = $order->readUserOrders($_SESSION['user_id']);
-        
-        // Load orders view
-        include 'views/user/orders.php';
+        $orders = $order->readUserOrders($_SESSION['user_id']);
+
+        // Load view
+        $this->loadView('user/orders', ['orders' => $orders]);
     }
-    
+
     // View order details
     public function orderDetails() {
-        // Check if user is logged in
-        if(!isset($_SESSION['user_id'])) {
+        if (!isset($_SESSION['user_id'])) {
             $_SESSION['redirect_after_login'] = 'index.php?controller=user&action=orders';
             header("Location: index.php?controller=user&action=login");
             exit;
         }
-        
+
         // Get order ID
-        $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        
-        if($order_id <= 0) {
+        $order_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+        if (!$order_id) {
             header("Location: index.php?controller=user&action=orders");
             exit;
         }
-        
-        // Get order details
+
+        // Get order
         $order = new Order($this->conn);
         $order->id = $order_id;
-        
-        if(!$order->readOne() || $order->user_id != $_SESSION['user_id']) {
+        if (!$order->readOne() || $order->user_id != $_SESSION['user_id']) {
             header("Location: index.php?controller=user&action=orders");
             exit;
         }
-        
+
         // Get order items
         $order_items = $order->getOrderDetails();
-        
-        // Load order details view
-        include 'views/user/order_details.php';
+
+        // Load view
+        $this->loadView('user/order_details', [
+            'order' => $order,
+            'order_items' => $order_items
+        ]);
+    }
+
+    // Helper method to load views
+    private function loadView($view, $data = []) {
+        $viewFile = "views/$view.php";
+        if (file_exists($viewFile)) {
+            extract($data);
+            include $viewFile;
+        } else {
+            // Log error and show user-friendly message
+            error_log("View file not found: $viewFile");
+            http_response_code(500);
+            echo "Error: Page cannot be loaded. Please try again later.";
+            exit;
+        }
     }
 }
 ?>
