@@ -17,7 +17,7 @@ class ProductController {
         
         // Get current page
         $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-        if($page < 1) $page = 1;
+        if ($page < 1) $page = 1;
         
         // Get search keyword
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -30,25 +30,25 @@ class ProductController {
         // Get all categories for sidebar
         $categories = [];
         $category_stmt = $this->category->read();
-        while($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
             $categories[] = $row;
         }
         
         // Get current category info if category_id is specified
         $category_name = '';
-        if($category_id > 0) {
+        if ($category_id > 0) {
             $this->category->id = $category_id;
-            if($this->category->readOne()) {
+            if ($this->category->readOne()) {
                 $category_name = $this->category->name;
             }
         }
         
         // Get products based on search or category
-        if(!empty($search)) {
+        if (!empty($search)) {
             // Search products
             $stmt = $this->product->search($search, $page, $items_per_page);
             $total_rows = $this->product->countSearch($search);
-        } elseif($category_id > 0) {
+        } elseif ($category_id > 0) {
             // Get products by category
             $stmt = $this->product->readByCategory($category_id, $page, $items_per_page);
             $total_rows = $this->product->countByCategory($category_id);
@@ -59,7 +59,7 @@ class ProductController {
         }
         
         // Process results
-        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $products[] = $row;
         }
         
@@ -75,14 +75,14 @@ class ProductController {
         // Get product ID from URL
         $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
-        if($product_id <= 0) {
+        if ($product_id <= 0) {
             header("Location: index.php?controller=product&action=list");
             exit;
         }
         
         // Get product details
         $this->product->id = $product_id;
-        if(!$this->product->readOne()) {
+        if (!$this->product->readOne()) {
             header("Location: index.php?controller=product&action=list");
             exit;
         }
@@ -93,9 +93,9 @@ class ProductController {
         // Get related products (same category)
         $related_products = [];
         $stmt = $this->product->readByCategory($this->product->category_id, 1, 4);
-        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             // Skip current product
-            if($row['id'] != $product_id) {
+            if ($row['id'] != $product_id) {
                 $related_products[] = $row;
             }
         }
@@ -106,26 +106,33 @@ class ProductController {
     
     // Add product to cart (AJAX)
     public function addToCart() {
-        // Check if request is AJAX
-        if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        // Đảm bảo session đã được khởi tạo
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Kiểm tra nếu là request AJAX
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             // Get product ID and quantity
             $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
             $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
             
-            if($product_id <= 0 || $quantity <= 0) {
+            error_log("addToCart AJAX: product_id=$product_id, quantity=$quantity");
+            
+            if ($product_id <= 0 || $quantity <= 0) {
                 echo json_encode(['success' => false, 'message' => 'Invalid product or quantity.']);
                 exit;
             }
             
             // Get product details
             $this->product->id = $product_id;
-            if(!$this->product->readOne()) {
+            if (!$this->product->readOne()) {
                 echo json_encode(['success' => false, 'message' => 'Product not found.']);
                 exit;
             }
             
             // Check stock availability
-            if($this->product->stock < $quantity) {
+            if ($this->product->stock < $quantity) {
                 echo json_encode(['success' => false, 'message' => 'Not enough stock available.']);
                 exit;
             }
@@ -142,20 +149,28 @@ class ProductController {
             ];
             
             // Add item to cart
-            $cart->addItem($product_id, $quantity, $product_data);
-            
-            // Return success response
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Product added to cart.',
-                'cart_count' => $cart->getTotalItems(),
-                'cart_total' => $cart->getTotalPrice()
-            ]);
+            if ($cart->addItem($product_id, $quantity, $product_data)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Product added to cart.',
+                    'cart_count' => $cart->getTotalItems(),
+                    'cart_total' => $cart->getTotalPrice()
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to add product to cart.']);
+            }
             exit;
         }
         
-        // If not AJAX, redirect to product page
-        header("Location: index.php?controller=product&action=detail&id=" . $product_id);
+        // Nếu không phải AJAX
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        error_log("addToCart non-AJAX: product_id=$product_id");
+        
+        if ($product_id <= 0) {
+            header("Location: index.php?controller=product&action=list");
+        } else {
+            header("Location: index.php?controller=product&action=detail&id=" . $product_id);
+        }
         exit;
     }
 }
