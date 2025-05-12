@@ -504,12 +504,9 @@ class UserController {
         }
     }
 
-    // Helper method to load views
+   // Helper method to load views
     private function loadView($view, $data = []) {
         $viewFile = "views/$view.php";
-        echo "<pre>Debug loadView data: ";
-        var_dump($data);
-        echo "</pre>";
         if (file_exists($viewFile)) {
             extract($data);
             include $viewFile;
