@@ -36,7 +36,7 @@ include 'views/layouts/header.php';
                 
                 <div class="mt-4 text-center">
                     <p>Don't have an account? <a href="index.php?controller=user&action=register">Register here</a></p>
-                    <p><a href="#">Forgot your password?</a></p>
+                    <p><a href="index.php?controller=user&action=forgot_password">Forgot your password?</a></p>
                 </div>
                 
                 <hr>
