@@ -10,7 +10,7 @@ include 'views/layouts/header.php';
         <li class="breadcrumb-item"><a href="index.php?controller=product&action=list">Sản phẩm</a></li>
         <li class="breadcrumb-item"><a href="index.php?controller=product&action=list&category_id=<?php echo $this->product->category_id; ?>"><?php echo htmlspecialchars($category_name); ?></a></li>
         <li class="breadcrumb-item active" aria-current="page"><?php echo htmlspecialchars($this->product->name); ?></li>
-    </ol。
+    </ol>
 </nav>
 
 <div class="row">
@@ -26,7 +26,7 @@ include 'views/layouts/header.php';
             <?php endif; ?>
         </div>
         
-        <!-- Product Thumbnails -->
+        <!-- Product Thumbnails - In a real application, you might have multiple images -->
         <div class="product-thumbnails mt-3 d-flex">
             <div class="thumbnail-item me-2 border rounded p-2 active">
                 <?php if(!empty($this->product->image)): ?>
@@ -46,12 +46,12 @@ include 'views/layouts/header.php';
         
         <!-- Price -->
         <div class="product-price mb-4">
-            <?php if($this->product->is_sale == 1 && is_numeric($this->product->sale_price) && $this->product->sale_price > 0 && $this->product->sale_price < $this->product->price): ?>
-            <span class="text-danger fs-4 fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($this->product->sale_price, 2); ?></span>
-            <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($this->product->price, 2); ?></span>
+            <?php if($this->product->is_sale == 1 && !empty($this->product->sale_price) && $this->product->sale_price < $this->product->price): ?>
+            <span class="text-danger fs-4 fw-bold"><?php echo CURRENCY . number_format($this->product->sale_price); ?></span>
+            <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo CURRENCY . number_format($this->product->price); ?></span>
             <span class="badge bg-danger ms-2">Giảm giá</span>
             <?php else: ?>
-            <span class="fs-4 fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($this->product->price, 2); ?></span>
+            <span class="fs-4 fw-bold"><?php echo CURRENCY . number_format($this->product->price); ?></span>
             <?php endif; ?>
         </div>
         
@@ -71,7 +71,6 @@ include 'views/layouts/header.php';
         <div class="product-description mb-4">
             <h5>Mô tả sản phẩm</h5>
             <p><?php echo nl2br(htmlspecialchars($this->product->description)); ?></p>
- couples in the accordion section -->
         </div>
         
         <!-- Add to Cart Form -->
@@ -115,7 +114,7 @@ include 'views/layouts/header.php';
                     </h2>
                     <div id="collapseShipping" class="accordion-collapse collapse" aria-labelledby="headingShipping" data-bs-parent="#productAccordion">
                         <div class="accordion-body">
-                            <p>Miễn phí vận chuyển cho đơn hàng trên <?php echo (defined('CURRENCY') ? CURRENCY : '₫'); ?>500.000.</p>
+                            <p>Miễn phí vận chuyển cho đơn hàng trên <?php echo CURRENCY; ?>500.000.</p>
                             <p>Giao hàng tiêu chuẩn: 2-5 ngày làm việc.</p>
                             <p>Giao hàng nhanh: 1-2 ngày làm việc (phí bổ sung).</p>
                         </div>
@@ -195,10 +194,10 @@ include 'views/layouts/header.php';
                         </h5>
                         <div class="price-block mb-3">
                             <?php if($product['is_sale'] == 1 && !empty($product['sale_price']) && $product['sale_price'] < $product['price']): ?>
-                            <span class="text-danger fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($product['sale_price'], 2); ?></span>
-                            <span class="text-muted text-decoration-line-through ms-2"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($product['price'], 2); ?></span>
+                            <span class="text-danger fw-bold"><?php echo CURRENCY . number_format($product['sale_price']); ?></span>
+                            <span class="text-muted text-decoration-line-through ms-2"><?php echo CURRENCY . number_format($product['price']); ?></span>
                             <?php else: ?>
-                            <span class="fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($product['price'], 2); ?></span>
+                            <span class="fw-bold"><?php echo CURRENCY . number_format($product['price']); ?></span>
                             <?php endif; ?>
                         </div>
                         <div class="mt-auto">
@@ -215,7 +214,7 @@ include 'views/layouts/header.php';
 </section>
 <?php endif; ?>
 
-<!-- Customer Reviews Section -->
+<!-- Customer Reviews Section - This would be implemented in a real application -->
 <section class="customer-reviews mt-5">
     <h3 class="mb-4">Đánh giá của khách hàng</h3>
     <div class="alert alert-info">
