@@ -348,28 +348,23 @@ class UserController {
             exit;
         }
     
-        echo "<pre>Debug Session: ";
-        var_dump($_SESSION);
-        echo "</pre>";
-    
         try {
             $user_id = $_SESSION['user_id'];
             error_log("Fetching orders for user_id: $user_id");
-            echo "<p>Debug: User ID = $user_id</p>";
     
             $order = new Order($this->conn);
-            echo "<pre>Debug PDO Connection: ";
-            var_dump($this->conn);
-            echo "</pre>";
-    
             $stmt = $order->readUserOrders($user_id);
-            echo "<p>Debug: Number of orders = " . $stmt->rowCount() . "</p>";
             error_log("Number of orders found: " . $stmt->rowCount());
+    
+            // Debug $stmt trước khi truyền vào view
+            echo "<pre>Debug stmt before loadView: ";
+            var_dump($stmt);
+            echo "</pre>";
+            echo "<p>Debug: Number of orders before loadView = " . $stmt->rowCount() . "</p>";
     
             $this->loadView('user/orders', ['stmt' => $stmt]);
         } catch (PDOException $e) {
             error_log("Error fetching orders: " . $e->getMessage());
-            echo "<div class='alert alert-danger'>Debug: Error = " . $e->getMessage() . "</div>";
             $_SESSION['error'] = "An error occurred while fetching your orders.";
             $this->loadView('user/orders', ['stmt' => null]);
         }
@@ -518,11 +513,13 @@ class UserController {
     // Helper method to load views
     private function loadView($view, $data = []) {
         $viewFile = "views/$view.php";
+        echo "<pre>Debug loadView data: ";
+        var_dump($data);
+        echo "</pre>";
         if (file_exists($viewFile)) {
             extract($data);
             include $viewFile;
         } else {
-            // Log error and show user-friendly message
             error_log("View file not found: $viewFile");
             http_response_code(500);
             echo "Error: Page cannot be loaded. Please try again later.";

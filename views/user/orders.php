@@ -33,6 +33,12 @@ include 'views/layouts/header.php';
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">My Orders</h5>
             </div>
+            <?php
+            echo "<pre>Debug stmt at start of view: ";
+            var_dump($stmt);
+            echo "</pre>";
+            ?>
+
             <div class="card-body p-0">
                 <?php if(isset($_SESSION['order_message'])): ?>
                 <div class="alert alert-info m-3">
@@ -43,23 +49,15 @@ include 'views/layouts/header.php';
                 </div>
                 <?php endif; ?>
                 
-                <!-- Debug -->
-                <?php
-                echo "<pre>Debug stmt: ";
-                var_dump($stmt);
-                echo "</pre>";
-                if (!$stmt) {
-                    echo "<div class='alert alert-danger m-3'>Error: \$stmt is null</div>";
-                } elseif ($stmt->rowCount() == 0) {
-                    echo "<div class='alert alert-info m-3'>Debug: No orders found</div>";
-                }
-                ?>
-                
-                <?php if($stmt && $stmt->rowCount() == 0): ?>
+                <?php if(!$stmt): ?>
+                <div class="alert alert-danger m-3">
+                    Error: $stmt is null
+                </div>
+                <?php elseif($stmt->rowCount() == 0): ?>
                 <div class="alert alert-info m-3">
                     <p class="mb-0">You haven't placed any orders yet. <a href="index.php?controller=product&action=list" class="alert-link">Start shopping</a></p>
                 </div>
-                <?php elseif($stmt): ?>
+                <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
