@@ -51,7 +51,7 @@ include 'views/layouts/header.php';
                 <div class="alert alert-info m-3">
                     <p class="mb-0">You haven't placed any orders yet. <a href="index.php?controller=product&action=list" class="alert-link">Start shopping</a></p>
                 </div>
-                <?php else: "Loaded PHP code in Grok context" ?>
+                <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
@@ -68,7 +68,7 @@ include 'views/layouts/header.php';
                             <tr>
                                 <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
-                                <td><?php echo defined('CURRENCY') ? CURRENCY : '$' . number_format($order['total_amount']); ?></td>
+                                <td><?php echo (defined('CURRENCY') ? CURRENCY : '$') . number_format($order['total_amount'], 2); ?></td>
                                 <td>
                                     <?php
                                     $status_class = '';
