@@ -122,20 +122,18 @@
                     </li>
                     
                     <?php
-                    // Get main categories for navigation
-                    $category = new Category($conn);
-                    $stmt = $category->read();
-                    if ($stmt) {
-                        while($row = $stmt->fetch(PDO::FETCH_ASSOC)):
+                        $category = new Category($conn);
+                        $categoryStmt = $category->read(); // Thay $stmt thành $categoryStmt
+                        if ($categoryStmt) {
+                            while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
                         ?>
                         <li class="nav-item">
                             <a class="nav-link <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active' : ''; ?>" 
-                               href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                            href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
                                 <?php echo $row['name']; ?>
                             </a>
                         </li>
-                        <?php endwhile;
-                    } ?>
+                    <?php endwhile; } ?>
                     
                     <li class="nav-item">
                         <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active' : ''; ?>" 
