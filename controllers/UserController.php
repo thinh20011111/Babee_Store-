@@ -432,13 +432,13 @@ class UserController {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com'; // Thay bằng SMTP server của bạn
             $mail->SMTPAuth = true;
-            $mail->Username = 'your-email@gmail.com'; // Thay bằng email của bạn
-            $mail->Password = 'your-app-password'; // Thay bằng App Password
-            $mail->SMTPSecure = 'tls';
+            $mail->Username = 'babeemoonstore@gmail.com'; // Thay bằng email của bạn
+            $mail->Password = 'hlsw gjpq smqt norf'; // Thay bằng App Password
+            $mail->SMTPSecure = 'PHPMailer::ENCRYPTION_STARTTLS';
             $mail->Port = 587;
 
             // Người gửi và người nhận
-            $mail->setFrom('no-reply@babee.wuaze.com', 'Babee Shop');
+            $mail->setFrom('babeemoonstore@gmail.com', 'Babee Shop');
             $mail->addAddress($email);
 
             // Nội dung email
