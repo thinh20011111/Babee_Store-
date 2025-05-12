@@ -56,19 +56,19 @@ include 'views/layouts/header.php';
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Order #</th>
-                                <th>Date</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th>Mã đơn hàng</th>
+                                <th>Thời gian đặt hàng</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php while($order = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($order['order_number']); ?></td>
-                                <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
-                                <td><?php echo (defined('CURRENCY') ? CURRENCY : '$') . number_format($order['total_amount'], 2); ?></td>
+                                <td><?php echo date('d M, Y', strtotime($order['created_at'])); ?></td>
+                                <td><?php echo (defined('CURRENCY') ? CURRENCY : '$') . number_format($order['total_amount']); ?></td>
                                 <td>
                                     <?php
                                     $status_class = '';
@@ -96,11 +96,11 @@ include 'views/layouts/header.php';
                                 </td>
                                 <td>
                                     <a href="index.php?controller=user&action=orderDetails&id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye"></i> View
+                                        <i class="fas fa-eye"></i> Xem chi tiết
                                     </a>
                                     <?php if($order['status'] == 'pending'): ?>
-                                    <a href="index.php?controller=order&action=cancel&id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this order?')">
-                                        <i class="fas fa-times"></i> Cancel
+                                    <a href="index.php?controller=order&action=cancel&id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn hủy đơn hàng này không?')">
+                                        <i class="fas fa-times"></i> Hủy đơn hàng
                                     </a>
                                     <?php endif; ?>
                                 </td>
