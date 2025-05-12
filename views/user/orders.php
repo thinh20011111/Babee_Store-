@@ -43,11 +43,23 @@ include 'views/layouts/header.php';
                 </div>
                 <?php endif; ?>
                 
-                <?php if($stmt->rowCount() == 0): ?>
+                <!-- Debug -->
+                <?php
+                echo "<pre>Debug stmt: ";
+                var_dump($stmt);
+                echo "</pre>";
+                if (!$stmt) {
+                    echo "<div class='alert alert-danger m-3'>Error: \$stmt is null</div>";
+                } elseif ($stmt->rowCount() == 0) {
+                    echo "<div class='alert alert-info m-3'>Debug: No orders found</div>";
+                }
+                ?>
+                
+                <?php if($stmt && $stmt->rowCount() == 0): ?>
                 <div class="alert alert-info m-3">
                     <p class="mb-0">You haven't placed any orders yet. <a href="index.php?controller=product&action=list" class="alert-link">Start shopping</a></p>
                 </div>
-                <?php else: ?>
+                <?php elseif($stmt): ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
@@ -64,7 +76,7 @@ include 'views/layouts/header.php';
                             <tr>
                                 <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
-                                <td><?php echo CURRENCY . number_format($order['total_amount']); ?></td>
+                                <td><?php echo defined('CURRENCY') ? CURRENCY : '$' . number_format($order['total_amount']); ?></td>
                                 <td>
                                     <?php
                                     $status_class = '';
