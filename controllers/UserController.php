@@ -347,16 +347,29 @@ class UserController {
             header("Location: index.php?controller=user&action=login");
             exit;
         }
-
+    
+        echo "<pre>Debug Session: ";
+        var_dump($_SESSION);
+        echo "</pre>";
+    
         try {
             $user_id = $_SESSION['user_id'];
             error_log("Fetching orders for user_id: $user_id");
+            echo "<p>Debug: User ID = $user_id</p>";
+    
             $order = new Order($this->conn);
+            echo "<pre>Debug PDO Connection: ";
+            var_dump($this->conn);
+            echo "</pre>";
+    
             $stmt = $order->readUserOrders($user_id);
+            echo "<p>Debug: Number of orders = " . $stmt->rowCount() . "</p>";
             error_log("Number of orders found: " . $stmt->rowCount());
+    
             $this->loadView('user/orders', ['stmt' => $stmt]);
         } catch (PDOException $e) {
             error_log("Error fetching orders: " . $e->getMessage());
+            echo "<div class='alert alert-danger'>Debug: Error = " . $e->getMessage() . "</div>";
             $_SESSION['error'] = "An error occurred while fetching your orders.";
             $this->loadView('user/orders', ['stmt' => null]);
         }
