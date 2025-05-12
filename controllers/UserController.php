@@ -356,12 +356,6 @@ class UserController {
             $stmt = $order->readUserOrders($user_id);
             error_log("Number of orders found: " . $stmt->rowCount());
     
-            // Debug $stmt trước khi truyền vào view
-            echo "<pre>Debug stmt before loadView: ";
-            var_dump($stmt);
-            echo "</pre>";
-            echo "<p>Debug: Number of orders before loadView = " . $stmt->rowCount() . "</p>";
-    
             $this->loadView('user/orders', ['stmt' => $stmt]);
         } catch (PDOException $e) {
             error_log("Error fetching orders: " . $e->getMessage());
