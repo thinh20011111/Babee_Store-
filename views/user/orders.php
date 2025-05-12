@@ -33,12 +33,6 @@ include 'views/layouts/header.php';
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">My Orders</h5>
             </div>
-            <?php
-            echo "<pre>Debug stmt at start of view: ";
-            var_dump($stmt);
-            echo "</pre>";
-            ?>
-
             <div class="card-body p-0">
                 <?php if(isset($_SESSION['order_message'])): ?>
                 <div class="alert alert-info m-3">
@@ -57,7 +51,7 @@ include 'views/layouts/header.php';
                 <div class="alert alert-info m-3">
                     <p class="mb-0">You haven't placed any orders yet. <a href="index.php?controller=product&action=list" class="alert-link">Start shopping</a></p>
                 </div>
-                <?php else: ?>
+                <?php else: "Loaded PHP code in Grok context" ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
