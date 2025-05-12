@@ -348,12 +348,18 @@ class UserController {
             exit;
         }
 
-        // Get orders
-        $order = new Order($this->conn);
-        $orders = $order->readUserOrders($_SESSION['user_id']);
-
-        // Load view
-        $this->loadView('user/orders', ['orders' => $orders]);
+        try {
+            $user_id = $_SESSION['user_id'];
+            error_log("Fetching orders for user_id: $user_id");
+            $order = new Order($this->conn);
+            $stmt = $order->readUserOrders($user_id);
+            error_log("Number of orders found: " . $stmt->rowCount());
+            $this->loadView('user/orders', ['stmt' => $stmt]);
+        } catch (PDOException $e) {
+            error_log("Error fetching orders: " . $e->getMessage());
+            $_SESSION['error'] = "An error occurred while fetching your orders.";
+            $this->loadView('user/orders', ['stmt' => null]);
+        }
     }
 
     // View order details
@@ -395,15 +401,15 @@ class UserController {
         try {
             // Cấu hình SMTP
             $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com'; // Thay bằng SMTP server của bạn
+            $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'your-email@gmail.com'; // Thay bằng email của bạn
-            $mail->Password = 'your-app-password'; // Thay bằng App Password
-            $mail->SMTPSecure = 'tls';
+            $mail->Username = 'babeemoonstore@gmail.com';
+            $mail->Password = 'hlsw gjpq smqt norf';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
             // Người gửi và người nhận
-            $mail->setFrom('no-reply@babee.wuaze.com', 'Babee Shop');
+            $mail->setFrom('babeemoonstore@gmail.com', 'Babee Shop');
             $mail->addAddress($email);
 
             // Nội dung email
@@ -430,11 +436,11 @@ class UserController {
         try {
             // Cấu hình SMTP
             $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com'; // Thay bằng SMTP server của bạn
+            $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'babeemoonstore@gmail.com'; // Thay bằng email của bạn
-            $mail->Password = 'hlsw gjpq smqt norf'; // Thay bằng App Password
-            $mail->SMTPSecure = 'PHPMailer::ENCRYPTION_STARTTLS';
+            $mail->Username = 'babeemoonstore@gmail.com';
+            $mail->Password = 'hlsw gjpq smqt norf';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
             // Người gửi và người nhận
@@ -467,15 +473,15 @@ class UserController {
         try {
             // Cấu hình SMTP
             $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com'; // Thay bằng SMTP server của bạn
+            $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'your-email@gmail.com'; // Thay bằng email của bạn
-            $mail->Password = 'your-app-password'; // Thay bằng App Password
-            $mail->SMTPSecure = 'tls';
+            $mail->Username = 'babeemoonstore@gmail.com';
+            $mail->Password = 'hlsw gjpq smqt norf';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
             // Người gửi và người nhận
-            $mail->setFrom('no-reply@babee.wuaze.com', 'Babee Shop');
+            $mail->setFrom('babeemoonstore@gmail.com', 'Babee Shop');
             $mail->addAddress($email);
 
             // Nội dung email
