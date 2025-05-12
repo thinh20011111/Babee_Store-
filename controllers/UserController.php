@@ -82,7 +82,7 @@ class UserController {
             } else {
                 $this->user->email = $email;
                 if ($this->user->emailExists()) {
-                    $error "Email already exists.";
+                    $error = "Email already exists.";
                 } else {
                     // Set user properties
                     $this->user->username = $username;
