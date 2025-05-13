@@ -9,49 +9,112 @@ $log_file = 'logs/debug.log';
 if (!file_exists('logs')) {
     mkdir('logs', 0755, true);
 }
-file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu render product_detail.php\n", FILE_APPEND);
 
-// Kiểm tra các biến cần thiết
-if (!isset($product) || !is_object($product)) {
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: Biến \$product không tồn tại hoặc không hợp lệ\n", FILE_APPEND);
-    die("Lỗi: Dữ liệu sản phẩm không hợp lệ");
-}
-if (!isset($variants)) {
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$variants không được định nghĩa\n", FILE_APPEND);
-    $variants = [];
-}
-if (!isset($category_name)) {
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$category_name không được định nghĩa\n", FILE_APPEND);
-    $category_name = 'Danh mục không xác định';
-}
-if (!isset($related_products)) {
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$related_products không được định nghĩa\n", FILE_APPEND);
-    $related_products = [];
-}
-
-$page_title = htmlspecialchars($product->name ?? 'Sản phẩm');
-file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Page title: $page_title\n", FILE_APPEND);
-
-// Include header
-try {
-    $header_path = __DIR__ . '/layouts/header.php';
-    if (!file_exists($header_path)) {
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $header_path không tồn tại\n", FILE_APPEND);
-        die("Lỗi: File header.php không tồn tại");
+public function detail() {
+    // Bật error reporting
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+    
+    // Khởi tạo file log
+    $log_file = 'logs/debug.log';
+    if (!file_exists('logs')) {
+        mkdir('logs', 0755, true);
     }
-    include $header_path;
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include header.php\n", FILE_APPEND);
-} catch (Exception $e) {
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include header.php: " . $e->getMessage() . "\n", FILE_APPEND);
-    die("Lỗi khi load header: " . htmlspecialchars($e->getMessage()));
+    
+    // Ghi log bắt đầu
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::detail\n", FILE_APPEND);
+    
+    // Get product ID from URL
+    $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID: $product_id\n", FILE_APPEND);
+    
+    if ($product_id <= 0) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID không hợp lệ, chuyển hướng\n", FILE_APPEND);
+        header("Location: index.php?controller=product&action=list");
+        exit;
+    }
+    
+    // Get product details
+    try {
+        $this->product->id = $product_id;
+        if (!$this->product->readOne()) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy sản phẩm với ID $product_id\n", FILE_APPEND);
+            header("Location: index.php?controller=product&action=list");
+            exit;
+        }
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product data: " . json_encode($this->product, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+    } catch (Exception $e) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
+        die("Lỗi khi đọc dữ liệu sản phẩm: " . htmlspecialchars($e->getMessage()));
+    }
+    
+    // Get variants
+    try {
+        $variants = $this->product->getVariants();
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variants for product ID $product_id: " . json_encode($variants, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+    } catch (Exception $e) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc variants: " . $e->getMessage() . "\n", FILE_APPEND);
+        $variants = [];
+    }
+    
+    // Get category name
+    try {
+        $category_name = $this->category->getNameById($this->product->category_id);
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Category name: $category_name\n", FILE_APPEND);
+    } catch (Exception $e) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc category name: " . $e->getMessage() . "\n", FILE_APPEND);
+        $category_name = 'Danh mục không xác định';
+    }
+    
+    // Get related products
+    try {
+        $related_products = [];
+        $stmt = $this->product->readByCategory($this->product->category_id, 1, 4);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if ($row['id'] != $product_id) {
+                $related_products[] = $row;
+            }
+        }
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Related products: " . json_encode($related_products, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+    } catch (Exception $e) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc related products: " . $e->getMessage() . "\n", FILE_APPEND);
+        $related_products = [];
+    }
+    
+    // Prepare data for view
+    $data = [
+        'product' => $this->product,
+        'variants' => $variants,
+        'category_name' => $category_name,
+        'related_products' => $related_products
+    ];
+    
+    // Ghi log dữ liệu truyền vào view
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Data for view: " . json_encode($data, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+    
+    // Load product detail view
+    try {
+        extract($data);
+        $view_path = __DIR__ . '/../views/product_detail.php';
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đường dẫn view được thử: $view_path\n", FILE_APPEND);
+        if (!file_exists($view_path)) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $view_path không tồn tại\n", FILE_APPEND);
+            die("Lỗi: Không tìm thấy file product_detail.php tại $view_path. Vui lòng kiểm tra thư mục /htdocs/views/.");
+        }
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu load $view_path\n", FILE_APPEND);
+        include $view_path;
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành load $view_path\n", FILE_APPEND);
+    } catch (Exception $e) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi load view: " . $e->getMessage() . "\n", FILE_APPEND);
+        die("Lỗi khi load trang chi tiết sản phẩm: " . htmlspecialchars($e->getMessage()));
+    }
 }
-?>
 
-<!-- Đảm bảo Bootstrap được include -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-<!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
+// <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
 <div class="debug-info alert alert-info">
     <strong>Debug Info:</strong><br>
