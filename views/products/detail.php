@@ -1,5 +1,5 @@
 <?php 
-$page_title = htmlspecialchars($this->product->name ?? 'Sản phẩm');
+$page_title = htmlspecialchars($product->name ?? 'Sản phẩm');
 include 'views/layouts/header.php'; 
 ?>
 
@@ -11,10 +11,10 @@ include 'views/layouts/header.php';
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
 <div class="debug-info alert alert-info">
     <strong>Debug Info:</strong><br>
-    Product ID: <?php echo htmlspecialchars($this->product->id ?? 'N/A'); ?><br>
-    Total Stock: <?php echo !empty($this->product->id) ? $this->product->getTotalStock() : 0; ?><br>
-    Variants Count: <?php echo count($this->variants ?? []); ?><br>
-    Variants: <?php echo htmlspecialchars(json_encode($this->variants ?? [])); ?>
+    Product ID: <?php echo htmlspecialchars($product->id ?? 'N/A'); ?><br>
+    Total Stock: <?php echo !empty($product->id) ? $product->getTotalStock() : 0; ?><br>
+    Variants Count: <?php echo count($variants ?? []); ?><br>
+    Variants: <?php echo htmlspecialchars(json_encode($variants ?? [])); ?>
 </div>
 <?php endif; ?>
 
@@ -28,8 +28,8 @@ include 'views/layouts/header.php';
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item"><a href="index.php" class="text-decoration-none">Home</a></li>
                             <li class="breadcrumb-item"><a href="index.php?controller=product&action=list" class="text-decoration-none">Shop</a></li>
-                            <li class="breadcrumb-item"><a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($this->product->category_id ?? 0); ?>" class="text-decoration-none"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><?php echo htmlspecialchars($this->product->name ?? 'Sản phẩm'); ?></li>
+                            <li class="breadcrumb-item"><a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($product->category_id ?? 0); ?>" class="text-decoration-none"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a></li>
+                            <li class="breadcrumb-item active" aria-current="page"><?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?></li>
                         </ol>
                     </nav>
                 </div>
@@ -44,15 +44,15 @@ include 'views/layouts/header.php';
         <!-- Product Images -->
         <div class="col-lg-6 mb-4 mb-lg-0">
             <div class="product-image-container position-relative">
-                <?php if(!empty($this->product->image)): ?>
-                <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded shadow-sm border main-image" alt="<?php echo htmlspecialchars($this->product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
+                <?php if(!empty($product->image)): ?>
+                <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded shadow-sm border main-image" alt="<?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
                 <?php else: ?>
                 <div class="product-placeholder d-flex align-items-center justify-content-center bg-light rounded border" style="height: 500px;">
                     <i class="fas fa-tshirt fa-6x text-secondary"></i>
                 </div>
                 <?php endif; ?>
                 
-                <?php if(($this->product->is_sale ?? 0) == 1 && !empty($this->product->sale_price) && $this->product->sale_price < $this->product->price): ?>
+                <?php if(($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
                 <span class="badge bg-danger position-absolute top-0 end-0 m-3">SALE</span>
                 <?php endif; ?>
             </div>
@@ -61,9 +61,9 @@ include 'views/layouts/header.php';
             <div class="product-thumbnails mt-3">
                 <div class="row g-2">
                     <div class="col-3">
-                        <div class="thumbnail-item border rounded p-1 <?php echo !empty($this->product->image) ? 'active' : ''; ?>" data-image="<?php echo htmlspecialchars($this->product->image ?? ''); ?>">
-                            <?php if(!empty($this->product->image)): ?>
-                            <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
+                        <div class="thumbnail-item border rounded p-1 <?php echo !empty($product->image) ? 'active' : ''; ?>" data-image="<?php echo htmlspecialchars($product->image ?? ''); ?>">
+                            <?php if(!empty($product->image)): ?>
+                            <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
                             <?php else: ?>
                             <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
                                 <i class="fas fa-tshirt fa-2x text-secondary"></i>
@@ -74,9 +74,9 @@ include 'views/layouts/header.php';
                     <!-- Placeholder thumbnails (có thể thay bằng hình ảnh phụ nếu có) -->
                     <?php for($i = 0; $i < 3; $i++): ?>
                     <div class="col-3">
-                        <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($this->product->image ?? ''); ?>">
-                            <?php if(!empty($this->product->image)): ?>
-                            <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
+                        <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($product->image ?? ''); ?>">
+                            <?php if(!empty($product->image)): ?>
+                            <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
                             <?php else: ?>
                             <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
                                 <i class="fas fa-tshirt fa-2x text-secondary"></i>
@@ -92,15 +92,15 @@ include 'views/layouts/header.php';
         <!-- Product Details -->
         <div class="col-lg-6">
             <div class="product-category text-uppercase mb-2"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></div>
-            <h1 class="product-title mb-3"><?php echo htmlspecialchars($this->product->name ?? 'Sản phẩm'); ?></h1>
+            <h1 class="product-title mb-3"><?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?></h1>
             
             <!-- Price -->
             <div class="product-price mb-4">
-                <?php if(($this->product->is_sale ?? 0) == 1 && !empty($this->product->sale_price) && $this->product->sale_price < $this->product->price): ?>
-                <span class="text-danger fs-3 fw-bold"><?php echo CURRENCY . number_format($this->product->sale_price); ?></span>
-                <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo CURRENCY . number_format($this->product->price); ?></span>
+                <?php if(($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
+                <span class="text-danger fs-3 fw-bold"><?php echo CURRENCY . number_format($product->sale_price); ?></span>
+                <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo CURRENCY . number_format($product->price); ?></span>
                 <?php else: ?>
-                <span class="fs-3 fw-bold"><?php echo CURRENCY . number_format($this->product->price ?? 0); ?></span>
+                <span class="fs-3 fw-bold"><?php echo CURRENCY . number_format($product->price ?? 0); ?></span>
                 <?php endif; ?>
             </div>
             
@@ -109,7 +109,7 @@ include 'views/layouts/header.php';
                 <div class="d-flex align-items-center mb-2">
                     <span class="me-2 fw-bold">Tình trạng:</span>
                     <?php
-                    $total_stock = !empty($this->product->id) ? $this->product->getTotalStock() : 0;
+                    $total_stock = !empty($product->id) ? $product->getTotalStock() : 0;
                     ?>
                     <?php if($total_stock > 0): ?>
                     <span class="badge bg-success rounded-0 py-2 px-3">CÒN HÀNG</span>
@@ -119,19 +119,19 @@ include 'views/layouts/header.php';
                 </div>
                 <div class="mb-2">
                     <span class="fw-bold">Danh mục:</span> 
-                    <a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($this->product->category_id ?? 0); ?>" class="ms-2 badge bg-light text-dark text-decoration-none py-2 px-3 rounded-0"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a>
+                    <a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($product->category_id ?? 0); ?>" class="ms-2 badge bg-light text-dark text-decoration-none py-2 px-3 rounded-0"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a>
                 </div>
             </div>
             
             <!-- Short Description -->
             <div class="product-description mb-4">
-                <p class="lead"><?php echo nl2br(htmlspecialchars($this->product->description ?? 'Không có mô tả')); ?></p>
+                <p class="lead"><?php echo nl2br(htmlspecialchars($product->description ?? 'Không có mô tả')); ?></p>
             </div>
         
             <!-- Add to Cart Form -->
-            <?php if($total_stock > 0 && !empty($this->variants) && is_array($this->variants)): ?>
+            <?php if($total_stock > 0 && !empty($variants) && is_array($variants)): ?>
             <form id="add-to-cart-form" class="mb-4">
-                <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($this->product->id ?? 0); ?>">
+                <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product->id ?? 0); ?>">
                 
                 <!-- Variant Selector -->
                 <div class="product-variants mb-4">
@@ -144,7 +144,6 @@ include 'views/layouts/header.php';
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
                                 // Lọc kích cỡ có stock > 0
-                                $variants = $this->variants ?? [];
                                 $sizes = !empty($variants) ? array_unique(array_filter(array_column($variants, 'size'), function($size) use ($variants) {
                                     foreach ($variants as $v) {
                                         if ($v['size'] === $size && $v['stock'] > 0) {
@@ -252,7 +251,7 @@ include 'views/layouts/header.php';
                 <div class="tab-content p-4 border border-top-0" id="productTabContent">
                     <div class="tab-pane fade show active" id="description" role="tabpanel">
                         <h5 class="fw-bold mb-3">Thông tin chi tiết sản phẩm</h5>
-                        <p><?php echo nl2br(htmlspecialchars($this->product->description ?? 'Không có mô tả')); ?></p>
+                        <p><?php echo nl2br(htmlspecialchars($product->description ?? 'Không có mô tả')); ?></p>
                         <ul class="mb-0">
                             <li>Chất liệu: 100% Cotton</li>
                             <li>Sản xuất tại Việt Nam</li>
@@ -337,38 +336,38 @@ include 'views/layouts/header.php';
 <section class="related-products mt-5">
     <h3 class="mb-4">Sản phẩm liên quan</h3>
     <div class="row">
-        <?php foreach($related_products as $product): ?>
+        <?php foreach($related_products as $related_product): ?>
         <div class="col-6 col-md-3 mb-4">
             <div class="product-card h-100">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="position-relative">
-                        <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($product['id'] ?? 0); ?>">
-                            <?php if(!empty($product['image'])): ?>
-                            <img src="<?php echo htmlspecialchars($product['image']); ?>" class="card-img-top img-fluid rounded" alt="<?php echo htmlspecialchars($product['name'] ?? 'Sản phẩm'); ?>">
+                        <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
+                            <?php if(!empty($related_product['image'])): ?>
+                            <img src="<?php echo htmlspecialchars($related_product['image']); ?>" class="card-img-top img-fluid rounded" alt="<?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?>">
                             <?php else: ?>
                             <div class="card-img-top bg-light p-4 d-flex align-items-center justify-content-center" style="height: 180px;">
                                 <i class="fas fa-tshirt fa-3x text-secondary"></i>
                             </div>
                             <?php endif; ?>
                         </a>
-                        <?php if(($product['is_sale'] ?? 0) == 1 && !empty($product['sale_price']) && $product['sale_price'] < $product['price']): ?>
+                        <?php if(($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
                         <span class="badge bg-danger position-absolute top-0 end-0 m-2">Giảm giá</span>
                         <?php endif; ?>
                     </div>
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">
-                            <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($product['id'] ?? 0); ?>" class="text-decoration-none text-dark"><?php echo htmlspecialchars($product['name'] ?? 'Sản phẩm'); ?></a>
+                            <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>" class="text-decoration-none text-dark"><?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?></a>
                         </h5>
                         <div class="price-block mb-3">
-                            <?php if(($product['is_sale'] ?? 0) == 1 && !empty($product['sale_price']) && $product['sale_price'] < $product['price']): ?>
-                            <span class="text-danger fw-bold"><?php echo CURRENCY . number_format($product['sale_price']); ?></span>
-                            <span class="text-muted text-decoration-line-through ms-2"><?php echo CURRENCY . number_format($product['price']); ?></span>
+                            <?php if(($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
+                            <span class="text-danger fw-bold"><?php echo CURRENCY . number_format($related_product['sale_price']); ?></span>
+                            <span class="text-muted text-decoration-line-through ms-2"><?php echo CURRENCY . number_format($related_product['price']); ?></span>
                             <?php else: ?>
-                            <span class="fw-bold"><?php echo CURRENCY . number_format($product['price'] ?? 0); ?></span>
+                            <span class="fw-bold"><?php echo CURRENCY . number_format($related_product['price'] ?? 0); ?></span>
                             <?php endif; ?>
                         </div>
                         <div class="mt-auto">
-                            <button class="btn btn-primary btn-sm w-100 add-to-cart-btn" data-product-id="<?php echo htmlspecialchars($product['id'] ?? 0); ?>">
+                            <button class="btn btn-primary btn-sm w-100 add-to-cart-btn" data-product-id="<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
                                 <i class="fas fa-shopping-cart me-1"></i> Thêm vào giỏ hàng
                             </button>
                         </div>
@@ -417,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const colorSelect = document.getElementById('variant-color');
     const variantIdInput = document.getElementById('variant-id');
     const quantityInput = document.getElementById('quantity');
-    const variants = <?php echo json_encode($this->variants ?? []); ?>;
+    const variants = <?php echo json_encode($variants ?? []); ?>;
     
     // Thumbnail click handling
     document.querySelectorAll('.thumbnail-item').forEach(thumbnail => {

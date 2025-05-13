@@ -87,6 +87,10 @@ class ProductController {
             exit;
         }
         
+        // Get variants
+        $variants = $this->product->getVariants();
+        error_log("Controller: Variants for product ID $product_id: " . json_encode($variants));
+        
         // Get category name
         $category_name = $this->category->getNameById($this->product->category_id);
         
@@ -100,8 +104,17 @@ class ProductController {
             }
         }
         
+        // Prepare data for view
+        $data = [
+            'product' => $this->product,
+            'variants' => $variants,
+            'category_name' => $category_name,
+            'related_products' => $related_products
+        ];
+        
         // Load product detail view
-        include 'views/products/detail.php';
+        extract($data); // Chuyển mảng thành các biến cục bộ
+        include 'views/product_detail.php';
     }
     
     // Add product to cart (AJAX)

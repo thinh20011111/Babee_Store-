@@ -219,11 +219,13 @@ class Product {
     
     // Get product variants
     public function getVariants() {
-        $query = "SELECT * FROM product_variants WHERE product_id = ?";
+        $query = "SELECT id, product_id, color, size, price, stock FROM product_variants WHERE product_id = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        error_log("Variants for product ID {$this->id}: " . json_encode($variants));
+        return $variants;
     }
     
     // Get total stock from variants
@@ -233,6 +235,7 @@ class Product {
         $stmt->bindParam(1, $this->id);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Total stock for product ID {$this->id}: " . ($row['total_stock'] ?? 0));
         return $row['total_stock'] ?? 0;
     }
     
