@@ -104,7 +104,7 @@ class ProductController {
                 header("Location: index.php?controller=product&action=list");
                 exit;
             }
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product data: " . json_encode($this->product) . "\n", FILE_APPEND);
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product data: " . json_encode($this->product, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
             die("Lỗi khi đọc dữ liệu sản phẩm: " . htmlspecialchars($e->getMessage()));
@@ -113,7 +113,7 @@ class ProductController {
         // Get variants
         try {
             $variants = $this->product->getVariants();
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variants for product ID $product_id: " . json_encode($variants) . "\n", FILE_APPEND);
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variants for product ID $product_id: " . json_encode($variants, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc variants: " . $e->getMessage() . "\n", FILE_APPEND);
             $variants = [];
@@ -137,7 +137,7 @@ class ProductController {
                     $related_products[] = $row;
                 }
             }
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Related products: " . json_encode($related_products) . "\n", FILE_APPEND);
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Related products: " . json_encode($related_products, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc related products: " . $e->getMessage() . "\n", FILE_APPEND);
             $related_products = [];
@@ -157,7 +157,14 @@ class ProductController {
         // Load product detail view
         try {
             extract($data);
-            include 'views/product_detail.php';
+            $view_path = __DIR__ . '/../views/product_detail.php';
+            if (!file_exists($view_path)) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $view_path không tồn tại\n", FILE_APPEND);
+                die("Lỗi: Không tìm thấy file product_detail.php tại $view_path");
+            }
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu load $view_path\n", FILE_APPEND);
+            include $view_path;
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành load $view_path\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi load view: " . $e->getMessage() . "\n", FILE_APPEND);
             die("Lỗi khi load trang chi tiết sản phẩm: " . htmlspecialchars($e->getMessage()));

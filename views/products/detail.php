@@ -1,9 +1,53 @@
-<?php 
+<?php
+// Bật error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Khởi tạo file log
+$log_file = 'logs/debug.log';
+if (!file_exists('logs')) {
+    mkdir('logs', 0755, true);
+}
+file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu render product_detail.php\n", FILE_APPEND);
+
+// Kiểm tra các biến cần thiết
+if (!isset($product) || !is_object($product)) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: Biến \$product không tồn tại hoặc không hợp lệ\n", FILE_APPEND);
+    die("Lỗi: Dữ liệu sản phẩm không hợp lệ");
+}
+if (!isset($variants)) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$variants không được định nghĩa\n", FILE_APPEND);
+    $variants = [];
+}
+if (!isset($category_name)) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$category_name không được định nghĩa\n", FILE_APPEND);
+    $category_name = 'Danh mục không xác định';
+}
+if (!isset($related_products)) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$related_products không được định nghĩa\n", FILE_APPEND);
+    $related_products = [];
+}
+
 $page_title = htmlspecialchars($product->name ?? 'Sản phẩm');
-include 'views/layouts/header.php'; 
+file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Page title: $page_title\n", FILE_APPEND);
+
+// Include header
+try {
+    $header_path = __DIR__ . '/layouts/header.php';
+    if (!file_exists($header_path)) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $header_path không tồn tại\n", FILE_APPEND);
+        die("Lỗi: File header.php không tồn tại");
+    }
+    include $header_path;
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include header.php\n", FILE_APPEND);
+} catch (Exception $e) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include header.php: " . $e->getMessage() . "\n", FILE_APPEND);
+    die("Lỗi khi load header: " . htmlspecialchars($e->getMessage()));
+}
 ?>
 
-<!-- Đảm bảo Bootstrap được include trong header.php -->
+<!-- Đảm bảo Bootstrap được include -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
@@ -12,11 +56,16 @@ include 'views/layouts/header.php';
 <div class="debug-info alert alert-info">
     <strong>Debug Info:</strong><br>
     Product ID: <?php echo htmlspecialchars($product->id ?? 'N/A'); ?><br>
+    Product Name: <?php echo htmlspecialchars($product->name ?? 'N/A'); ?><br>
     Total Stock: <?php echo !empty($product->id) ? $product->getTotalStock() : 0; ?><br>
     Variants Count: <?php echo count($variants ?? []); ?><br>
-    Variants: <?php echo htmlspecialchars(json_encode($variants ?? [])); ?>
+    Variants: <?php echo htmlspecialchars(json_encode($variants ?? [])); ?><br>
+    Category Name: <?php echo htmlspecialchars($category_name ?? 'N/A'); ?><br>
+    Related Products Count: <?php echo count($related_products ?? []); ?>
 </div>
-<?php endif; ?>
+<?php
+file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info\n", FILE_APPEND);
+endif; ?>
 
 <!-- Page Header with Breadcrumb -->
 <div class="category-header position-relative mb-5">
@@ -71,7 +120,7 @@ include 'views/layouts/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    <!-- Placeholder thumbnails (có thể thay bằng hình ảnh phụ nếu có) -->
+                    <!-- Placeholder thumbnails -->
                     <?php for($i = 0; $i < 3; $i++): ?>
                     <div class="col-3">
                         <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($product->image ?? ''); ?>">
@@ -110,6 +159,7 @@ include 'views/layouts/header.php';
                     <span class="me-2 fw-bold">Tình trạng:</span>
                     <?php
                     $total_stock = !empty($product->id) ? $product->getTotalStock() : 0;
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Total stock: $total_stock\n", FILE_APPEND);
                     ?>
                     <?php if($total_stock > 0): ?>
                     <span class="badge bg-success rounded-0 py-2 px-3">CÒN HÀNG</span>
@@ -143,7 +193,6 @@ include 'views/layouts/header.php';
                             <select class="form-select" name="size" id="variant-size" required>
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
-                                // Lọc kích cỡ có stock > 0
                                 $sizes = !empty($variants) ? array_unique(array_filter(array_column($variants, 'size'), function($size) use ($variants) {
                                     foreach ($variants as $v) {
                                         if ($v['size'] === $size && $v['stock'] > 0) {
@@ -152,6 +201,7 @@ include 'views/layouts/header.php';
                                     }
                                     return false;
                                 })) : [];
+                                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Sizes available: " . json_encode($sizes) . "\n", FILE_APPEND);
                                 foreach($sizes as $size):
                                 ?>
                                 <option value="<?php echo htmlspecialchars($size); ?>"><?php echo htmlspecialchars($size); ?></option>
@@ -256,7 +306,7 @@ include 'views/layouts/header.php';
                             <li>Chất liệu: 100% Cotton</li>
                             <li>Sản xuất tại Việt Nam</li>
                             <li>Phù hợp với phong cách đường phố</li>
-                            <li>Hướng dẫn gi CTL: Giặt máy ở nhiệt độ thấp, không tẩy</li>
+                            <li>Hướng dẫn giặt: Giặt máy ở nhiệt độ thấp, không tẩy</li>
                         </ul>
                     </div>
                     <div class="tab-pane fade" id="shipping" role="tabpanel">
@@ -275,7 +325,7 @@ include 'views/layouts/header.php';
                                 <tr>
                                     <th>Size</th>
                                     <th>Chiều cao (cm)</th>
-  <th>Cân nặng (kg)</th>
+                                    <th>Cân nặng (kg)</th>
                                     <th>Ngực (cm)</th>
                                     <th>Eo (cm)</th>
                                 </tr>
@@ -378,7 +428,9 @@ include 'views/layouts/header.php';
         <?php endforeach; ?>
     </div>
 </section>
-<?php endif; ?>
+<?php
+file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã render related products\n", FILE_APPEND);
+endif; ?>
 
 <!-- Customer Reviews Section -->
 <section class="customer-reviews mt-5">
@@ -410,7 +462,14 @@ include 'views/layouts/header.php';
 </style>
 
 <script>
+console.log('Bắt đầu script product_detail.php');
+console.log('Product ID:', <?php echo json_encode($product->id ?? 'N/A'); ?>);
+console.log('Variants:', <?php echo json_encode($variants ?? []); ?>);
+console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?>);
+console.log('Related Products Count:', <?php echo json_encode(count($related_products ?? [])); ?>);
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded');
     const form = document.getElementById('add-to-cart-form');
     const sizeSelect = document.getElementById('variant-size');
     const colorSelect = document.getElementById('variant-color');
@@ -419,21 +478,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const variants = <?php echo json_encode($variants ?? []); ?>;
     
     // Thumbnail click handling
-    document.querySelectorAll('.thumbnail-item').forEach(thumbnail => {
-        thumbnail.addEventListener('click', function() {
-            document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            const mainImage = document.querySelector('.main-image');
-            const imageSrc = this.dataset.image;
-            if(mainImage && imageSrc) {
-                mainImage.src = imageSrc;
-            }
+    try {
+        document.querySelectorAll('.thumbnail-item').forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                console.log('Thumbnail clicked:', this.dataset.image);
+                document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const mainImage = document.querySelector('.main-image');
+                const imageSrc = this.dataset.image;
+                if(mainImage && imageSrc) {
+                    mainImage.src = imageSrc;
+                }
+            });
         });
-    });
+    } catch (e) {
+        console.error('Lỗi khi xử lý thumbnail:', e);
+    }
     
     // Update color options based on size
     if(sizeSelect) {
         sizeSelect.addEventListener('change', function() {
+            console.log('Size selected:', this.value);
             const selectedSize = this.value;
             colorSelect.innerHTML = '<option value="" disabled selected>Chọn màu sắc</option>';
             const availableColors = variants
@@ -455,11 +520,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateVariant();
         });
+    } else {
+        console.error('Không tìm thấy sizeSelect element');
     }
     
     // Update variant ID and max quantity
     if(colorSelect) {
         colorSelect.addEventListener('change', updateVariant);
+    } else {
+        console.error('Không tìm thấy colorSelect element');
     }
     
     function updateVariant() {
@@ -473,6 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
             quantityInput.max = variant.stock;
             quantityInput.value = 1;
         } else {
+            console.log('No valid variant selected');
             variantIdInput.value = '';
             quantityInput.max = 1;
             quantityInput.value = 1;
@@ -480,19 +550,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Quantity buttons
-    document.querySelectorAll('.qty-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const action = this.dataset.action;
-            let currentQuantity = parseInt(quantityInput.value);
-            const maxQuantity = parseInt(quantityInput.max) || 1;
-            
-            if (action === 'increase' && currentQuantity < maxQuantity) {
-                quantityInput.value = currentQuantity + 1;
-            } else if (action === 'decrease' && currentQuantity > 1) {
-                quantityInput.value = currentQuantity - 1;
-            }
+    try {
+        document.querySelectorAll('.qty-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const action = this.dataset.action;
+                let currentQuantity = parseInt(quantityInput.value);
+                const maxQuantity = parseInt(quantityInput.max) || 1;
+                
+                console.log('Quantity button clicked:', action, 'Current:', currentQuantity, 'Max:', maxQuantity);
+                if (action === 'increase' && currentQuantity < maxQuantity) {
+                    quantityInput.value = currentQuantity + 1;
+                } else if (action === 'decrease' && currentQuantity > 1) {
+                    quantityInput.value = currentQuantity - 1;
+                }
+            });
         });
-    });
+    } catch (e) {
+        console.error('Lỗi khi xử lý quantity buttons:', e);
+    }
     
     // Prevent invalid quantity input
     if(quantityInput) {
@@ -501,12 +576,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const minQuantity = parseInt(this.min) || 1;
             let value = parseInt(this.value);
             
+            console.log('Quantity input changed:', value);
             if(isNaN(value) || value < minQuantity) {
                 this.value = minQuantity;
             } else if(value > maxQuantity) {
                 this.value = maxQuantity;
             }
         });
+    } else {
+        console.error('Không tìm thấy quantityInput element');
     }
     
     // Form submission
@@ -518,12 +596,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const variantId = this.querySelector('[name="variant_id"]').value;
             const quantity = parseInt(this.querySelector('[name="quantity"]').value);
             
+            console.log('Form submitted:', { productId, variantId, quantity });
+            
             if(!variantId) {
+                console.error('Lỗi: Chưa chọn biến thể hợp lệ');
                 alert('Vui lòng chọn kích cỡ và màu sắc hợp lệ.');
                 return;
             }
             
             if(quantity < 1 || isNaN(quantity)) {
+                console.error('Lỗi: Số lượng không hợp lệ');
                 alert('Số lượng không hợp lệ.');
                 return;
             }
@@ -537,8 +619,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: `product_id=${encodeURIComponent(productId)}&variant_id=${encodeURIComponent(variantId)}&quantity=${encodeURIComponent(quantity)}`
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('AJAX response received');
+                return response.json();
+            })
             .then(data => {
+                console.log('AJAX data:', data);
                 if(data.success) {
                     alert(data.message || 'Đã thêm vào giỏ hàng!');
                     const cartBadge = document.querySelector('.fa-shopping-cart')?.nextElementSibling;
@@ -546,31 +632,53 @@ document.addEventListener('DOMContentLoaded', function() {
                         cartBadge.textContent = data.cart_count || 0;
                     }
                 } else {
+                    console.error('Lỗi từ server:', data.message);
                     alert(data.message || 'Không thể thêm vào giỏ hàng. Vui lòng thử lại.');
                 }
             })
             .catch(error => {
-                console.error('Lỗi:', error);
+                console.error('Lỗi AJAX:', error);
                 alert('Đã xảy ra lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.');
             });
         });
+    } else {
+        console.error('Không tìm thấy add-to-cart-form');
     }
 
-    // Notify form submission (placeholder)
+    // Notify form submission
     const notifyForm = document.getElementById('notify-form');
     if(notifyForm) {
         notifyForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const email = this.querySelector('[name="email"]').value;
+            console.log('Notify form submitted:', email);
             if(email) {
                 alert('Cảm ơn bạn! Chúng tôi sẽ thông báo khi sản phẩm có hàng.');
                 this.reset();
             } else {
+                console.error('Lỗi: Email không hợp lệ');
                 alert('Vui lòng nhập email hợp lệ.');
             }
         });
+    } else {
+        console.error('Không tìm thấy notify-form');
     }
 });
 </script>
 
-<?php include 'views/layouts/footer.php'; ?>
+<?php
+// Include footer
+try {
+    $footer_path = __DIR__ . '/layouts/footer.php';
+    if (!file_exists($footer_path)) {
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $footer_path không tồn tại\n", FILE_APPEND);
+        die("Lỗi: File footer.php không tồn tại");
+    }
+    include $footer_path;
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n", FILE_APPEND);
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành render product_detail.php\n", FILE_APPEND);
+} catch (Exception $e) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include footer.php: " . $e->getMessage() . "\n", FILE_APPEND);
+    die("Lỗi khi load footer: " . htmlspecialchars($e->getMessage()));
+}
+?>
