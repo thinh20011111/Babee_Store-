@@ -67,7 +67,6 @@ while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
         $date = DateTime::createFromFormat('Y-m-d', $date_string);
         
         if ($date === false) {
-            // Handle format error and provide detailed diagnostics
             $errors = DateTime::getLastErrors();
             $error_msg = "Invalid date format for year: $year, month: $month, date string: $date_string";
             if ($errors) {
@@ -95,7 +94,6 @@ while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
 // Debug: Prepare raw data message
 if (empty($raw_revenue_data)) {
     $debug_raw_revenue = "No data returned from getMonthlyRevenue. Check orders table for non-cancelled orders.";
-    // Additional debug query to check if we have any valid orders
     $debug_orders_query = "SELECT id, status, total_amount, created_at FROM orders WHERE status != 'cancelled' LIMIT 5";
     $debug_orders_stmt = $conn->prepare($debug_orders_query);
     $debug_orders_stmt->execute();
@@ -138,13 +136,12 @@ if (!defined('CURRENCY')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <!-- Favicon (empty data URI to avoid CORS) -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- No Chart.js needed anymore as we use Bootstrap 5 components -->
     <style>
         .sidebar {
             min-height: 100vh;
@@ -162,15 +159,21 @@ if (!defined('CURRENCY')) {
             height: 400px;
             background-color: #f8f9fa;
             border: 2px solid #007bff;
+            border-radius: 0.375rem;
         }
         .badge {
             padding: 8px 12px;
         }
         .list-group-item {
             border: none;
+            border-radius: 0.375rem;
         }
         .table img {
             object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+        .table img:hover {
+            opacity: 0.9;
         }
         .debug-info {
             background-color: #f8f9fa;
@@ -183,6 +186,22 @@ if (!defined('CURRENCY')) {
             color: red;
             margin-top: 10px;
             font-weight: bold;
+        }
+        .bestseller-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 0.25rem;
+            border: 1px solid #dee2e6;
+        }
+        .bestseller-img-placeholder {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            border: 1px solid #dee2e6;
         }
     </style>
 </head>
@@ -220,7 +239,7 @@ if (!defined('CURRENCY')) {
                 <!-- Statistics Cards -->
                 <div class="row g-4 mb-4">
                     <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0">
+                        <div class="card shadow-sm border-0 rounded">
                             <div class="card-body d-flex align-items-center">
                                 <i class="fas fa-money-bill-wave fa-3x text-primary me-3"></i>
                                 <div>
@@ -231,7 +250,7 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                     <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0">
+                        <div class="card shadow-sm border-0 rounded">
                             <div class="card-body d-flex align-items-center">
                                 <i class="fas fa-shopping-cart fa-3x text-success me-3"></i>
                                 <div>
@@ -242,7 +261,7 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                     <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0">
+                        <div class="card shadow-sm border-0 rounded">
                             <div class="card-body d-flex align-items-center">
                                 <i class="fas fa-box fa-3x text-warning me-3"></i>
                                 <div>
@@ -253,7 +272,7 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                     <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0">
+                        <div class="card shadow-sm border-0 rounded">
                             <div class="card-body d-flex align-items-center">
                                 <i class="fas fa-users fa-3x text-info me-3"></i>
                                 <div>
@@ -268,7 +287,7 @@ if (!defined('CURRENCY')) {
                 <!-- Charts -->
                 <div class="row mb-4">
                     <div class="col-lg-6">
-                        <div class="card shadow-sm">
+                        <div class="card shadow-sm rounded">
                             <div class="card-header">
                                 <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-bar me-2"></i> Monthly Revenue</h6>
                             </div>
@@ -277,7 +296,6 @@ if (!defined('CURRENCY')) {
                                     <?php if ($monthly_revenue_labels[0] === 'No Data'): ?>
                                         <p class="text-center text-muted mt-3">No revenue data available for the last 12 months.</p>
                                     <?php else: ?>
-                                        <!-- Bootstrap 5 based bar chart -->
                                         <div class="row align-items-end mb-4" style="height: 300px;">
                                             <?php foreach ($monthly_revenue_data as $index => $value): ?>
                                                 <?php 
@@ -304,12 +322,11 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="card shadow-sm">
+                        <div class="card shadow-sm rounded">
                             <div class="card-header">
                                 <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-pie me-2"></i> Order Status</h6>
                             </div>
                             <div class="card-body">
-                                <!-- Bootstrap 5 Order Status Chart -->
                                 <div class="order-status-chart">
                                     <?php
                                     $status_labels = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
@@ -320,20 +337,12 @@ if (!defined('CURRENCY')) {
                                         $order->countByStatus('delivered'),
                                         $order->countByStatus('cancelled')
                                     ];
-                                    $status_colors = [
-                                        'warning',  // Pending - yellow
-                                        'info',     // Processing - blue
-                                        'primary',  // Shipped - dark blue
-                                        'success',  // Delivered - green
-                                        'danger'    // Cancelled - red
-                                    ];
+                                    $status_colors = ['warning', 'info', 'primary', 'success', 'danger'];
                                     $total_orders = array_sum($status_counts);
                                     ?>
-                                    
                                     <?php if ($total_orders == 0): ?>
                                         <div class="text-center text-muted py-4">No order status data available.</div>
                                     <?php else: ?>
-                                        <!-- Visual representation using colored cards -->
                                         <div class="row mb-4">
                                             <?php foreach ($status_labels as $index => $label): 
                                                 $count = $status_counts[$index];
@@ -341,7 +350,7 @@ if (!defined('CURRENCY')) {
                                                 $color = $status_colors[$index];
                                             ?>
                                             <div class="col">
-                                                <div class="card border-<?php echo $color; ?> h-100">
+                                                <div class="card border-<?php echo $color; ?> h-100 shadow-sm rounded">
                                                     <div class="card-body p-2 text-center">
                                                         <h6 class="text-<?php echo $color; ?>"><?php echo $label; ?></h6>
                                                         <h3 class="mb-0"><?php echo $count; ?></h3>
@@ -359,8 +368,6 @@ if (!defined('CURRENCY')) {
                                             </div>
                                             <?php endforeach; ?>
                                         </div>
-                                        
-                                        <!-- Visual representation as circular progress -->
                                         <div class="row justify-content-center">
                                             <div class="col-md-10">
                                                 <div class="progress" style="height: 25px;">
@@ -397,7 +404,7 @@ if (!defined('CURRENCY')) {
                 <div class="row">
                     <!-- Recent Orders -->
                     <div class="col-lg-8">
-                        <div class="card shadow-sm">
+                        <div class="card shadow-sm rounded">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h6 class="m-0 fw-bold text-primary"><i class="fas fa-shopping-cart me-2"></i> Recent Orders</h6>
                                 <a href="index.php?page=orders" class="btn btn-sm btn-primary">View All</a>
@@ -443,7 +450,7 @@ if (!defined('CURRENCY')) {
                                                         default: $status_class = 'bg-secondary text-white';
                                                     }
                                                     ?>
-                                                    <span class="badge <?php echo $status_class; ?>"><?php echo ucfirst($order['status']); ?></span>
+                                                    <span class="badge <?php echo $status_class; ?> rounded-pill"><?php echo ucfirst($order['status']); ?></span>
                                                 </td>
                                                 <td><?php echo date('d/m/Y', strtotime($order['created_at'])); ?></td>
                                             </tr>
@@ -458,7 +465,7 @@ if (!defined('CURRENCY')) {
 
                     <!-- Best Selling Products -->
                     <div class="col-lg-4">
-                        <div class="card shadow-sm">
+                        <div class="card shadow-sm rounded">
                             <div class="card-header">
                                 <h6 class="m-0 fw-bold text-primary"><i class="fas fa-star me-2"></i> Best Sellers</h6>
                             </div>
@@ -468,16 +475,23 @@ if (!defined('CURRENCY')) {
                                     <div class="list-group-item text-center">No best sellers found</div>
                                     <?php else: ?>
                                     <?php foreach ($bestsellers as $product): ?>
-                                    <div class="list-group-item">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-1"><?php echo htmlspecialchars($product['name']); ?></h6>
-                                                <small class="text-muted"><?php echo number_format($product['total_sold']); ?> units sold</small>
+                                    <div class="list-group-item d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <?php if (!empty($product['image'])): ?>
+                                            <img src="<?php echo htmlspecialchars($product['image']); ?>" class="bestseller-img img-fluid" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                            <?php else: ?>
+                                            <div class="bestseller-img-placeholder">
+                                                <i class="fas fa-tshirt fa-2x text-secondary"></i>
                                             </div>
-                                            <div class="text-end">
-                                                <div class="fw-bold text-success"><?php echo CURRENCY . number_format($product['total_revenue']); ?></div>
-                                                <small class="text-muted"><?php echo CURRENCY . number_format($product['price']); ?>/unit</small>
-                                            </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($product['name']); ?></h6>
+                                            <small class="text-muted"><?php echo number_format($product['total_sold']); ?> units sold</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-success"><?php echo CURRENCY . number_format($product['total_revenue']); ?></div>
+                                            <small class="text-muted"><?php echo CURRENCY . number_format($product['price']); ?>/unit</small>
                                         </div>
                                     </div>
                                     <?php endforeach; ?>
@@ -491,8 +505,8 @@ if (!defined('CURRENCY')) {
         </div>
     </div>
 
-    <!-- Bootstrap JS and Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         console.log("Dashboard script started with Bootstrap 5 visualizations.");
 
@@ -500,15 +514,11 @@ if (!defined('CURRENCY')) {
             location.reload();
         }
 
-        // We are now using pure Bootstrap 5 for visualizations, no chart.js initialization needed
         document.addEventListener("DOMContentLoaded", function() {
-            console.log("DOM fully loaded. Bootstrap 5 visualizations are static and dont require JavaScript initialization.");
-            
-            // Just log data for debugging purposes
+            console.log("DOM fully loaded. Bootstrap 5 visualizations are static.");
             console.log("Raw Revenue Data:", <?php echo json_encode($debug_raw_revenue); ?>);
             console.log("Mapped Revenue Data:", <?php echo json_encode($debug_mapped_data); ?>);
             
-            // Status counts for debugging
             const statusCounts = {
                 "Pending": <?php echo $order->countByStatus("pending"); ?>,
                 "Processing": <?php echo $order->countByStatus("processing"); ?>,
