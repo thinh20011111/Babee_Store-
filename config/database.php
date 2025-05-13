@@ -54,7 +54,7 @@ function createLocalTables($conn) {
         ");
     }
     
-    // Create products table
+    // Create products table (removed stock)
     $conn->exec("CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -63,14 +63,26 @@ function createLocalTables($conn) {
         sale_price REAL,
         image TEXT,
         category_id INTEGER,
-        stock INTEGER DEFAULT 0,
         is_featured INTEGER DEFAULT 0,
         is_sale INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
     
-    // Create orders table
+    // Create product_variants table
+    $conn->exec("CREATE TABLE IF NOT EXISTS product_variants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        size TEXT NOT NULL,
+        color TEXT,
+        stock INTEGER DEFAULT 0,
+        price REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id)
+    )");
+    
+    // Create orders table (added shipping_name, payment_status)
     $conn->exec("CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_number TEXT NOT NULL,
@@ -78,22 +90,29 @@ function createLocalTables($conn) {
         total_amount REAL NOT NULL,
         status TEXT DEFAULT 'pending',
         payment_method TEXT,
+        payment_status TEXT DEFAULT 'pending',
         shipping_address TEXT,
         shipping_city TEXT,
         shipping_phone TEXT,
+        shipping_name TEXT,
         notes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
     )");
     
-    // Create order_items table
+    // Create order_items table (added variant_id)
     $conn->exec("CREATE TABLE IF NOT EXISTS order_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_id INTEGER NOT NULL,
         product_id INTEGER NOT NULL,
+        variant_id INTEGER,
         quantity INTEGER NOT NULL,
         price REAL NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (order_id) REFERENCES orders(id),
+        FOREIGN KEY (product_id) REFERENCES products(id),
+        FOREIGN KEY (variant_id) REFERENCES product_variants(id)
     )");
     
     // Create promotions table
@@ -165,12 +184,29 @@ function createLocalTables($conn) {
     // Add sample products if no products exist
     $check = $conn->query("SELECT COUNT(*) FROM products")->fetchColumn();
     if ($check == 0) {
-        $conn->exec("INSERT INTO products (name, description, price, sale_price, category_id, stock, is_featured, is_sale) VALUES 
-            ('Oversized Logo Tee', 'Áo phông rộng với logo nổi bật, 100% cotton hữu cơ', 450000, 0, 1, 25, 1, 0),
-            ('Cargo Pants', 'Quần túi hộp phong cách đường phố, nhiều túi tiện lợi', 620000, 520000, 2, 15, 1, 1),
-            ('Graphic Hoodie', 'Áo hoodie in họa tiết đồ họa hiện đại', 850000, 0, 1, 20, 1, 0),
-            ('Bucket Hat', 'Mũ bucket dáng rộng với họa tiết táo bạo', 320000, 250000, 4, 30, 0, 1),
-            ('High-top Sneakers', 'Giày thể thao cổ cao phong cách retro', 1200000, 0, 5, 18, 1, 0)
+        $conn->exec("INSERT INTO products (name, description, price, sale_price, category_id, is_featured, is_sale) VALUES 
+            ('Oversized Logo Tee', 'Áo phông rộng với logo nổi bật, 100% cotton hữu cơ', 450000, 0, 1, 1, 0),
+            ('Cargo Pants', 'Quần túi hộp phong cách đường phố, nhiều túi tiện lợi', 620000, 520000, 2, 1, 1),
+            ('Graphic Hoodie', 'Áo hoodie in họa tiết đồ họa hiện đại', 850000, 0, 1, 1, 0),
+            ('Bucket Hat', 'Mũ bucket dáng rộng với họa tiết táo bạo', 320000, 250000, 4, 0, 1),
+            ('High-top Sneakers', 'Giày thể thao cổ cao phong cách retro', 1200000, 0, 5, 1, 0)
+        ");
+    }
+    
+    // Add sample product variants if no variants exist
+    $check = $conn->query("SELECT COUNT(*) FROM product_variants")->fetchColumn();
+    if ($check == 0) {
+        $conn->exec("INSERT INTO product_variants (product_id, size, color, stock, price) VALUES 
+            (1, 'S', 'Đỏ', 10, 450000),
+            (1, 'M', 'Đỏ', 15, 450000),
+            (1, 'L', 'Xanh', 5, 460000),
+            (2, '28', 'Đen', 5, 520000),
+            (2, '30', 'Đen', 10, 520000),
+            (3, 'S', 'Trắng', 8, 850000),
+            (3, 'M', 'Trắng', 12, 850000),
+            (4, 'One Size', 'Cam', 30, 250000),
+            (5, '39', 'Trắng', 5, 1200000),
+            (5, '40', 'Trắng', 13, 1200000)
         ");
     }
     
