@@ -381,27 +381,6 @@ if (!defined('CURRENCY')) {
                             <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i> Hủy</a>
                         </div>
                     </form>
-
-                    <!-- Debug Info -->
-                    <?php if (DEBUG_MODE): ?>
-                    <div class="debug-info mt-4">
-                        <h6>Debug Information</h6>
-                        <ul>
-                            <?php foreach ($debug_logs as $log): ?>
-                            <li><?php echo htmlspecialchars($log); ?></li>
-                            <?php endforeach; ?>
-                            <li>Categories: <?php echo htmlspecialchars(json_encode($categories)); ?></li>
-                            <li>Variants: <?php echo htmlspecialchars(json_encode($variants)); ?></li>
-                            <li>Product Data: <?php echo htmlspecialchars(json_encode([
-                                'id' => $product->id,
-                                'name' => $product->name,
-                                'category_id' => $product->category_id,
-                                'price' => $product->price,
-                                'image' => $product->image
-                            ])); ?></li>
-                        </ul>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>

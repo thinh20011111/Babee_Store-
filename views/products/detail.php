@@ -34,7 +34,7 @@ include 'views/layouts/header.php';
         <div class="col-lg-6 mb-4 mb-lg-0">
             <div class="product-image-container position-relative">
                 <?php if(!empty($this->product->image)): ?>
-                <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded shadow-sm border" alt="<?php echo htmlspecialchars($this->product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
+                <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded shadow-sm border main-image" alt="<?php echo htmlspecialchars($this->product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
                 <?php else: ?>
                 <div class="product-placeholder d-flex align-items-center justify-content-center bg-light rounded border" style="height: 500px;">
                     <i class="fas fa-tshirt fa-6x text-secondary"></i>
@@ -50,9 +50,9 @@ include 'views/layouts/header.php';
             <div class="product-thumbnails mt-3">
                 <div class="row g-2">
                     <div class="col-3">
-                        <div class="thumbnail-item border rounded p-1 <?php echo !empty($this->product->image) ? 'active' : ''; ?>">
+                        <div class="thumbnail-item border rounded p-1 <?php echo !empty($this->product->image) ? 'active' : ''; ?>" data-image="<?php echo htmlspecialchars($this->product->image ?? ''); ?>">
                             <?php if(!empty($this->product->image)): ?>
-                            <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded" alt="Thumbnail" style="cursor: pointer;">
+                            <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
                             <?php else: ?>
                             <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
                                 <i class="fas fa-tshirt fa-2x text-secondary"></i>
@@ -60,12 +60,12 @@ include 'views/layouts/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    <!-- Thêm các thumbnail khác nếu có (giả sử có thêm hình ảnh phụ) -->
+                    <!-- Placeholder thumbnails (có thể thay bằng hình ảnh phụ nếu có) -->
                     <?php for($i = 0; $i < 3; $i++): ?>
                     <div class="col-3">
-                        <div class="thumbnail-item border rounded p-1">
+                        <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($this->product->image ?? ''); ?>">
                             <?php if(!empty($this->product->image)): ?>
-                            <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded" alt="Thumbnail" style="cursor: pointer;">
+                            <img src="<?php echo htmlspecialchars($this->product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
                             <?php else: ?>
                             <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
                                 <i class="fas fa-tshirt fa-2x text-secondary"></i>
@@ -78,7 +78,7 @@ include 'views/layouts/header.php';
             </div>
         </div>
         
-        <!-- Product Details (giữ nguyên như trước) -->
+        <!-- Product Details -->
         <div class="col-lg-6">
             <div class="product-category text-uppercase mb-2"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></div>
             <h1 class="product-title mb-3"><?php echo htmlspecialchars($this->product->name ?? 'Sản phẩm'); ?></h1>
@@ -98,7 +98,7 @@ include 'views/layouts/header.php';
                 <div class="d-flex align-items-center mb-2">
                     <span class="me-2 fw-bold">Tình trạng:</span>
                     <?php
-                    $total_stock = isset($this->variants) ? array_sum(array_column($this->variants, 'stock')) : 0;
+                    $total_stock = !empty($this->product->id) ? $this->product->getTotalStock() : 0;
                     ?>
                     <?php if($total_stock > 0): ?>
                     <span class="badge bg-success rounded-0 py-2 px-3">CÒN HÀNG</span>
@@ -132,7 +132,16 @@ include 'views/layouts/header.php';
                             <select class="form-select" name="size" id="variant-size" required>
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
-                                $sizes = !empty($this->variants) ? array_unique(array_column($this->variants, 'size')) : [];
+                                // Lọc kích cỡ có stock > 0
+                                $sizes = !empty($this->variants) ? array_unique(array_filter(array_column($this->variants, 'size'), function($size) {
+                                    global $variants;
+                                    foreach ($variants as $v) {
+                                        if ($v['size'] === $size && $v['stock'] > 0) {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                })) : [];
                                 foreach($sizes as $size):
                                 ?>
                                 <option value="<?php echo htmlspecialchars($size); ?>"><?php echo htmlspecialchars($size); ?></option>
@@ -142,7 +151,7 @@ include 'views/layouts/header.php';
                         <!-- Color Selector -->
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold d-block mb-2">Màu sắc:</label>
-                            <select class="form-select" name="color" id="variant-color" required>
+                            <select class="form-select" name="color" id="variant-color" required disabled>
                                 <option value="" disabled selected>Chọn màu sắc</option>
                             </select>
                         </div>
@@ -372,6 +381,7 @@ include 'views/layouts/header.php';
 <style>
 .thumbnail-item {
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 .thumbnail-item:hover {
     border-color: #0d6efd !important;
@@ -390,7 +400,6 @@ include 'views/layouts/header.php';
 </style>
 
 <script>
-// Add to cart form handling
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('add-to-cart-form');
     const sizeSelect = document.getElementById('variant-size');
@@ -404,9 +413,10 @@ document.addEventListener('DOMContentLoaded', function() {
         thumbnail.addEventListener('click', function() {
             document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
-            const mainImage = document.querySelector('.product-image-container img');
-            if(mainImage && this.querySelector('img')) {
-                mainImage.src = this.querySelector('img').src;
+            const mainImage = document.querySelector('.main-image');
+            const imageSrc = this.dataset.image;
+            if(mainImage && imageSrc) {
+                mainImage.src = imageSrc;
             }
         });
     });
@@ -429,6 +439,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             colorSelect.disabled = uniqueColors.length === 0;
+            if(uniqueColors.length > 0) {
+                colorSelect.disabled = false;
+                colorSelect.focus();
+            }
             updateVariant();
         });
     }
@@ -443,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedColor = colorSelect ? colorSelect.value : '';
         const variant = variants.find(v => v.size === selectedSize && v.color === selectedColor);
         
-        if(variant) {
+        if(variant && variant.stock > 0) {
             variantIdInput.value = variant.id;
             quantityInput.max = variant.stock;
             quantityInput.value = 1;
@@ -459,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const action = this.dataset.action;
             let currentQuantity = parseInt(quantityInput.value);
-            const maxQuantity = parseInt(quantityInput.max);
+            const maxQuantity = parseInt(quantityInput.max) || 1;
             
             if (action === 'increase' && currentQuantity < maxQuantity) {
                 quantityInput.value = currentQuantity + 1;
@@ -468,6 +482,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Prevent invalid quantity input
+    if(quantityInput) {
+        quantityInput.addEventListener('input', function() {
+            const maxQuantity = parseInt(this.max) || 1;
+            const minQuantity = parseInt(this.min) || 1;
+            let value = parseInt(this.value);
+            
+            if(isNaN(value) || value < minQuantity) {
+                this.value = minQuantity;
+            } else if(value > maxQuantity) {
+                this.value = maxQuantity;
+            }
+        });
+    }
     
     // Form submission
     if(form) {
@@ -479,26 +508,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const quantity = parseInt(this.querySelector('[name="quantity"]').value);
             
             if(!variantId) {
-                alert('Vui lòng chọn kích cỡ và màu sắc.');
+                alert('Vui lòng chọn kích cỡ và màu sắc hợp lệ.');
+                return;
+            }
+            
+            if(quantity < 1 || isNaN(quantity)) {
+                alert('Số lượng không hợp lệ.');
                 return;
             }
             
             // AJAX request to add to cart
-            fetch('index.php?controller=product&action=addToCart', {
+            fetch('index.php?controller=cart&action=add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `product_id=${productId}&variant_id=${variantId}&quantity=${quantity}`
+                body: `product_id=${encodeURIComponent(productId)}&variant_id=${encodeURIComponent(variantId)}&quantity=${encodeURIComponent(quantity)}`
             })
             .then(response => response.json())
             .then(data => {
                 if(data.success) {
-                    alert(data.message);
+                    alert(data.message || 'Đã thêm vào giỏ hàng!');
                     const cartBadge = document.querySelector('.fa-shopping-cart')?.nextElementSibling;
                     if(cartBadge) {
-                        cartBadge.textContent = data.cart_count;
+                        cartBadge.textContent = data.cart_count || 0;
                     }
                 } else {
                     alert(data.message || 'Không thể thêm vào giỏ hàng. Vui lòng thử lại.');
@@ -506,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi. Vui lòng thử lại.');
+                alert('Đã xảy ra lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.');
             });
         });
     }
