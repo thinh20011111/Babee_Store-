@@ -7,6 +7,17 @@ include 'views/layouts/header.php';
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
+<!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
+<?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
+<div class="debug-info alert alert-info">
+    <strong>Debug Info:</strong><br>
+    Product ID: <?php echo htmlspecialchars($this->product->id ?? 'N/A'); ?><br>
+    Total Stock: <?php echo !empty($this->product->id) ? $this->product->getTotalStock() : 0; ?><br>
+    Variants Count: <?php echo count($this->variants ?? []); ?><br>
+    Variants: <?php echo htmlspecialchars(json_encode($this->variants ?? [])); ?>
+</div>
+<?php endif; ?>
+
 <!-- Page Header with Breadcrumb -->
 <div class="category-header position-relative mb-5">
     <div class="category-header-bg" style="background-color: var(--light-bg-color); height: 120px; position: relative; overflow: hidden;">
@@ -118,7 +129,7 @@ include 'views/layouts/header.php';
             </div>
         
             <!-- Add to Cart Form -->
-            <?php if($total_stock > 0 && !empty($this->variants)): ?>
+            <?php if($total_stock > 0 && !empty($this->variants) && is_array($this->variants)): ?>
             <form id="add-to-cart-form" class="mb-4">
                 <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($this->product->id ?? 0); ?>">
                 
@@ -133,9 +144,8 @@ include 'views/layouts/header.php';
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
                                 // Lọc kích cỡ có stock > 0
-                                $sizes = !empty($this->variants) ? array_unique(array_filter(array_column($this->variants, 'size'), function($size) {
-                                    global $variants;
-                                    foreach ($variants as $v) {
+                                $sizes = !empty($this->variants) ? array_unique(array_filter(array_column($this->variants, 'size'), function($size) use ($this) {
+                                    foreach ($this->variants as $v) {
                                         if ($v['size'] === $size && $v['stock'] > 0) {
                                             return true;
                                         }
@@ -188,8 +198,8 @@ include 'views/layouts/header.php';
             <div class="product-out-of-stock mb-4 p-3 bg-light text-center">
                 <p class="mb-2 fw-bold text-danger">SẢN PHẨM TẠM HẾT HÀNG</p>
                 <p class="mb-0 small">Vui lòng để lại email để nhận thông báo khi sản phẩm có hàng trở lại</p>
-                <form class="mt-3 d-flex gap-2">
-                    <input type="email" class="form-control" placeholder="Email của bạn">
+                <form class="mt-3 d-flex gap-2" id="notify-form">
+                    <input type="email" class="form-control" name="email" placeholder="Email của bạn" required>
                     <button type="submit" class="btn btn-primary">Thông báo cho tôi</button>
                 </form>
             </div>
@@ -458,6 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const variant = variants.find(v => v.size === selectedSize && v.color === selectedColor);
         
         if(variant && variant.stock > 0) {
+            console.log('Selected variant:', variant);
             variantIdInput.value = variant.id;
             quantityInput.max = variant.stock;
             quantityInput.value = 1;
@@ -542,6 +553,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Lỗi:', error);
                 alert('Đã xảy ra lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.');
             });
+        });
+    }
+
+    // Notify form submission (placeholder)
+    const notifyForm = document.getElementById('notify-form');
+    if(notifyForm) {
+        notifyForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = this.querySelector('[name="email"]').value;
+            if(email) {
+                alert('Cảm ơn bạn! Chúng tôi sẽ thông báo khi sản phẩm có hàng.');
+                this.reset();
+            } else {
+                alert('Vui lòng nhập email hợp lệ.');
+            }
         });
     }
 });
