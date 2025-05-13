@@ -112,8 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'color' => trim($variant['color'] ?? ''),
                 'size' => trim($variant['size'] ?? ''),
                 'price' => floatval($variant['price'] ?? 0),
-                'stock' => max(0, intval($variant['stock'] ?? 0)),
-                'image' => trim($variant['image'] ?? '')
+                'stock' => max(0, intval($variant['stock'] ?? 0))
             ];
         }
         $debug_logs[] = "Received " . count($variants_data) . " variants from form: " . json_encode($variants_data);
@@ -213,23 +212,6 @@ if (!defined('CURRENCY')) {
         .img-preview {
             max-height: 200px;
             object-fit: contain;
-        }
-        .variant-img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 0.25rem;
-            border: 1px solid #dee2e6;
-        }
-        .variant-img-placeholder {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fa;
-            border-radius: 0.25rem;
-            border: 1px solid #dee2e6;
         }
         .table-variants th, .table-variants td {
             vertical-align: middle;
@@ -361,7 +343,6 @@ if (!defined('CURRENCY')) {
                                             <th>Kích thước</th>
                                             <th>Giá</th>
                                             <th>Số lượng <span class="text-danger">*</span></th>
-                                            <th>Hình ảnh</th>
                                             <th>Hành động</th>
                                         </tr>
                                     </thead>
@@ -384,16 +365,6 @@ if (!defined('CURRENCY')) {
                                                 <input type="number" class="form-control" name="variants[<?php echo $index; ?>][stock]" min="0" value="<?php echo $variant['stock']; ?>" required>
                                             </td>
                                             <td>
-                                                <input type="text" class="form-control mb-2" name="variants[<?php echo $index; ?>][image]" value="<?php echo htmlspecialchars($variant['image']); ?>">
-                                                <?php if ($variant['image']): ?>
-                                                <img src="<?php echo htmlspecialchars($variant['image']); ?>" class="variant-img img-fluid" alt="Variant Image">
-                                                <?php else: ?>
-                                                <div class="variant-img-placeholder">
-                                                    <i class="fas fa-tshirt fa-2x text-secondary"></i>
-                                                </div>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
                                                 <button type="button" class="btn btn-danger btn-sm" onclick="removeVariantRow(this)">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -410,6 +381,27 @@ if (!defined('CURRENCY')) {
                             <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i> Hủy</a>
                         </div>
                     </form>
+
+                    <!-- Debug Info -->
+                    <?php if (DEBUG_MODE): ?>
+                    <div class="debug-info mt-4">
+                        <h6>Debug Information</h6>
+                        <ul>
+                            <?php foreach ($debug_logs as $log): ?>
+                            <li><?php echo htmlspecialchars($log); ?></li>
+                            <?php endforeach; ?>
+                            <li>Categories: <?php echo htmlspecialchars(json_encode($categories)); ?></li>
+                            <li>Variants: <?php echo htmlspecialchars(json_encode($variants)); ?></li>
+                            <li>Product Data: <?php echo htmlspecialchars(json_encode([
+                                'id' => $product->id,
+                                'name' => $product->name,
+                                'category_id' => $product->category_id,
+                                'price' => $product->price,
+                                'image' => $product->image
+                            ])); ?></li>
+                        </ul>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -444,12 +436,6 @@ if (!defined('CURRENCY')) {
                 <input type="number" class="form-control" name="variants[${variantIndex}][stock]" min="0" required>
             </td>
             <td>
-                <input type="text" class="form-control mb-2" name="variants[${variantIndex}][image]">
-                <div class="variant-img-placeholder">
-                    <i class="fas fa-tshirt fa-2x text-secondary"></i>
-                </div>
-            </td>
-            <td>
                 <button type="button" class="btn btn-danger btn-sm" onclick="removeVariantRow(this)">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -479,16 +465,13 @@ if (!defined('CURRENCY')) {
         const variantRows = document.querySelectorAll('.variant-row');
         console.log(`Found ${variantRows.length} variant rows`);
 
-        const images = document.querySelectorAll('.variant-img, .img-preview');
+        const images = document.querySelectorAll('.img-preview');
         console.log(`Found ${images.length} images`);
         images.forEach((img, index) => {
             if (!img.complete || img.naturalWidth === 0) {
                 console.warn(`Image ${index + 1} failed to load: ${img.src}`);
             }
         });
-
-        const placeholders = document.querySelectorAll('.variant-img-placeholder');
-        console.log(`Found ${placeholders.length} image placeholders`);
     });
 </script>
 </body>
