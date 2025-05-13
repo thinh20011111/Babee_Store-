@@ -4,6 +4,9 @@ if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
+// Define debug mode
+define('DEBUG_MODE', true); // Set to false in production
+
 require_once '../models/Order.php';
 require_once '../models/Product.php';
 require_once '../models/User.php';
@@ -14,101 +17,131 @@ require_once '../config/database.php';
 $db = new Database();
 $conn = $db->getConnection();
 
+// Initialize debug log
+$debug_logs = [];
+
 // Initialize objects
 $order = new Order($conn);
 $product = new Product($conn);
 $user = new User($conn);
 $promotion = new Promotion($conn);
 
-// Get statistics
-$total_revenue = $order->getTotalRevenue() ?? 0;
-$order_count = $order->countAll() ?? 0;
-$product_count = $product->countAll() ?? 0;
-$user_count = $user->countAll() ?? 0;
-
-// Get recent orders and bestsellers
-$recent_orders_stmt = $order->getRecentOrders(5);
-$recent_orders = [];
-while ($row = $recent_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
-    $recent_orders[] = $row;
+// Get statistics with debug
+try {
+    $total_revenue = $order->getTotalRevenue() ?? 0;
+    $order_count = $order->countAll() ?? 0;
+    $product_count = $product->countAll() ?? 0;
+    $user_count = $user->countAll() ?? 0;
+    $debug_logs[] = "Statistics fetched: Revenue=$total_revenue, Orders=$order_count, Products=$product_count, Users=$user_count";
+} catch (Exception $e) {
+    $debug_logs[] = "Error fetching statistics: " . $e->getMessage();
+    error_log("Dashboard statistics error: " . $e->getMessage());
 }
 
-$bestsellers_stmt = $product->getBestsellers(5);
-$bestsellers = [];
-while ($row = $bestsellers_stmt->fetch(PDO::FETCH_ASSOC)) {
-    $bestsellers[] = $row;
+// Get recent orders
+try {
+    $recent_orders_stmt = $order->getRecentOrders(5);
+    $recent_orders = [];
+    while ($row = $recent_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
+        $recent_orders[] = $row;
+    }
+    $debug_logs[] = "Recent orders fetched: " . count($recent_orders) . " records";
+} catch (Exception $e) {
+    $debug_logs[] = "Error fetching recent orders: " . $e->getMessage();
+    error_log("Recent orders error: " . $e->getMessage());
 }
 
-// Get monthly revenue data (last 12 months)
-$monthly_revenue_data = array_fill(0, 12, 0); // Initialize with zeros
+// Get bestsellers with image validation
+try {
+    $bestsellers_stmt = $product->getBestsellers(5);
+    $bestsellers = [];
+    while ($row = $bestsellers_stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Validate image
+        if (!empty($row['image']) && !file_exists($_SERVER['DOCUMENT_ROOT'] . $row['image'])) {
+            $debug_logs[] = "Invalid image for product ID {$row['id']}: {$row['image']}";
+            $row['image'] = null; // Set to null if image file doesn't exist
+        }
+        $bestsellers[] = $row;
+    }
+    $debug_logs[] = "Bestsellers fetched: " . count($bestsellers) . " records";
+} catch (Exception $e) {
+    $debug_logs[] = "Error fetching bestsellers: " . $e->getMessage();
+    error_log("Bestsellers error: " . $e->getMessage());
+}
+
+// Get monthly revenue data
+$monthly_revenue_data = array_fill(0, 12, 0);
 $monthly_revenue_labels = [];
 $today = new DateTime();
-$today->modify('first day of this month'); // Start from first day of current month
+$today->modify('first day of this month');
 for ($i = 11; $i >= 0; $i--) {
     $date = (clone $today)->modify("-$i months");
     $monthly_revenue_labels[] = $date->format('M Y');
 }
 
-// Fetch revenue data
-$monthly_revenue_stmt = $order->getMonthlyRevenue();
-$raw_revenue_data = [];
-while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
-    $raw_revenue_data[] = $row;
-    try {
-        // In PostgreSQL, EXTRACT returns decimal/float values, so we need to convert them to integers
-        $year = intval($row['year']);
-        $month = intval($row['month']);
-        
-        // Debug the values
-        error_log("Processing revenue data - Year: $year, Month: $month, Revenue: {$row['revenue']}");
-        
-        // Create month_year using DateTime for consistent format
-        $date_string = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01';
-        $date = DateTime::createFromFormat('Y-m-d', $date_string);
-        
-        if ($date === false) {
-            $errors = DateTime::getLastErrors();
-            $error_msg = "Invalid date format for year: $year, month: $month, date string: $date_string";
-            if ($errors) {
-                $error_msg .= " - DateTime errors: " . json_encode($errors);
+try {
+    $monthly_revenue_stmt = $order->getMonthlyRevenue();
+    $raw_revenue_data = [];
+    while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
+        $raw_revenue_data[] = $row;
+        try {
+            $year = intval($row['year']);
+            $month = intval($row['month']);
+            $date_string = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01';
+            $date = DateTime::createFromFormat('Y-m-d', $date_string);
+            
+            if ($date === false) {
+                $errors = DateTime::getLastErrors();
+                $error_msg = "Invalid date format for year: $year, month: $month, date string: $date_string";
+                if ($errors) {
+                    $error_msg .= " - DateTime errors: " . json_encode($errors);
+                }
+                $debug_logs[] = $error_msg;
+                error_log($error_msg);
+                continue;
             }
-            error_log($error_msg);
-            continue;
+            
+            $month_year = $date->format('M Y');
+            $index = array_search($month_year, $monthly_revenue_labels);
+            if ($index !== false) {
+                $monthly_revenue_data[$index] = (float)($row['revenue'] ?? 0);
+                $debug_logs[] = "Mapped revenue $month_year to index $index: {$monthly_revenue_data[$index]}";
+            } else {
+                $debug_logs[] = "No match for month_year: $month_year in labels";
+            }
+        } catch (Exception $e) {
+            $debug_logs[] = "Error processing revenue data: " . $e->getMessage();
+            error_log("Revenue processing error: " . $e->getMessage());
         }
-        
-        $month_year = $date->format('M Y');
-        error_log("Formatted date: $month_year");
-        
-        $index = array_search($month_year, $monthly_revenue_labels);
-        if ($index !== false) {
-            $monthly_revenue_data[$index] = (float)($row['revenue'] ?? 0);
-            error_log("Mapped revenue $month_year to index $index: {$monthly_revenue_data[$index]}");
-        } else {
-            error_log("No match for month_year: $month_year in labels: " . implode(", ", $monthly_revenue_labels));
-        }
-    } catch (Exception $e) {
-        error_log("Error processing revenue data: " . $e->getMessage());
     }
+} catch (Exception $e) {
+    $debug_logs[] = "Error fetching monthly revenue: " . $e->getMessage();
+    error_log("Monthly revenue error: " . $e->getMessage());
 }
 
-// Debug: Prepare raw data message
+// Debug raw revenue data
 if (empty($raw_revenue_data)) {
     $debug_raw_revenue = "No data returned from getMonthlyRevenue. Check orders table for non-cancelled orders.";
-    $debug_orders_query = "SELECT id, status, total_amount, created_at FROM orders WHERE status != 'cancelled' LIMIT 5";
-    $debug_orders_stmt = $conn->prepare($debug_orders_query);
-    $debug_orders_stmt->execute();
-    $debug_orders = [];
-    while ($row = $debug_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
-        $debug_orders[] = $row;
-    }
-    if (!empty($debug_orders)) {
-        $debug_raw_revenue = "Found orders but no monthly revenue data. Sample orders: " . json_encode($debug_orders);
+    try {
+        $debug_orders_query = "SELECT id, status, total_amount, created_at FROM orders WHERE status != 'cancelled' LIMIT 5";
+        $debug_orders_stmt = $conn->prepare($debug_orders_query);
+        $debug_orders_stmt->execute();
+        $debug_orders = [];
+        while ($row = $debug_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
+            $debug_orders[] = $row;
+        }
+        if (!empty($debug_orders)) {
+            $debug_raw_revenue = "Found orders but no monthly revenue data. Sample orders: " . json_encode($debug_orders);
+        }
+    } catch (Exception $e) {
+        $debug_logs[] = "Error debugging orders: " . $e->getMessage();
+        error_log("Debug orders error: " . $e->getMessage());
     }
 } else {
     $debug_raw_revenue = $raw_revenue_data;
 }
 
-// Debug: Prepare mapped data
+// Debug mapped data
 $debug_mapped_data = [
     'labels' => $monthly_revenue_labels,
     'data' => $monthly_revenue_data
@@ -118,13 +151,14 @@ $debug_mapped_data = [
 if (empty($monthly_revenue_data) || array_sum($monthly_revenue_data) == 0) {
     $monthly_revenue_labels = ['No Data'];
     $monthly_revenue_data = [0];
+    $debug_logs[] = "No valid monthly revenue data, setting default to 'No Data'";
 }
 
 // Convert to JSON
 $monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
 $monthly_revenue_data_json = json_encode($monthly_revenue_data);
 
-// Define currency constant if not defined
+// Define currency constant
 if (!defined('CURRENCY')) {
     define('CURRENCY', 'đ');
 }
@@ -136,11 +170,8 @@ if (!defined('CURRENCY')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         .sidebar {
@@ -181,6 +212,7 @@ if (!defined('CURRENCY')) {
             border-radius: 5px;
             margin-top: 10px;
             font-size: 0.9em;
+            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
         }
         .error-message {
             color: red;
@@ -339,6 +371,7 @@ if (!defined('CURRENCY')) {
                                     ];
                                     $status_colors = ['warning', 'info', 'primary', 'success', 'danger'];
                                     $total_orders = array_sum($status_counts);
+                                    $debug_logs[] = "Order status counts: " . json_encode(array_combine($status_labels, $status_counts));
                                     ?>
                                     <?php if ($total_orders == 0): ?>
                                         <div class="text-center text-muted py-4">No order status data available.</div>
@@ -501,21 +534,55 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Debug Info -->
+                <?php if (DEBUG_MODE): ?>
+                <div class="debug-info mt-4">
+                    <h6>Debug Information</h6>
+                    <ul>
+                        <?php foreach ($debug_logs as $log): ?>
+                        <li><?php echo htmlspecialchars($log); ?></li>
+                        <?php endforeach; ?>
+                        <li>Raw Revenue Data: <?php echo htmlspecialchars(json_encode($debug_raw_revenue)); ?></li>
+                        <li>Mapped Revenue Data: <?php echo htmlspecialchars(json_encode($debug_mapped_data)); ?></li>
+                    </ul>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
-        console.log("Dashboard script started with Bootstrap 5 visualizations.");
+        console.log("Dashboard script started at <?php echo date('Y-m-d H:i:s'); ?>");
 
         function refreshDashboard() {
+            console.log("Refreshing dashboard...");
             location.reload();
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            console.log("DOM fully loaded. Bootstrap 5 visualizations are static.");
+            console.log("DOM fully loaded. Checking Bootstrap components...");
+
+            // Debug Bootstrap components
+            const cards = document.querySelectorAll('.card');
+            console.log(`Found ${cards.length} card elements`);
+            if (cards.length === 0) {
+                console.error("No Bootstrap cards found. Check Bootstrap CSS inclusion.");
+            }
+
+            const images = document.querySelectorAll('.bestseller-img');
+            console.log(`Found ${images.length} bestseller images`);
+            images.forEach((img, index) => {
+                if (!img.complete || img.naturalWidth === 0) {
+                    console.warn(`Bestseller image ${index + 1} failed to load: ${img.src}`);
+                }
+            });
+
+            const placeholders = document.querySelectorAll('.bestseller-img-placeholder');
+            console.log(`Found ${placeholders.length} bestseller image placeholders`);
+
+            // Log data for debugging
             console.log("Raw Revenue Data:", <?php echo json_encode($debug_raw_revenue); ?>);
             console.log("Mapped Revenue Data:", <?php echo json_encode($debug_mapped_data); ?>);
             
