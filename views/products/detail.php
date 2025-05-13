@@ -256,7 +256,7 @@ include 'views/layouts/header.php';
                             <li>Chất liệu: 100% Cotton</li>
                             <li>Sản xuất tại Việt Nam</li>
                             <li>Phù hợp với phong cách đường phố</li>
-                            <li>Hướng dẫn giặt: Giặt máy ở nhiệt độ thấp, không tẩy</li>
+                            <li>Hướng dẫn gi CTL: Giặt máy ở nhiệt độ thấp, không tẩy</li>
                         </ul>
                     </div>
                     <div class="tab-pane fade" id="shipping" role="tabpanel">
@@ -275,7 +275,7 @@ include 'views/layouts/header.php';
                                 <tr>
                                     <th>Size</th>
                                     <th>Chiều cao (cm)</th>
-                                    <th>Cân nặng (kg)</th>
+  <th>Cân nặng (kg)</th>
                                     <th>Ngực (cm)</th>
                                     <th>Eo (cm)</th>
                                 </tr>
