@@ -12,11 +12,11 @@ class Product {
     public $sale_price;
     public $category_id;
     public $image;
-    public $stock;
     public $is_featured;
     public $is_sale;
     public $created_at;
     public $updated_at;
+    public $variants; // Added to store product variants
     
     // Constructor with DB connection
     public function __construct($db) {
@@ -31,7 +31,7 @@ class Product {
                 ORDER BY p.created_at DESC";
         
         // Add limit if specified
-        if($limit) {
+        if ($limit) {
             $query .= " LIMIT " . $limit;
         }
         
@@ -61,7 +61,6 @@ class Product {
             
             return $stmt;
         } catch(PDOException $e) {
-            // Handle database error gracefully
             error_log("Database error in Product::readFeatured: " . $e->getMessage());
             return false;
         }
@@ -87,7 +86,6 @@ class Product {
             
             return $stmt;
         } catch(PDOException $e) {
-            // Handle database error gracefully
             error_log("Database error in Product::readAllSale: " . $e->getMessage());
             return false;
         }
@@ -201,22 +199,41 @@ class Product {
         $stmt->execute();
         
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if($row) {
+        if ($row) {
             $this->name = $row['name'];
             $this->description = $row['description'];
             $this->price = $row['price'];
             $this->sale_price = $row['sale_price'];
             $this->category_id = $row['category_id'];
             $this->image = $row['image'];
-            $this->stock = $row['stock'];
             $this->is_featured = $row['is_featured'];
             $this->is_sale = $row['is_sale'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
+            $this->variants = $this->getVariants(); // Load variants
             return true;
         }
         
         return false;
+    }
+    
+    // Get product variants
+    public function getVariants() {
+        $query = "SELECT * FROM product_variants WHERE product_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    // Get total stock from variants
+    public function getTotalStock() {
+        $query = "SELECT SUM(stock) as total_stock FROM product_variants WHERE product_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row['total_stock'] ?? 0;
     }
     
     // Create product
@@ -229,7 +246,6 @@ class Product {
                     sale_price = :sale_price, 
                     category_id = :category_id, 
                     image = :image, 
-                    stock = :stock, 
                     is_featured = :is_featured, 
                     is_sale = :is_sale, 
                     created_at = :created_at, 
@@ -244,7 +260,6 @@ class Product {
         $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
         $this->category_id = htmlspecialchars(strip_tags($this->category_id));
         $this->image = htmlspecialchars(strip_tags($this->image));
-        $this->stock = htmlspecialchars(strip_tags($this->stock));
         $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
         $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
         $this->created_at = date('Y-m-d H:i:s');
@@ -257,14 +272,13 @@ class Product {
         $stmt->bindParam(':sale_price', $this->sale_price);
         $stmt->bindParam(':category_id', $this->category_id);
         $stmt->bindParam(':image', $this->image);
-        $stmt->bindParam(':stock', $this->stock);
         $stmt->bindParam(':is_featured', $this->is_featured);
         $stmt->bindParam(':is_sale', $this->is_sale);
         $stmt->bindParam(':created_at', $this->created_at);
         $stmt->bindParam(':updated_at', $this->updated_at);
         
         // Execute the query
-        if($stmt->execute()) {
+        if ($stmt->execute()) {
             return $this->conn->lastInsertId();
         }
         
@@ -281,7 +295,6 @@ class Product {
                     sale_price = :sale_price, 
                     category_id = :category_id, 
                     image = :image, 
-                    stock = :stock, 
                     is_featured = :is_featured, 
                     is_sale = :is_sale, 
                     updated_at = :updated_at 
@@ -297,7 +310,6 @@ class Product {
         $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
         $this->category_id = htmlspecialchars(strip_tags($this->category_id));
         $this->image = htmlspecialchars(strip_tags($this->image));
-        $this->stock = htmlspecialchars(strip_tags($this->stock));
         $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
         $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
         $this->updated_at = date('Y-m-d H:i:s');
@@ -309,14 +321,13 @@ class Product {
         $stmt->bindParam(':sale_price', $this->sale_price);
         $stmt->bindParam(':category_id', $this->category_id);
         $stmt->bindParam(':image', $this->image);
-        $stmt->bindParam(':stock', $this->stock);
         $stmt->bindParam(':is_featured', $this->is_featured);
         $stmt->bindParam(':is_sale', $this->is_sale);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
         
         // Execute the query
-        if($stmt->execute()) {
+        if ($stmt->execute()) {
             return true;
         }
         
@@ -329,7 +340,7 @@ class Product {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
         
-        if($stmt->execute()) {
+        if ($stmt->execute()) {
             return true;
         }
         
@@ -401,10 +412,10 @@ class Product {
     // Get bestselling products
     public function getBestsellers($limit = 5) {
         $query = "SELECT p.*, c.name as category_name, 
-                    SUM(od.quantity) as total_sold
+                    SUM(oi.quantity) as total_sold
                 FROM " . $this->table_name . " p
                 LEFT JOIN categories c ON p.category_id = c.id
-                LEFT JOIN order_details od ON p.id = od.product_id
+                LEFT JOIN order_items oi ON p.id = oi.product_id
                 GROUP BY p.id
                 ORDER BY total_sold DESC
                 LIMIT ?";
@@ -416,9 +427,9 @@ class Product {
         return $stmt;
     }
     
-    // Update stock
-    public function updateStock($quantity) {
-        $query = "UPDATE " . $this->table_name . " 
+    // Update stock for a specific variant
+    public function updateVariantStock($variant_id, $quantity) {
+        $query = "UPDATE product_variants 
                 SET 
                     stock = stock - ?, 
                     updated_at = NOW() 
@@ -427,9 +438,9 @@ class Product {
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $quantity, PDO::PARAM_INT);
-        $stmt->bindParam(2, $this->id, PDO::PARAM_INT);
+        $stmt->bindParam(2, $variant_id, PDO::PARAM_INT);
         
-        if($stmt->execute()) {
+        if ($stmt->execute()) {
             return true;
         }
         
