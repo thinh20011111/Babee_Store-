@@ -11,7 +11,8 @@ require_once 'config/database.php';
 
 // Kiểm tra kết nối
 try {
-    $conn = getConnection();
+    $db = new Database(); // Create an instance of the Database class
+    $conn = $db->getConnection(); // Call the getConnection method on the instance
 } catch (PDOException $e) {
     die("Database Connection failed: " . $e->getMessage());
 }
