@@ -534,20 +534,6 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
-
-                <!-- Debug Info -->
-                <?php if (DEBUG_MODE): ?>
-                <div class="debug-info mt-4">
-                    <h6>Debug Information</h6>
-                    <ul>
-                        <?php foreach ($debug_logs as $log): ?>
-                        <li><?php echo htmlspecialchars($log); ?></li>
-                        <?php endforeach; ?>
-                        <li>Raw Revenue Data: <?php echo htmlspecialchars(json_encode($debug_raw_revenue)); ?></li>
-                        <li>Mapped Revenue Data: <?php echo htmlspecialchars(json_encode($debug_mapped_data)); ?></li>
-                    </ul>
-                </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
