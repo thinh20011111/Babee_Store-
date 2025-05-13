@@ -25,25 +25,26 @@ class CartController {
     public function update() {
         // Check if request is AJAX
         if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            // Get product ID and quantity
+            // Get product ID, variant ID, and quantity
             $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+            $variant_id = isset($_POST['variant_id']) ? intval($_POST['variant_id']) : 0;
             $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
             
-            if($product_id <= 0 || $quantity <= 0) {
-                echo json_encode(['success' => false, 'message' => 'Invalid product or quantity.']);
+            if($product_id <= 0 || $variant_id <= 0 || $quantity <= 0) {
+                echo json_encode(['success' => false, 'message' => 'Invalid product, variant, or quantity.']);
                 exit;
             }
             
             // Update cart item
-            $this->cart->updateItem($product_id, $quantity);
+            $this->cart->updateItem($product_id, $quantity, $variant_id);
             
             // Get updated cart totals
             $cart_items = $this->cart->getItems();
             $cart_subtotal = 0;
             
-            if(isset($cart_items[$product_id])) {
-                $item = $cart_items[$product_id];
-                $price = (!empty($item['sale_price']) && $item['sale_price'] > 0) ? $item['sale_price'] : $item['price'];
+            if(isset($cart_items[$product_id . '_' . $variant_id])) {
+                $item = $cart_items[$product_id . '_' . $variant_id];
+                $price = (!empty($item['data']['sale_price']) && $item['data']['sale_price'] > 0) ? $item['data']['sale_price'] : $item['data']['price'];
                 $item_total = $price * $item['quantity'];
                 $cart_subtotal = $this->cart->getTotalPrice();
             }
@@ -65,12 +66,13 @@ class CartController {
     
     // Remove cart item
     public function remove() {
-        // Get product ID
-        $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        // Get product ID and variant ID
+        $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;
+        $variant_id = isset($_GET['variant_id']) ? intval($_GET['variant_id']) : 0;
         
-        if($product_id > 0) {
+        if($product_id > 0 && $variant_id > 0) {
             // Remove item from cart
-            $this->cart->removeItem($product_id);
+            $this->cart->removeItem($product_id, $variant_id);
         }
         
         // Check if request is AJAX
@@ -112,7 +114,7 @@ class CartController {
             $code = isset($_POST['code']) ? trim($_POST['code']) : '';
             
             if(empty($code)) {
-                echo json_encode(['success' => false, 'message' => 'Please enter a promotion code.']);
+                echo json_encode(['success' => false, 'message' => 'Vui lòng nhập mã khuyến mãi.']);
                 exit;
             }
             
@@ -206,7 +208,8 @@ class CartController {
                     'full_name' => $user->full_name,
                     'email' => $user->email,
                     'phone' => $user->phone,
-                    'address' => $user->address
+                    'address' => $user->address,
+                    'city' => $user->city ?? '' // Thêm city nếu có
                 ];
             }
         }
@@ -216,7 +219,7 @@ class CartController {
         
         if($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Process checkout form
-            $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
+            $shipping_name = isset($_POST['shipping_name']) ? trim($_POST['shipping_name']) : '';
             $email = isset($_POST['email']) ? trim($_POST['email']) : '';
             $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
             $address = isset($_POST['address']) ? trim($_POST['address']) : '';
@@ -225,10 +228,20 @@ class CartController {
             $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
             
             // Validate form data
-            if(empty($full_name) || empty($email) || empty($phone) || empty($address) || empty($city) || empty($payment_method)) {
-                $error = "Please fill all required fields.";
+            if(empty($shipping_name)) {
+                $error = "Vui lòng nhập tên người nhận.";
+            } elseif(empty($email)) {
+                $error = "Vui lòng nhập email.";
             } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $error = "Invalid email format.";
+                $error = "Định dạng email không hợp lệ.";
+            } elseif(empty($phone)) {
+                $error = "Vui lòng nhập số điện thoại.";
+            } elseif(empty($address)) {
+                $error = "Vui lòng nhập địa chỉ giao hàng.";
+            } elseif(empty($city)) {
+                $error = "Vui lòng nhập thành phố.";
+            } elseif(empty($payment_method)) {
+                $error = "Vui lòng chọn phương thức thanh toán.";
             } else {
                 // Create order
                 $order = new Order($this->conn);
@@ -239,20 +252,27 @@ class CartController {
                 $order->shipping_address = $address;
                 $order->shipping_city = $city;
                 $order->shipping_phone = $phone;
+                $order->shipping_name = $shipping_name;
                 $order->notes = $notes;
                 
-                $order_id = $order->create();
-                
-                if($order_id) {
+                $this->conn->beginTransaction();
+                try {
+                    $order_id = $order->create();
+                    if(!$order_id) {
+                        throw new Exception("Không thể tạo đơn hàng.");
+                    }
+                    
                     // Add order details
                     foreach($cart_items as $item) {
-                        $price = (!empty($item['sale_price']) && $item['sale_price'] > 0) ? $item['sale_price'] : $item['price'];
-                        $order->addOrderDetails($item['id'], $item['quantity'], $price);
+                        $price = (!empty($item['data']['sale_price']) && $item['data']['sale_price'] > 0) ? $item['data']['sale_price'] : $item['data']['price'];
+                        $order->addOrderDetails($item['product_id'], $item['quantity'], $price, $item['variant_id']);
                         
-                        // Update product stock
+                        // Update product variant stock
                         $product = new Product($this->conn);
-                        $product->id = $item['id'];
-                        $product->updateStock($item['quantity']);
+                        $product->id = $item['product_id'];
+                        if(!$product->updateVariantStock($item['variant_id'], $item['quantity'])) {
+                            throw new Exception("Không thể cập nhật tồn kho cho biến thể ID {$item['variant_id']}.");
+                        }
                     }
                     
                     // Update promotion usage if applied
@@ -262,14 +282,19 @@ class CartController {
                         $promotion->incrementUsage();
                     }
                     
+                    $this->conn->commit();
+                    
                     // Clear cart and promotion
                     $this->cart->clear();
                     unset($_SESSION['promotion']);
                     
-                    // Set success message
-                    $success = "Order placed successfully. Your order number is " . $order->order_number;
-                } else {
-                    $error = "Failed to create order. Please try again.";
+                    // Redirect to success page
+                    header("Location: index.php?controller=order&action=success&id=$order_id");
+                    exit;
+                } catch(Exception $e) {
+                    $this->conn->rollBack();
+                    error_log("Lỗi tạo đơn hàng: " . $e->getMessage());
+                    $error = "Không thể xử lý đơn hàng: " . $e->getMessage();
                 }
             }
         }

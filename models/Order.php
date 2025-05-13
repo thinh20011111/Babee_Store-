@@ -14,6 +14,7 @@ class Order {
     public $shipping_address;
     public $shipping_city;
     public $shipping_phone;
+    public $shipping_name;
     public $notes;
     public $created_at;
     public $updated_at;
@@ -77,6 +78,7 @@ class Order {
             $this->shipping_address = $row['shipping_address'];
             $this->shipping_city = $row['shipping_city'];
             $this->shipping_phone = $row['shipping_phone'];
+            $this->shipping_name = $row['shipping_name'];
             $this->notes = $row['notes'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
@@ -105,6 +107,7 @@ class Order {
                         shipping_address = :shipping_address, 
                         shipping_city = :shipping_city, 
                         shipping_phone = :shipping_phone, 
+                        shipping_name = :shipping_name, 
                         notes = :notes, 
                         created_at = :created_at, 
                         updated_at = :updated_at";
@@ -119,6 +122,7 @@ class Order {
             $this->shipping_address = htmlspecialchars(strip_tags($this->shipping_address));
             $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
             $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
+            $this->shipping_name = htmlspecialchars(strip_tags($this->shipping_name ?: 'Unknown'));
             $this->notes = htmlspecialchars(strip_tags($this->notes));
             $this->created_at = date('Y-m-d H:i:s');
             $this->updated_at = date('Y-m-d H:i:s');
@@ -132,6 +136,7 @@ class Order {
             $stmt->bindParam(':shipping_address', $this->shipping_address);
             $stmt->bindParam(':shipping_city', $this->shipping_city);
             $stmt->bindParam(':shipping_phone', $this->shipping_phone);
+            $stmt->bindParam(':shipping_name', $this->shipping_name);
             $stmt->bindParam(':notes', $this->notes);
             $stmt->bindParam(':created_at', $this->created_at);
             $stmt->bindParam(':updated_at', $this->updated_at);
@@ -149,6 +154,7 @@ class Order {
         } catch(Exception $e) {
             // Rollback transaction on error
             $this->conn->rollback();
+            error_log("Error creating order: " . $e->getMessage());
             return false;
         }
     }
@@ -162,6 +168,7 @@ class Order {
                     shipping_address = :shipping_address, 
                     shipping_city = :shipping_city, 
                     shipping_phone = :shipping_phone, 
+                    shipping_name = :shipping_name, 
                     notes = :notes, 
                     updated_at = :updated_at 
                 WHERE 
@@ -175,6 +182,7 @@ class Order {
         $this->shipping_address = htmlspecialchars(strip_tags($this->shipping_address));
         $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
         $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
+        $this->shipping_name = htmlspecialchars(strip_tags($this->shipping_name ?: 'Unknown'));
         $this->notes = htmlspecialchars(strip_tags($this->notes));
         $this->updated_at = date('Y-m-d H:i:s');
         
@@ -184,6 +192,7 @@ class Order {
         $stmt->bindParam(':shipping_address', $this->shipping_address);
         $stmt->bindParam(':shipping_city', $this->shipping_city);
         $stmt->bindParam(':shipping_phone', $this->shipping_phone);
+        $stmt->bindParam(':shipping_name', $this->shipping_name);
         $stmt->bindParam(':notes', $this->notes);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
@@ -249,6 +258,7 @@ class Order {
         } catch(Exception $e) {
             // Rollback transaction on error
             $this->conn->rollback();
+            error_log("Error deleting order: " . $e->getMessage());
             return false;
         }
     }

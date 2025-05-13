@@ -113,14 +113,15 @@ class ProductController {
 
         // Kiểm tra nếu là request AJAX
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            // Get product ID and quantity
+            // Get product ID, variant ID, and quantity
             $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+            $variant_id = isset($_POST['variant_id']) ? intval($_POST['variant_id']) : 0;
             $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
             
-            error_log("addToCart AJAX: product_id=$product_id, quantity=$quantity");
+            error_log("addToCart AJAX: product_id=$product_id, variant_id=$variant_id, quantity=$quantity");
             
-            if ($product_id <= 0 || $quantity <= 0) {
-                echo json_encode(['success' => false, 'message' => 'Invalid product or quantity.']);
+            if ($product_id <= 0 || $variant_id <= 0 || $quantity <= 0) {
+                echo json_encode(['success' => false, 'message' => 'Invalid product, variant, or quantity.']);
                 exit;
             }
             
@@ -131,34 +132,65 @@ class ProductController {
                 exit;
             }
             
-            // Check stock availability
-            if ($this->product->stock < $quantity) {
-                echo json_encode(['success' => false, 'message' => 'Not enough stock available.']);
+            // Check variant details and stock availability
+            $query = "SELECT stock, price FROM product_variants WHERE id = ? AND product_id = ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([$variant_id, $product_id]);
+            $variant = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$variant) {
+                echo json_encode(['success' => false, 'message' => 'Variant not found.']);
+                exit;
+            }
+            
+            if ($variant['stock'] < $quantity) {
+                echo json_encode(['success' => false, 'message' => 'Not enough stock available for this variant.']);
                 exit;
             }
             
             // Create or get cart
-            $cart = new Cart();
+            $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
             
             // Prepare product data
             $product_data = [
                 'name' => $this->product->name,
-                'price' => $this->product->price,
+                'price' => $variant['price'] ?? $this->product->price,
                 'sale_price' => $this->product->sale_price,
-                'image' => $this->product->image
+                'image' => $this->product->image,
+                'variant_id' => $variant_id
             ];
             
-            // Add item to cart
-            if ($cart->addItem($product_id, $quantity, $product_data)) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Product added to cart.',
-                    'cart_count' => $cart->getTotalItems(),
-                    'cart_total' => $cart->getTotalPrice()
-                ]);
+            // Create unique key for cart item (product_id + variant_id)
+            $cart_key = $product_id . '_' . $variant_id;
+            
+            // Add or update item in cart
+            if (isset($cart[$cart_key])) {
+                $cart[$cart_key]['quantity'] += $quantity;
             } else {
-                echo json_encode(['success' => false, 'message' => 'Failed to add product to cart.']);
+                $cart[$cart_key] = [
+                    'product_id' => $product_id,
+                    'variant_id' => $variant_id,
+                    'quantity' => $quantity,
+                    'data' => $product_data
+                ];
             }
+            
+            // Update session cart
+            $_SESSION['cart'] = $cart;
+            
+            // Calculate cart totals
+            $cart_count = array_sum(array_column($cart, 'quantity'));
+            $cart_total = array_sum(array_map(function($item) {
+                $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
+                return $item['quantity'] * $price;
+            }, $cart));
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Product added to cart.',
+                'cart_count' => $cart_count,
+                'cart_total' => $cart_total
+            ]);
             exit;
         }
         
