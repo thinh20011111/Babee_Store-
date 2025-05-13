@@ -144,8 +144,9 @@ include 'views/layouts/header.php';
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
                                 // Lọc kích cỡ có stock > 0
-                                $sizes = !empty($this->variants) ? array_unique(array_filter(array_column($this->variants, 'size'), function($size) use ($this) {
-                                    foreach ($this->variants as $v) {
+                                $variants = $this->variants ?? [];
+                                $sizes = !empty($variants) ? array_unique(array_filter(array_column($variants, 'size'), function($size) use ($variants) {
+                                    foreach ($variants as $v) {
                                         if ($v['size'] === $size && $v['stock'] > 0) {
                                             return true;
                                         }
