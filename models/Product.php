@@ -209,7 +209,7 @@ class Product {
             $this->is_featured = $row['is_featured'];
             $this->is_sale = $row['is_sale'];
             $this->created_at = $row['created_at'];
-            $this->updated_at = $row['updated_at']; // Sửa lỗi ở đây
+            $this->updated_at = $row['updated_at'];
             $this->variants = $this->getVariants(); // Load variants
             return true;
         }
@@ -468,8 +468,8 @@ class Product {
             error_log("Deleted old variants for product ID: " . $this->id);
 
             // Thêm các biến thể mới
-            $query = "INSERT INTO product_variants (product_id, color, size, price, stock, image) 
-                      VALUES (?, ?, ?, ?, ?, ?)";
+            $query = "INSERT INTO product_variants (product_id, color, size, price, stock) 
+                      VALUES (?, ?, ?, ?, ?)";
             $stmt = $this->conn->prepare($query);
 
             foreach ($variants as $variant) {
@@ -477,14 +477,12 @@ class Product {
                 $size = htmlspecialchars(strip_tags($variant['size'] ?? ''));
                 $price = floatval($variant['price'] ?? 0);
                 $stock = intval($variant['stock'] ?? 0);
-                $image = htmlspecialchars(strip_tags($variant['image'] ?? ''));
 
                 $stmt->bindParam(1, $this->id, PDO::PARAM_INT);
                 $stmt->bindParam(2, $color);
                 $stmt->bindParam(3, $size);
                 $stmt->bindParam(4, $price);
                 $stmt->bindParam(5, $stock, PDO::PARAM_INT);
-                $stmt->bindParam(6, $image);
 
                 $stmt->execute();
                 error_log("Inserted variant for product ID: " . $this->id . ", color: " . $color . ", size: " . $size);
