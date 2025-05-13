@@ -3,23 +3,23 @@ $page_title = "Trang chủ";
 include 'views/layouts/header.php'; 
 ?>
 
-<!-- Carousel/Banner Section -->
+<!-- Hero Banner Section -->
 <?php if(!empty($banners)): ?>
-<div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+<div id="mainCarousel" class="carousel slide banner-carousel mb-5" data-bs-ride="carousel">
     <div class="carousel-indicators">
         <?php foreach($banners as $index => $banner): ?>
         <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="<?php echo $index; ?>" <?php echo $index === 0 ? 'class="active"' : ''; ?>></button>
         <?php endforeach; ?>
     </div>
-    <div class="carousel-inner rounded shadow">
+    <div class="carousel-inner">
         <?php foreach($banners as $index => $banner): ?>
         <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
-            <img src="<?php echo htmlspecialchars($banner['image']); ?>" class="d-block w-100" alt="<?php echo htmlspecialchars($banner['title']); ?>">
-            <div class="carousel-caption d-none d-md-block">
-                <h2><?php echo htmlspecialchars($banner['title']); ?></h2>
-                <p><?php echo htmlspecialchars($banner['subtitle']); ?></p>
+            <img src="<?php echo htmlspecialchars($banner['image']); ?>" class="d-block" alt="<?php echo htmlspecialchars($banner['title']); ?>">
+            <div class="carousel-caption">
+                <h2 class="fade-in"><?php echo htmlspecialchars($banner['title']); ?></h2>
+                <p class="fade-in"><?php echo htmlspecialchars($banner['subtitle']); ?></p>
                 <?php if(!empty($banner['link'])): ?>
-                <a href="<?php echo htmlspecialchars($banner['link']); ?>" class="btn btn-primary">Mua ngay</a>
+                <a href="<?php echo htmlspecialchars($banner['link']); ?>" class="btn btn-light btn-lg"><?php echo isset($banner['button_text']) ? htmlspecialchars($banner['button_text']) : 'SHOP NOW'; ?></a>
                 <?php endif; ?>
             </div>
         </div>
@@ -33,6 +33,17 @@ include 'views/layouts/header.php';
         <span class="carousel-control-next-icon" aria-hidden="true"></span>
         <span class="visually-hidden">Sau</span>
     </button>
+</div>
+<?php else: ?>
+<!-- Fallback Hero Banner -->
+<div class="hero-banner mb-5 position-relative">
+    <div class="hero-banner-image" style="background-image: url('https://via.placeholder.com/1200x500/000000/FFFFFF/?text=STREETSTYLE'); background-size: cover; background-position: center; height: 500px;">
+        <div class="position-absolute top-50 start-50 translate-middle text-center text-white p-4" style="background-color: rgba(0,0,0,0.5); max-width: 600px; width: 80%;">
+            <h1 class="display-4 fw-bold mb-3">NEW ARRIVALS</h1>
+            <p class="lead mb-4">Phong cách thời trang đường phố táo bạo và nổi bật dành cho giới trẻ</p>
+            <a href="index.php?controller=product&action=list" class="btn btn-light btn-lg">SHOP NOW</a>
+        </div>
+    </div>
 </div>
 <?php endif; ?>
 

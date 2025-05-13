@@ -12,146 +12,156 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Google Fonts - Cute, child-friendly fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Modern, bold fonts for streetwear fashion -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
     
     <style>
         :root {
-            --primary-color: <?php echo isset($site_colors['primary_color']) ? $site_colors['primary_color'] : '#ff6b6b'; ?>;
-            --secondary-color: <?php echo isset($site_colors['secondary_color']) ? $site_colors['secondary_color'] : '#4ecdc4'; ?>;
-            --text-color: <?php echo isset($site_colors['text_color']) ? $site_colors['text_color'] : '#333333'; ?>;
-            --background-color: <?php echo isset($site_colors['background_color']) ? $site_colors['background_color'] : '#ffffff'; ?>;
-            --footer-color: <?php echo isset($site_colors['footer_color']) ? $site_colors['footer_color'] : '#292b2c'; ?>;
+            --primary-color: <?php echo isset($site_colors['primary_color']) ? $site_colors['primary_color'] : '#FF2D55'; ?>;
+            --secondary-color: <?php echo isset($site_colors['secondary_color']) ? $site_colors['secondary_color'] : '#4A00E0'; ?>;
+            --accent-color: <?php echo isset($site_colors['accent_color']) ? $site_colors['accent_color'] : '#FFCC00'; ?>;
+            --text-color: <?php echo isset($site_colors['text_color']) ? $site_colors['text_color'] : '#121212'; ?>;
+            --background-color: <?php echo isset($site_colors['background_color']) ? $site_colors['background_color'] : '#FFFFFF'; ?>;
+            --dark-bg-color: <?php echo isset($site_colors['dark_bg_color']) ? $site_colors['dark_bg_color'] : '#1A1A1A'; ?>;
+            --light-bg-color: <?php echo isset($site_colors['light_bg_color']) ? $site_colors['light_bg_color'] : '#F7F7F7'; ?>;
+            --footer-color: <?php echo isset($site_colors['footer_color']) ? $site_colors['footer_color'] : '#0D0D0D'; ?>;
+            --success-color: <?php echo isset($site_colors['success_color']) ? $site_colors['success_color'] : '#00C851'; ?>;
+            --warning-color: <?php echo isset($site_colors['warning_color']) ? $site_colors['warning_color'] : '#FFBB33'; ?>;
+            --danger-color: <?php echo isset($site_colors['danger_color']) ? $site_colors['danger_color'] : '#FF3547'; ?>;
         }
     </style>
 </head>
 <body>
-    <!-- Top Bar -->
-    <div class="top-bar bg-light py-2">
+    <!-- Top Bar - Simple with high contrast -->
+    <div class="top-bar py-2" style="background-color: var(--dark-bg-color); color: white;">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <small class="text-muted">
-                        <i class="fas fa-envelope me-2"></i> <?php echo defined('ADMIN_EMAIL') ? ADMIN_EMAIL : 'contact@babeestore.com'; ?>
-                        <i class="fas fa-phone ms-3 me-2"></i> <?php echo '+84 123 456 789'; ?>
-                    </small>
+            <div class="row align-items-center">
+                <div class="col-md-6 d-none d-md-block">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3 small"><i class="fas fa-bolt me-1"></i> FREESHIP FOR ORDERS OVER 1.000.000₫</span>
+                        <span class="small"><i class="far fa-clock me-1"></i> SHIP TOÀN QUỐC 1-3 NGÀY</span>
+                    </div>
                 </div>
-                <div class="col-md-6 text-end">
-                    <small>
-                        <?php if(isset($_SESSION['user_id'])): ?>
-                            <a href="index.php?controller=user&action=profile" class="text-decoration-none me-3">
-                                <i class="fas fa-user me-1"></i> <?php echo $_SESSION['username']; ?>
-                            </a>
-                            <a href="index.php?controller=user&action=orders" class="text-decoration-none me-3">
-                                <i class="fas fa-box me-1"></i> Đơn hàng của tôi
-                            </a>
-                            <a href="index.php?controller=user&action=logout" class="text-decoration-none">
-                                <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
-                            </a>
-                        <?php else: ?>
-                            <a href="index.php?controller=user&action=login" class="text-decoration-none me-3">
-                                <i class="fas fa-sign-in-alt me-1"></i> Đăng nhập
-                            </a>
-                            <a href="index.php?controller=user&action=register" class="text-decoration-none">
-                                <i class="fas fa-user-plus me-1"></i> Đăng ký
-                            </a>
-                        <?php endif; ?>
-                    </small>
+                <div class="col-md-6 text-center text-md-end small">
+                    <?php if(isset($_SESSION['user_id'])): ?>
+                        <a href="index.php?controller=user&action=profile" class="text-light me-3">
+                            <i class="fas fa-user me-1"></i> <?php echo $_SESSION['username']; ?>
+                        </a>
+                        <a href="index.php?controller=user&action=orders" class="text-light me-3">
+                            <i class="fas fa-box me-1"></i> Orders
+                        </a>
+                        <a href="index.php?controller=user&action=logout" class="text-light">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </a>
+                    <?php else: ?>
+                        <a href="index.php?controller=user&action=login" class="text-light me-3">
+                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                        </a>
+                        <a href="index.php?controller=user&action=register" class="text-light">
+                            <i class="fas fa-user-plus me-1"></i> Register
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Header -->
-    <header class="main-header py-3">
+    <!-- Main Header - Bold & Modern -->
+    <header class="main-header py-3 bg-white">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-3 mb-3 mb-md-0">
+                <div class="col-md-3 col-6 mb-2 mb-md-0">
                     <a href="index.php" class="text-decoration-none">
-                        <h1 class="logo m-0">
-                            <span class="text-primary">Babee</span> <span class="text-secondary">Store</span>
+                        <h1 class="site-logo m-0">
+                            <span class="text-primary fw-black logo-text">STREET</span><span class="text-secondary fw-light logo-text">STYLE</span>
                         </h1>
                     </a>
                 </div>
-                <div class="col-md-5 mb-3 mb-md-0">
+                <div class="col-md-5 col-12 order-3 order-md-2 mt-3 mt-md-0">
                     <form action="index.php" method="GET" class="search-form">
                         <input type="hidden" name="controller" value="product">
                         <input type="hidden" name="action" value="list">
                         <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="Tìm kiếm sản phẩm cho bé..." 
+                            <input type="text" name="search" class="form-control rounded-pill-start search-input" 
+                                placeholder="Tìm kiếm sản phẩm..." 
                                 value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                            <button class="btn btn-primary" type="submit">
+                            <button class="btn btn-primary rounded-pill-end" type="submit">
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
                     </form>
                 </div>
-                <div class="col-md-4 text-end">
-                    <?php
-                    // Initialize cart
-                    $cart = new Cart();
-                    $cart_count = $cart->getTotalItems();
-                    ?>
-                    <a href="index.php?controller=cart&action=index" class="btn btn-outline-primary position-relative">
-                        <i class="fas fa-shopping-cart me-1"></i> Giỏ hàng
-                        <?php if($cart_count > 0): ?>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            <?php echo $cart_count; ?>
-                        </span>
-                        <?php endif; ?>
-                    </a>
+                <div class="col-md-4 col-6 text-end order-2 order-md-3">
+                    <div class="d-flex justify-content-end">
+                        <a href="index.php?controller=user&action=wishlist" class="btn btn-link text-dark me-2 position-relative">
+                            <i class="fas fa-heart fs-5"></i>
+                        </a>
+                        
+                        <?php
+                        // Initialize cart
+                        $cart = new Cart();
+                        $cart_count = $cart->getTotalItems();
+                        ?>
+                        <a href="index.php?controller=cart&action=index" class="btn btn-link text-dark position-relative">
+                            <i class="fas fa-shopping-cart fs-5"></i>
+                            <?php if($cart_count > 0): ?>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                                <?php echo $cart_count; ?>
+                            </span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <!-- Navigation - Bold & Colorful -->
+    <nav class="main-nav py-0 sticky-top">
         <div class="container">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active' : ''; ?>" 
-                           href="index.php">Trang chủ</a>
-                    </li>
+            <div class="nav-container bg-white py-2 px-3 rounded-bottom shadow-sm">
+                <div class="d-flex justify-content-between">
+                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
+                        <i class="fas fa-bars"></i> MENU
+                    </button>
                     
-                    <?php
-                        $category = new Category($conn);
-                        $categoryStmt = $category->read(); // Thay $stmt thành $categoryStmt
-                        if ($categoryStmt) {
-                            while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
-                        ?>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active' : ''; ?>" 
-                            href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
-                                <?php echo $row['name']; ?>
-                            </a>
-                        </li>
-                    <?php endwhile; } ?>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active' : ''; ?>" 
-                           href="index.php?controller=product&action=list&is_sale=1">Khuyến mãi</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'home' && isset($_GET['action']) && $_GET['action'] == 'about') ? 'active' : ''; ?>" 
-                           href="index.php?controller=home&action=about">Giới thiệu</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'home' && isset($_GET['action']) && $_GET['action'] == 'contact') ? 'active' : ''; ?>" 
-                           href="index.php?controller=home&action=contact">Liên hệ</a>
-                    </li>
-                </ul>
-                <div class="d-flex">
-                    <a href="index.php?controller=order&action=track" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-truck me-1"></i> Theo dõi đơn hàng
-                    </a>
+                    <div class="collapse navbar-collapse" id="mainNavigation">
+                        <ul class="navbar-nav nav-pills nav-fill mx-auto">
+                            <li class="nav-item">
+                                <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
+                                   href="index.php">HOME</a>
+                            </li>
+                            
+                            <?php
+                                $category = new Category($conn);
+                                $categoryStmt = $category->read();
+                                if ($categoryStmt) {
+                                    while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                                ?>
+                                <li class="nav-item">
+                                    <a class="nav-link <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active fw-bold' : ''; ?>" 
+                                    href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                                        <?php echo strtoupper($row['name']); ?>
+                                    </a>
+                                </li>
+                            <?php endwhile; } ?>
+                            
+                            <li class="nav-item">
+                                <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
+                                   href="index.php?controller=product&action=list&is_sale=1">
+                                   <span class="sale-text">SALE</span>
+                                </a>
+                            </li>
+                            <li class="nav-item d-none d-lg-block">
+                                <a class="nav-link" href="index.php?controller=order&action=track">
+                                    <i class="fas fa-truck me-1"></i> TRACK ORDER
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

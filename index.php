@@ -1,63 +1,51 @@
 <?php
-// Main entry point for the application
-session_start();
+// Cấu hình ứng dụng
+define('SITE_NAME', 'StreetStyle');
+define('SITE_DESCRIPTION', 'Thời trang đường phố dành cho giới trẻ - Bold & Colorful');
+define('CURRENCY', '₫');
+define('ADMIN_EMAIL', 'contact@streetstyle.com');
 
-// Include configuration files
+// Load cấu hình
 require_once 'config/config.php';
 require_once 'config/database.php';
 
-// Autoload models and controllers
+// Kiểm tra kết nối
+try {
+    $conn = getConnection();
+} catch (PDOException $e) {
+    die("Database Connection failed: " . $e->getMessage());
+}
+
+// Khởi tạo session
+session_start();
+
+// Tự động load các class
 spl_autoload_register(function ($class_name) {
-    // Check if it's a controller
-    if (strpos($class_name, 'Controller') !== false) {
-        $filename = 'controllers/' . $class_name . '.php';
-        if (file_exists($filename)) {
-            require_once $filename;
-            return true;
-        }
+    if (file_exists('models/' . $class_name . '.php')) {
+        require_once 'models/' . $class_name . '.php';
     }
-    
-    // Check if it's a model
-    $filename = 'models/' . $class_name . '.php';
-    if (file_exists($filename)) {
-        require_once $filename;
-        return true;
-    }
-    
-    return false;
 });
 
-// Database connection
-$db = new Database();
-$conn = $db->getConnection();
-
-// Routing
+// Xử lý routing
 $controller = isset($_GET['controller']) ? $_GET['controller'] : 'home';
 $action = isset($_GET['action']) ? $_GET['action'] : 'index';
 
-// Sanitize input parameters
-$controller = filter_var($controller, FILTER_SANITIZE_STRING);
-$action = filter_var($action, FILTER_SANITIZE_STRING);
+// Load controller tương ứng
+$controller_name = ucfirst($controller) . 'Controller';
+$controller_file = "controllers/{$controller_name}.php";
 
-// Convert to PascalCase for controller class name
-$controllerClass = ucfirst(strtolower($controller)) . 'Controller';
-
-// Check if controller exists
-if (class_exists($controllerClass)) {
-    $controllerInstance = new $controllerClass($conn);
+if (file_exists($controller_file)) {
+    require_once $controller_file;
+    $controller_instance = new $controller_name($conn);
     
-    // Check if action exists
-    if (method_exists($controllerInstance, $action)) {
-        // Call the action
-        $controllerInstance->$action();
+    // Gọi action tương ứng
+    if (method_exists($controller_instance, $action)) {
+        $controller_instance->$action();
     } else {
-        // Action not found - show 404
-        header("HTTP/1.0 404 Not Found");
-        include('views/404.php');
+        // Action không tồn tại -> 404
+        include 'views/404.php';
     }
 } else {
-    // Controller not found - show 404
-    header("HTTP/1.0 404 Not Found");
-    include('views/404.php');
+    // Controller không tồn tại -> 404
+    include 'views/404.php';
 }
-?>
