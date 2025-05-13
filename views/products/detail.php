@@ -42,7 +42,7 @@ include 'views/layouts/header.php';
                 <?php endif; ?>
             </div>
             
-            <!-- Product Thumbnails - Would contain multiple images in a real app -->
+            <!-- Product Thumbnails -->
             <div class="product-thumbnails mt-3 d-flex">
                 <div class="thumbnail-item me-2 active">
                     <?php if(!empty($this->product->image)): ?>
@@ -75,7 +75,11 @@ include 'views/layouts/header.php';
             <div class="product-availability mb-4">
                 <div class="d-flex align-items-center mb-2">
                     <span class="me-2 fw-bold">Tình trạng:</span>
-                    <?php if($this->product->stock > 0): ?>
+                    <?php
+                    // Tính tổng tồn kho từ product_variants
+                    $total_stock = array_sum(array_column($this->variants, 'stock'));
+                    ?>
+                    <?php if($total_stock > 0): ?>
                     <span class="badge bg-success rounded-0 py-2 px-3">CÒN HÀNG</span>
                     <?php else: ?>
                     <span class="badge bg-danger rounded-0 py-2 px-3">HẾT HÀNG</span>
@@ -93,31 +97,36 @@ include 'views/layouts/header.php';
             </div>
         
             <!-- Add to Cart Form -->
-            <?php if($this->product->stock > 0): ?>
+            <?php if($total_stock > 0): ?>
             <form id="add-to-cart-form" class="mb-4">
                 <input type="hidden" name="product_id" value="<?php echo $this->product->id; ?>">
                 
-                <!-- Size Selector - For demo purposes, real implementation would be data-driven -->
-                <div class="product-sizes mb-4">
-                    <label class="fw-bold d-block mb-2">Kích cỡ:</label>
-                    <div class="d-flex flex-wrap gap-2">
-                        <div class="form-check size-option">
-                            <input class="form-check-input visually-hidden" type="radio" name="size" id="sizeS" value="S" checked>
-                            <label class="form-check-label d-flex align-items-center justify-content-center" for="sizeS">S</label>
+                <!-- Variant Selector -->
+                <div class="product-variants mb-4">
+                    <label class="fw-bold d-block mb-2">Biến thể:</label>
+                    <div class="row">
+                        <!-- Size Selector -->
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold d-block mb-2">Kích cỡ:</label>
+                            <select class="form-select" name="size" id="variant-size" required>
+                                <option value="" disabled selected>Chọn kích cỡ</option>
+                                <?php
+                                $sizes = array_unique(array_column($this->variants, 'size'));
+                                foreach($sizes as $size):
+                                ?>
+                                <option value="<?php echo htmlspecialchars($size); ?>"><?php echo htmlspecialchars($size); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                        <div class="form-check size-option">
-                            <input class="form-check-input visually-hidden" type="radio" name="size" id="sizeM" value="M">
-                            <label class="form-check-label d-flex align-items-center justify-content-center" for="sizeM">M</label>
-                        </div>
-                        <div class="form-check size-option">
-                            <input class="form-check-input visually-hidden" type="radio" name="size" id="sizeL" value="L">
-                            <label class="form-check-label d-flex align-items-center justify-content-center" for="sizeL">L</label>
-                        </div>
-                        <div class="form-check size-option">
-                            <input class="form-check-input visually-hidden" type="radio" name="size" id="sizeXL" value="XL">
-                            <label class="form-check-label d-flex align-items-center justify-content-center" for="sizeXL">XL</label>
+                        <!-- Color Selector -->
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold d-block mb-2">Màu sắc:</label>
+                            <select class="form-select" name="color" id="variant-color" required>
+                                <option value="" disabled selected>Chọn màu sắc</option>
+                            </select>
                         </div>
                     </div>
+                    <input type="hidden" name="variant_id" id="variant-id">
                 </div>
                 
                 <div class="row align-items-end mb-4">
@@ -127,7 +136,7 @@ include 'views/layouts/header.php';
                             <button type="button" class="qty-btn" data-action="decrease">
                                 <i class="fas fa-minus"></i>
                             </button>
-                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="<?php echo $this->product->stock; ?>">
+                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="1">
                             <button type="button" class="qty-btn" data-action="increase">
                                 <i class="fas fa-plus"></i>
                             </button>
@@ -140,7 +149,7 @@ include 'views/layouts/header.php';
                     </div>
                     <div class="col-12 col-md-5">
                         <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">
-                            ADD TO CART
+                            THÊM VÀO GIỎ HÀNG
                         </button>
                     </div>
                 </div>
@@ -278,6 +287,7 @@ include 'views/layouts/header.php';
                     </div>
                 </div>
             </div>
+        </div>
     </div>
 </div>
 
@@ -330,7 +340,7 @@ include 'views/layouts/header.php';
 </section>
 <?php endif; ?>
 
-<!-- Customer Reviews Section - This would be implemented in a real application -->
+<!-- Customer Reviews Section -->
 <section class="customer-reviews mt-5">
     <h3 class="mb-4">Đánh giá của khách hàng</h3>
     <div class="alert alert-info">
@@ -338,18 +348,78 @@ include 'views/layouts/header.php';
     </div>
 </section>
 
+<style>
+.product-variants .form-select {
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+.quantity-selector .qty-btn {
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+    padding: 0.5rem;
+}
+.quantity-selector .form-control {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+}
+</style>
+
 <script>
 // Add to cart form handling
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('add-to-cart-form');
+    const sizeSelect = document.getElementById('variant-size');
+    const colorSelect = document.getElementById('variant-color');
+    const variantIdInput = document.getElementById('variant-id');
     const quantityInput = document.getElementById('quantity');
-    const maxQuantity = <?php echo $this->product->stock; ?>;
+    const variants = <?php echo json_encode($this->variants); ?>;
+    
+    // Update color options based on size
+    sizeSelect.addEventListener('change', function() {
+        const selectedSize = this.value;
+        colorSelect.innerHTML = '<option value="" disabled selected>Chọn màu sắc</option>';
+        const availableColors = variants
+            .filter(v => v.size === selectedSize && v.stock > 0)
+            .map(v => v.color);
+        const uniqueColors = [...new Set(availableColors)];
+        
+        uniqueColors.forEach(color => {
+            const option = document.createElement('option');
+            option.value = color;
+            option.textContent = color;
+            colorSelect.appendChild(option);
+        });
+        
+        colorSelect.disabled = uniqueColors.length === 0;
+        updateVariant();
+    });
+    
+    // Update variant ID and max quantity
+    colorSelect.addEventListener('change', updateVariant);
+    
+    function updateVariant() {
+        const selectedSize = sizeSelect.value;
+        const selectedColor = colorSelect.value;
+        const variant = variants.find(v => v.size === selectedSize && v.color === selectedColor);
+        
+        if(variant) {
+            variantIdInput.value = variant.id;
+            quantityInput.max = variant.stock;
+            quantityInput.value = 1;
+        } else {
+            variantIdInput.value = '';
+            quantityInput.max = 1;
+            quantityInput.value = 1;
+        }
+    }
     
     // Quantity buttons
     document.querySelectorAll('.qty-btn').forEach(button => {
         button.addEventListener('click', function() {
             const action = this.dataset.action;
             let currentQuantity = parseInt(quantityInput.value);
+            const maxQuantity = parseInt(quantityInput.max);
             
             if (action === 'increase' && currentQuantity < maxQuantity) {
                 quantityInput.value = currentQuantity + 1;
@@ -360,12 +430,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Form submission
-    if (form) {
+    if(form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const productId = this.querySelector('[name="product_id"]').value;
+            const variantId = this.querySelector('[name="variant_id"]').value;
             const quantity = parseInt(this.querySelector('[name="quantity"]').value);
+            
+            if(!variantId) {
+                alert('Vui lòng chọn kích cỡ và màu sắc.');
+                return;
+            }
             
             // AJAX request to add to cart
             fetch('index.php?controller=product&action=addToCart', {
@@ -374,22 +450,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `product_id=${productId}&quantity=${quantity}`
+                body: `product_id=${productId}&variant_id=${variantId}&quantity=${quantity}`
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    // Show success message
+                if(data.success) {
                     alert(data.message);
-                    
-                    // Update cart count in header
                     const cartBadge = document.querySelector('.fa-shopping-cart').nextElementSibling;
-                    if (cartBadge) {
+                    if(cartBadge) {
                         cartBadge.textContent = data.cart_count;
                     }
                 } else {
-                    // Show error message
-                    alert(data.message);
+                    alert(data.message || 'Không thể thêm vào giỏ hàng. Vui lòng thử lại.');
                 }
             })
             .catch(error => {
