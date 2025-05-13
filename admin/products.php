@@ -48,8 +48,10 @@ if (!empty($search)) {
     $total_rows = $product->countAll();
 }
 
-// Process products
+// Process products and add total stock
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $product->id = $row['id'];
+    $row['total_stock'] = $product->getTotalStock(); // Add total stock from variants
     $products[] = $row;
 }
 
@@ -230,10 +232,10 @@ if (!defined('CURRENCY')) {
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <?php if ($item['stock'] <= 5): ?>
-                                            <span class="text-danger"><?php echo $item['stock']; ?></span>
+                                            <?php if ($item['total_stock'] <= 5): ?>
+                                            <span class="text-danger"><?php echo $item['total_stock']; ?></span>
                                             <?php else: ?>
-                                            <?php echo $item['stock']; ?>
+                                            <?php echo $item['total_stock']; ?>
                                             <?php endif; ?>
                                         </td>
                                         <td>
@@ -243,7 +245,7 @@ if (!defined('CURRENCY')) {
                                             <?php if ($item['is_sale'] == 1): ?>
                                             <span class="badge bg-danger text-white">Sale</span>
                                             <?php endif; ?>
-                                            <?php if ($item['stock'] <= 0): ?>
+                                            <?php if ($item['total_stock'] <= 0): ?>
                                             <span class="badge bg-secondary text-white">Out of Stock</span>
                                             <?php endif; ?>
                                         </td>
