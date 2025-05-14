@@ -13,6 +13,10 @@ if (!isset($cart_total)) {
     $cart_total = 0;
 }
 
+// Kiểm tra mã giảm giá trong session
+$promotion_discount = isset($_SESSION['promotion']['discount_amount']) ? $_SESSION['promotion']['discount_amount'] : 0;
+$final_total = $cart_total - $promotion_discount;
+
 // Kiểm tra constant CURRENCY
 $currency = defined('CURRENCY') ? CURRENCY : '₫';
 
@@ -164,16 +168,16 @@ try {
                             </div>
                             
                             <!-- Discount amount -->
-                            <div id="discount-row" class="d-flex justify-content-between mb-3" style="display: none;">
+                            <div id="discount-row" class="d-flex justify-content-between mb-3" style="display: <?php echo $promotion_discount > 0 ? 'flex' : 'none'; ?>;">
                                 <span>Giảm giá:</span>
-                                <span class="fw-bold text-danger" id="discount-amount">- <?php echo $currency; ?>0</span>
+                                <span class="fw-bold text-danger" id="discount-amount"><?php echo $promotion_discount > 0 ? '- ' . $currency . number_format($promotion_discount, 0, ',', '.') : '- ' . $currency . '0'; ?></span>
                             </div>
                             
                             <!-- Total with horizontal line above -->
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
                                 <span>Tổng cộng:</span>
-                                <span class="fw-bold fs-5 cart-total"><?php echo $currency . number_format($cart_total, 0, ',', '.'); ?></span>
+                                <span class="fw-bold fs-5 cart-total"><?php echo $currency . number_format($final_total, 0, ',', '.'); ?></span>
                             </div>
                             
                             <!-- Checkout button -->
@@ -250,8 +254,6 @@ try {
                     this.value = min;
                 } else if (value > max) {
                     this.value = max;
-                } else {
-                    this.value = value;
                 }
                 
                 updateCartItem(this);
@@ -297,6 +299,8 @@ try {
                     // Update cart subtotal and total
                     const cartSubtotal = document.querySelector('.cart-subtotal');
                     const cartTotal = document.querySelector('.cart-total');
+                    const discountRow = document.getElementById('discount-row');
+                    const discountAmount = document.getElementById('discount-amount');
                     
                     if (cartSubtotal) {
                         cartSubtotal.textContent = new Intl.NumberFormat('vi-VN', { 
@@ -306,12 +310,31 @@ try {
                         }).format(data.cart_total);
                     }
                     
+                    if (data.discount_amount !== undefined && discountRow && discountAmount) {
+                        if (data.discount_amount > 0) {
+                            discountRow.style.display = 'flex';
+                            discountAmount.textContent = '- ' + new Intl.NumberFormat('vi-VN', { 
+                                style: 'currency', 
+                                currency: 'VND',
+                                maximumFractionDigits: 0
+                            }).format(data.discount_amount);
+                        } else {
+                            discountRow.style.display = 'none';
+                            discountAmount.textContent = '- ' + new Intl.NumberFormat('vi-VN', { 
+                                style: 'currency', 
+                                currency: 'VND',
+                                maximumFractionDigits: 0
+                            }).format(0);
+                        }
+                    }
+                    
                     if (cartTotal) {
+                        const newTotal = data.discount_amount !== undefined ? data.cart_total - data.discount_amount : data.cart_total;
                         cartTotal.textContent = new Intl.NumberFormat('vi-VN', { 
                             style: 'currency', 
                             currency: 'VND',
                             maximumFractionDigits: 0
-                        }).format(data.cart_total);
+                        }).format(newTotal);
                     }
                     
                     // Update cart count in header
@@ -370,6 +393,8 @@ try {
                             // Update cart subtotal and total
                             const cartSubtotal = document.querySelector('.cart-subtotal');
                             const cartTotal = document.querySelector('.cart-total');
+                            const discountRow = document.getElementById('discount-row');
+                            const discountAmount = document.getElementById('discount-amount');
                             
                             if (cartSubtotal) {
                                 cartSubtotal.textContent = new Intl.NumberFormat('vi-VN', { 
@@ -379,12 +404,31 @@ try {
                                 }).format(data.cart_total);
                             }
                             
+                            if (data.discount_amount !== undefined && discountRow && discountAmount) {
+                                if (data.discount_amount > 0) {
+                                    discountRow.style.display = 'flex';
+                                    discountAmount.textContent = '- ' + new Intl.NumberFormat('vi-VN', { 
+                                        style: 'currency', 
+                                        currency: 'VND',
+                                        maximumFractionDigits: 0
+                                    }).format(data.discount_amount);
+                                } else {
+                                    discountRow.style.display = 'none';
+                                    discountAmount.textContent = '- ' + new Intl.NumberFormat('vi-VN', { 
+                                        style: 'currency', 
+                                        currency: 'VND',
+                                        maximumFractionDigits: 0
+                                    }).format(0);
+                                }
+                            }
+                            
                             if (cartTotal) {
+                                const newTotal = data.discount_amount !== undefined ? data.cart_total - data.discount_amount : data.cart_total;
                                 cartTotal.textContent = new Intl.NumberFormat('vi-VN', { 
                                     style: 'currency', 
                                     currency: 'VND',
                                     maximumFractionDigits: 0
-                                }).format(data.cart_total);
+                                }).format(newTotal);
                             }
                             
                             // If cart is empty, reload the page
