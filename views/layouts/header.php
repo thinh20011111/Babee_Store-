@@ -200,67 +200,62 @@
     </header>
 
     <!-- Navigation - Bold & Colorful -->
-    <nav class="main-nav py-0 sticky-top">
+    <nav class="main-nav navbar navbar-expand-lg navbar-light sticky-top shadow-sm" style="background-color: var(--background-color);">
         <div class="container">
-            <div class="nav-container bg-white py-2 px-3 rounded-bottom shadow-sm">
-                <div class="d-flex justify-content-between align-items-center">
-                    <!-- Nút menu chỉ hiện trên mobile -->
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
-                        <i class="fas fa-bars"></i> MENU
-                    </button>
+            <a class="navbar-brand d-lg-none fw-bold text-primary" href="index.php">MENU</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-                    <!-- Menu hiển thị luôn ở desktop, collapse trên mobile -->
-                    <div class="collapse navbar-collapse d-lg-flex justify-content-center" id="mainNavigation">
-                        <ul class="navbar-nav nav-pills nav-fill flex-column flex-lg-row">
-                            <li class="nav-item">
-                                <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
-                                href="index.php">HOME</a>
-                            </li>
+            <div class="collapse navbar-collapse" id="mainNavigation">
+                <ul class="navbar-nav mx-auto gap-2">
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold text-primary' : ''; ?>" href="index.php">HOME</a>
+                    </li>
 
-                            <?php
-                            if (!$conn) {
-                                echo "<li class='nav-item'>Lỗi: Kết nối cơ sở dữ liệu thất bại.</li>";
+                    <?php
+                    if (!$conn) {
+                        echo "<li class='nav-item text-danger'>Lỗi: Kết nối cơ sở dữ liệu thất bại.</li>";
+                    } else {
+                        $category = new Category($conn);
+                        $categoryStmt = $category->read();
+
+                        if ($categoryStmt === false) {
+                            echo "<li class='nav-item text-danger'>Lỗi: Không thể lấy danh sách danh mục.</li>";
+                        } else {
+                            $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
+
+                            if ($categoryStmt->rowCount() > 0) {
+                                while ($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                    ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold text-primary' : ''; ?>" 
+                        href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                            <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
+                        </a>
+                    </li>
+                    <?php
+                                endwhile;
                             } else {
-                                $category = new Category($conn);
-                                $categoryStmt = $category->read();
-
-                                if ($categoryStmt === false) {
-                                    echo "<li class='nav-item'>Lỗi: Không thể lấy danh sách danh mục.</li>";
-                                } else {
-                                    $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
-
-                                    if ($categoryStmt->rowCount() > 0) {
-                                        while ($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
-                            ?>
-                            <li class="nav-item">
-                                <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold' : ''; ?>" 
-                                href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
-                                    <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
-                                </a>
-                            </li>
-                            <?php
-                                        endwhile;
-                                    } else {
-                                        echo "<li class='nav-item'>Không có danh mục nào.</li>";
-                                    }
-                                }
+                                echo "<li class='nav-item'>Không có danh mục nào.</li>";
                             }
-                            ?>
+                        }
+                    }
+                    ?>
 
-                            <li class="nav-item">
-                                <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
-                                href="index.php?controller=product&action=list&is_sale=1">
-                                <span class="sale-text">SALE</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="index.php?controller=order&action=track">
-                                    <i class="fas fa-truck me-1"></i> TRACK ORDER
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold text-danger' : ''; ?>" 
+                        href="index.php?controller=product&action=list&is_sale=1">
+                        SALE
+                        </a>
+                    </li>
+
+                    <li class="nav-item d-none d-lg-block">
+                        <a class="nav-link" href="index.php?controller=order&action=track">
+                            <i class="fas fa-truck me-1"></i> TRACK ORDER
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
