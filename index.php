@@ -27,6 +27,9 @@ spl_autoload_register(function ($class_name) {
     }
 });
 
+// Ghi log truy cập (trừ khi là trang admin hoặc file tài nguyên)
+include_once 'track_visits.php';
+
 // Xử lý routing
 $controller = isset($_GET['controller']) ? $_GET['controller'] : 'home';
 $action = isset($_GET['action']) ? $_GET['action'] : 'index';

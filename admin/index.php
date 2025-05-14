@@ -24,7 +24,7 @@ $allowed_pages = [
 // Add admin-only pages
 if ($_SESSION['user_role'] == 'admin') {
     $allowed_pages = array_merge($allowed_pages, [
-        'promotions', 'banners', 'settings', 'reports'
+        'promotions', 'banners', 'settings', 'reports', 'traffic'
     ]);
 }
 
