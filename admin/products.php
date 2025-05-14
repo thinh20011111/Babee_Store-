@@ -157,7 +157,7 @@ if (!defined('CURRENCY')) {
                 <div class="card shadow-sm mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="m-0 fw-bold text-primary"><i class="fas fa-table me-2"></i> Products List</h6>
-                        <a href="index.php?page=product-edit" class="btn btn-primary btn-sm">
+                        <a href="/admin/index.php?page=product-edit" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus me-1"></i> Add New Product
                         </a>
                     </div>
@@ -165,14 +165,14 @@ if (!defined('CURRENCY')) {
                         <!-- Search and Filter Form -->
                         <div class="row mb-4">
                             <div class="col-md-6">
-                                <form action="index.php" method="GET" class="d-flex">
+                                <form action="/admin/index.php" method="GET" class="d-flex">
                                     <input type="hidden" name="page" value="products">
                                     <input type="text" name="search" class="form-control me-2" placeholder="Search products..." value="<?php echo htmlspecialchars($search); ?>">
                                     <button type="submit" class="btn btn-primary">Search</button>
                                 </form>
                             </div>
                             <div class="col-md-6">
-                                <form action="index.php" method="GET" class="d-flex justify-content-end">
+                                <form action="/admin/index.php" method="GET" class="d-flex justify-content-end">
                                     <input type="hidden" name="page" value="products">
                                     <select name="category_id" class="form-select me-2" style="max-width: 200px;">
                                         <option value="0">All Categories</option>
@@ -250,10 +250,10 @@ if (!defined('CURRENCY')) {
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <a href="index.php?page=product-edit&id=<?php echo $item['id']; ?>" class="btn btn-primary btn-sm me-1">
+                                            <a href="/admin/index.php?page=product-edit&id=<?php echo $item['id']; ?>" class="btn btn-primary btn-sm me-1">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="index.php?page=products&action=delete&id=<?php echo $item['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this product?')">
+                                            <a href="/admin/index.php?page=products&action=delete&id=<?php echo $item['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this product?')">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </td>
@@ -270,7 +270,7 @@ if (!defined('CURRENCY')) {
                             <ul class="pagination justify-content-center mt-4">
                                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                                 <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
-                                    <a class="page-link" href="index.php?page=products&<?php 
+                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
                                         echo 'page=' . $i;
