@@ -203,18 +203,20 @@
     <nav class="main-nav py-0 sticky-top">
         <div class="container">
             <div class="nav-container bg-white py-2 px-3 rounded-bottom shadow-sm">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
+                    <!-- Nút menu chỉ hiện trên mobile -->
                     <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
                         <i class="fas fa-bars"></i> MENU
                     </button>
-                    
-                    <div class="collapse navbar-collapse" id="mainNavigation">
-                        <ul class="navbar-nav nav-pills nav-fill mx-auto">
+
+                    <!-- Menu hiển thị luôn ở desktop, collapse trên mobile -->
+                    <div class="collapse navbar-collapse d-lg-flex justify-content-center" id="mainNavigation">
+                        <ul class="navbar-nav nav-pills nav-fill flex-column flex-lg-row">
                             <li class="nav-item">
                                 <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
-                                   href="index.php">HOME</a>
+                                href="index.php">HOME</a>
                             </li>
-                            
+
                             <?php
                             if (!$conn) {
                                 echo "<li class='nav-item'>Lỗi: Kết nối cơ sở dữ liệu thất bại.</li>";
@@ -232,7 +234,7 @@
                             ?>
                             <li class="nav-item">
                                 <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold' : ''; ?>" 
-                                   href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                                href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
                                     <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
                                 </a>
                             </li>
@@ -244,14 +246,14 @@
                                 }
                             }
                             ?>
-                            
+
                             <li class="nav-item">
                                 <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
-                                   href="index.php?controller=product&action=list&is_sale=1">
-                                   <span class="sale-text">SALE</span>
+                                href="index.php?controller=product&action=list&is_sale=1">
+                                <span class="sale-text">SALE</span>
                                 </a>
                             </li>
-                            <li class="nav-item d-none d-lg-block">
+                            <li class="nav-item">
                                 <a class="nav-link" href="index.php?controller=order&action=track">
                                     <i class="fas fa-truck me-1"></i> TRACK ORDER
                                 </a>
