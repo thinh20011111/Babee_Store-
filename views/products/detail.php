@@ -10,7 +10,7 @@ if (!defined('CURRENCY')) {
 }
 
 // Khởi tạo file log
-$log_file = '/tmp/debug.log';
+$log_file = __DIR__ . '/../../logs/debug.log';
 if (!file_exists(dirname($log_file))) {
     mkdir(dirname($log_file), 0755, true);
 }
