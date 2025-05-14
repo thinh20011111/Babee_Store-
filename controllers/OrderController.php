@@ -31,17 +31,30 @@ class OrderController {
             }, $cart));
             $this->order->status = 'pending';
             $this->order->payment_method = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : '';
-            $this->order->status = 'pending';
             $this->order->shipping_address = isset($_POST['shipping_address']) ? trim($_POST['shipping_address']) : '';
             $this->order->shipping_city = isset($_POST['shipping_city']) ? trim($_POST['shipping_city']) : '';
             $this->order->shipping_phone = isset($_POST['shipping_phone']) ? trim($_POST['shipping_phone']) : '';
-            $this->order->shipping_name = isset($_POST['shipping_name']) ? trim($_POST['shipping_name']) : '';
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
+            // Debug: Log cart and total
+            error_log("DEBUG: OrderController::create - cart: " . print_r($cart, true) . "\n", 3, '/tmp/cart_debug.log');
+            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}\n", 3, '/tmp/cart_debug.log');
+
             // Validate required fields
+            $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
+            if (empty($full_name)) {
+                $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
+                header("Location: index.php?controller=cart&action=checkout");
+                exit;
+            }
             if (empty($this->order->shipping_address) || empty($this->order->shipping_city) || 
-                empty($this->order->shipping_phone) || empty($this->order->shipping_name)) {
+                empty($this->order->shipping_phone)) {
                 $_SESSION['order_message'] = "Vui lòng điền đầy đủ thông tin giao hàng.";
+                header("Location: index.php?controller=cart&action=checkout");
+                exit;
+            }
+            if ($this->order->total_amount <= 0) {
+                $_SESSION['order_message'] = "Tổng giá đơn hàng không hợp lệ.";
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
@@ -52,15 +65,16 @@ class OrderController {
                 if ($order_id = $this->order->create()) {
                     // Tạo các mục đơn hàng
                     foreach ($cart as $item) {
-                        $query = "INSERT INTO order_items (order_id, product_id, variant_id, quantity, price) 
+                        $query = "INSERT INTO order_details (order_id, product_id, variant_id, quantity, price) 
                                   VALUES (:order_id, :product_id, :variant_id, :quantity, :price)";
                         $stmt = $this->conn->prepare($query);
+                        $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
                         $stmt->execute([
                             ':order_id' => $order_id,
                             ':product_id' => $item['product_id'],
                             ':variant_id' => $item['variant_id'],
                             ':quantity' => $item['quantity'],
-                            ':price' => $item['data']['price']
+                            ':price' => $price
                         ]);
 
                         // Cập nhật tồn kho
@@ -80,7 +94,7 @@ class OrderController {
                 }
             } catch (Exception $e) {
                 $this->conn->rollBack();
-                error_log("Lỗi tạo đơn hàng: " . $e->getMessage());
+                error_log("Lỗi tạo đơn hàng: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
                 $_SESSION['order_message'] = "Lỗi khi tạo đơn hàng: " . $e->getMessage();
                 header("Location: index.php?controller=cart&action=checkout");
             }
@@ -158,11 +172,9 @@ class OrderController {
                     $this->order->total_amount = $row['total_amount'];
                     $this->order->status = $row['status'];
                     $this->order->payment_method = $row['payment_method'];
-                    $this->order->status = $row['payment_status'];
                     $this->order->shipping_address = $row['shipping_address'];
                     $this->order->shipping_city = $row['shipping_city'];
                     $this->order->shipping_phone = $row['shipping_phone'];
-                    $this->order->shipping_name = $row['shipping_name'];
                     $this->order->notes = $row['notes'];
                     $this->order->created_at = $row['created_at'];
                     $this->order->updated_at = $row['updated_at'];
@@ -250,7 +262,7 @@ class OrderController {
             $_SESSION['order_message'] = "Đơn hàng đã được hủy thành công.";
         } catch (Exception $e) {
             $this->conn->rollBack();
-            error_log("Lỗi hủy đơn hàng: " . $e->getMessage());
+            error_log("Lỗi hủy đơn hàng: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
             $_SESSION['order_message'] = "Lỗi khi hủy đơn hàng: " . $e->getMessage();
         }
         

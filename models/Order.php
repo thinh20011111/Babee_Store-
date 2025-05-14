@@ -14,7 +14,6 @@ class Order {
     public $shipping_address;
     public $shipping_city;
     public $shipping_phone;
-    public $shipping_name;
     public $notes;
     public $created_at;
     public $updated_at;
@@ -31,8 +30,7 @@ class Order {
                 LEFT JOIN users u ON o.user_id = u.id
                 ORDER BY o.created_at DESC";
         
-        // Add limit if specified
-        if($limit) {
+        if ($limit) {
             $query .= " LIMIT " . $limit;
         }
         
@@ -69,7 +67,7 @@ class Order {
         $stmt->execute();
         
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if($row) {
+        if ($row) {
             $this->user_id = $row['user_id'];
             $this->order_number = $row['order_number'];
             $this->total_amount = $row['total_amount'];
@@ -78,7 +76,6 @@ class Order {
             $this->shipping_address = $row['shipping_address'];
             $this->shipping_city = $row['shipping_city'];
             $this->shipping_phone = $row['shipping_phone'];
-            $this->shipping_name = $row['shipping_name'];
             $this->notes = $row['notes'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
@@ -90,11 +87,7 @@ class Order {
     
     // Create order
     public function create() {
-        // Begin transaction
-        $this->conn->beginTransaction();
-        
         try {
-            // Generate unique order number
             $this->order_number = $this->generateOrderNumber();
             
             $query = "INSERT INTO " . $this->table_name . " 
@@ -107,14 +100,12 @@ class Order {
                         shipping_address = :shipping_address, 
                         shipping_city = :shipping_city, 
                         shipping_phone = :shipping_phone, 
-                        shipping_name = :shipping_name, 
                         notes = :notes, 
                         created_at = :created_at, 
                         updated_at = :updated_at";
             
             $stmt = $this->conn->prepare($query);
             
-            // Sanitize inputs
             $this->user_id = htmlspecialchars(strip_tags($this->user_id));
             $this->total_amount = htmlspecialchars(strip_tags($this->total_amount));
             $this->status = htmlspecialchars(strip_tags($this->status));
@@ -122,12 +113,10 @@ class Order {
             $this->shipping_address = htmlspecialchars(strip_tags($this->shipping_address));
             $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
             $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
-            $this->shipping_name = htmlspecialchars(strip_tags($this->shipping_name ?: 'Unknown'));
             $this->notes = htmlspecialchars(strip_tags($this->notes));
             $this->created_at = date('Y-m-d H:i:s');
             $this->updated_at = date('Y-m-d H:i:s');
             
-            // Bind parameters
             $stmt->bindParam(':user_id', $this->user_id);
             $stmt->bindParam(':order_number', $this->order_number);
             $stmt->bindParam(':total_amount', $this->total_amount);
@@ -136,26 +125,18 @@ class Order {
             $stmt->bindParam(':shipping_address', $this->shipping_address);
             $stmt->bindParam(':shipping_city', $this->shipping_city);
             $stmt->bindParam(':shipping_phone', $this->shipping_phone);
-            $stmt->bindParam(':shipping_name', $this->shipping_name);
             $stmt->bindParam(':notes', $this->notes);
             $stmt->bindParam(':created_at', $this->created_at);
             $stmt->bindParam(':updated_at', $this->updated_at);
             
-            // Execute the query
             $stmt->execute();
             
-            // Get the order ID
             $this->id = $this->conn->lastInsertId();
             
-            // Commit transaction
-            $this->conn->commit();
-            
             return $this->id;
-        } catch(Exception $e) {
-            // Rollback transaction on error
-            $this->conn->rollback();
-            error_log("Error creating order: " . $e->getMessage());
-            return false;
+        } catch (Exception $e) {
+            error_log("Error creating order: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
+            throw $e;
         }
     }
     
@@ -168,7 +149,6 @@ class Order {
                     shipping_address = :shipping_address, 
                     shipping_city = :shipping_city, 
                     shipping_phone = :shipping_phone, 
-                    shipping_name = :shipping_name, 
                     notes = :notes, 
                     updated_at = :updated_at 
                 WHERE 
@@ -176,29 +156,24 @@ class Order {
         
         $stmt = $this->conn->prepare($query);
         
-        // Sanitize inputs
         $this->status = htmlspecialchars(strip_tags($this->status));
         $this->payment_method = htmlspecialchars(strip_tags($this->payment_method));
         $this->shipping_address = htmlspecialchars(strip_tags($this->shipping_address));
         $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
         $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
-        $this->shipping_name = htmlspecialchars(strip_tags($this->shipping_name ?: 'Unknown'));
         $this->notes = htmlspecialchars(strip_tags($this->notes));
         $this->updated_at = date('Y-m-d H:i:s');
         
-        // Bind parameters
         $stmt->bindParam(':status', $this->status);
         $stmt->bindParam(':payment_method', $this->payment_method);
         $stmt->bindParam(':shipping_address', $this->shipping_address);
         $stmt->bindParam(':shipping_city', $this->shipping_city);
         $stmt->bindParam(':shipping_phone', $this->shipping_phone);
-        $stmt->bindParam(':shipping_name', $this->shipping_name);
         $stmt->bindParam(':notes', $this->notes);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
         
-        // Execute the query
-        if($stmt->execute()) {
+        if ($stmt->execute()) {
             return true;
         }
         
@@ -216,17 +191,14 @@ class Order {
         
         $stmt = $this->conn->prepare($query);
         
-        // Sanitize inputs
         $this->status = htmlspecialchars(strip_tags($this->status));
         $this->updated_at = date('Y-m-d H:i:s');
         
-        // Bind parameters
         $stmt->bindParam(':status', $this->status);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
         
-        // Execute the query
-        if($stmt->execute()) {
+        if ($stmt->execute()) {
             return true;
         }
         
@@ -235,58 +207,48 @@ class Order {
     
     // Delete order
     public function delete() {
-        // Begin transaction
-        $this->conn->beginTransaction();
-        
         try {
-            // First delete order details
             $query = "DELETE FROM order_details WHERE order_id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(1, $this->id);
             $stmt->execute();
             
-            // Then delete the order
             $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(1, $this->id);
             $stmt->execute();
             
-            // Commit transaction
-            $this->conn->commit();
-            
             return true;
-        } catch(Exception $e) {
-            // Rollback transaction on error
-            $this->conn->rollback();
-            error_log("Error deleting order: " . $e->getMessage());
-            return false;
+        } catch (Exception $e) {
+            error_log("Error deleting order: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
+            throw $e;
         }
     }
     
     // Add order details
-    public function addOrderDetails($product_id, $quantity, $price) {
+    public function addOrderDetails($product_id, $quantity, $price, $variant_id) {
         $query = "INSERT INTO order_details
                 SET 
                     order_id = :order_id, 
                     product_id = :product_id, 
                     quantity = :quantity, 
-                    price = :price";
+                    price = :price,
+                    variant_id = :variant_id";
         
         $stmt = $this->conn->prepare($query);
         
-        // Sanitize inputs
         $product_id = htmlspecialchars(strip_tags($product_id));
         $quantity = htmlspecialchars(strip_tags($quantity));
         $price = htmlspecialchars(strip_tags($price));
+        $variant_id = htmlspecialchars(strip_tags($variant_id));
         
-        // Bind parameters
         $stmt->bindParam(':order_id', $this->id);
         $stmt->bindParam(':product_id', $product_id);
         $stmt->bindParam(':quantity', $quantity);
         $stmt->bindParam(':price', $price);
+        $stmt->bindParam(':variant_id', $variant_id);
         
-        // Execute the query
-        if($stmt->execute()) {
+        if ($stmt->execute()) {
             return true;
         }
         
@@ -309,7 +271,6 @@ class Order {
     
     // Generate unique order number
     private function generateOrderNumber() {
-        // Format: BB-YYYYMMDDxxxx where xxxx is a random number
         return 'BB-' . date('Ymd') . rand(1000, 9999);
     }
     
