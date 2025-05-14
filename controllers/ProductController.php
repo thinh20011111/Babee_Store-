@@ -176,11 +176,11 @@ class ProductController {
         // Load product detail view
         try {
             extract($data);
-            $view_path = __DIR__ . '/../views/product_detail.php'; // Sửa thành product_detail.php
+            $view_path = __DIR__ . '/../views/products/detail.php'; // Sửa thành detail.php
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đường dẫn view được thử: $view_path\n", FILE_APPEND);
             if (!file_exists($view_path)) {
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $view_path không tồn tại\n", FILE_APPEND);
-                die("Lỗi: Không tìm thấy file product_detail.php tại $view_path. Vui lòng kiểm tra thư mục /htdocs/views/.");
+                die("Lỗi: Không tìm thấy file detail.php tại $view_path. Vui lòng kiểm tra thư mục /htdocs/views/.");
             }
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu load $view_path\n", FILE_APPEND);
             include $view_path;
