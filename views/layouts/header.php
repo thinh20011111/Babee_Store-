@@ -117,8 +117,8 @@
             <div class="row align-items-center">
                 <div class="col-md-6 d-none d-md-block">
                     <div class="d-flex align-items-center">
-                        <span class="me-3 small"><i class="fas fa-bolt me-1"></i> FREESHIP FOR ORDERS OVER 1.000.000₫</span>
-                        <span class="small"><i class="far fa-clock me-1"></i> SHIP TOÀN QUỐC 1-3 NGÀY</span>
+                        <span class="me-3 small"><i class="fas fa-bolt me-1"></i> Miễn phí vận chuyển cho đơn hàng trên 500.000₫</span>
+                        <span class="small"><i class="far fa-clock me-1"></i> Vận chuyển toàn quốc 1-3 ngày</span>
                     </div>
                 </div>
                 <div class="col-md-6 text-center text-md-end small">
@@ -127,17 +127,17 @@
                             <i class="fas fa-user me-1"></i> <?php echo $_SESSION['username']; ?>
                         </a>
                         <a href="index.php?controller=user&action=orders" class="text-light me-3">
-                            <i class="fas fa-box me-1"></i> Orders
+                            <i class="fas fa-box me-1"></i> Đơn hàng
                         </a>
                         <a href="index.php?controller=user&action=logout" class="text-light">
-                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                            <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
                         </a>
                     <?php else: ?>
                         <a href="index.php?controller=user&action=login" class="text-light me-3">
-                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                            <i class="fas fa-sign-in-alt me-1"></i> Đăng nhập
                         </a>
                         <a href="index.php?controller=user&action=register" class="text-light">
-                            <i class="fas fa-user-plus me-1"></i> Register
+                            <i class="fas fa-user-plus me-1"></i> Đăng ký
                         </a>
                     <?php endif; ?>
                 </div>
@@ -153,7 +153,7 @@
                 <div class="col-8 col-md-3">
                     <a href="index.php" class="text-decoration-none">
                         <h1 class="site-logo m-0">
-                            <span class="text-primary fw-black logo-text">STREET</span><span class="text-secondary fw-light logo-text">STYLE</span>
+                            <span class="text-primary fw-black logo-text">Ba</span><span class="text-secondary fw-light logo-text">Bee</span>
                         </h1>
                     </a>
                 </div>
@@ -252,7 +252,7 @@
 
                     <li class="nav-item d-none d-lg-block">
                         <a class="nav-link" href="index.php?controller=order&action=track">
-                            <i class="fas fa-truck me-1"></i> TRACK ORDER
+                            <i class="fas fa-truck me-1"></i> THEO DÕI ĐƠN HÀNG
                         </a>
                     </li>
                 </ul>
