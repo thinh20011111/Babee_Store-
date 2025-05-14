@@ -136,18 +136,36 @@
                             </li>
                             
                             <?php
-                                $category = new Category($conn);
-                                $categoryStmt = $category->read();
-                                if ($categoryStmt) {
-                                    while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                                // Kiểm tra kết nối cơ sở dữ liệu
+                                if (!$conn) {
+                                    echo "<li class='nav-item'>Lỗi: Kết nối cơ sở dữ liệu thất bại.</li>";
+                                } else {
+                                    $category = new Category($conn);
+                                    $categoryStmt = $category->read();
+
+                                    // Kiểm tra kết quả trả về từ read()
+                                    if ($categoryStmt === false) {
+                                        echo "<li class='nav-item'>Lỗi: Không thể lấy danh sách danh mục.</li>";
+                                    } else {
+                                        $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
+
+                                        if ($categoryStmt->rowCount() > 0) {
+                                            while ($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
                                 ?>
                                 <li class="nav-item">
-                                    <a class="nav-link <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active fw-bold' : ''; ?>" 
+                                    <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold' : ''; ?>" 
                                     href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
-                                        <?php echo strtoupper($row['name']); ?>
+                                        <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
                                     </a>
                                 </li>
-                            <?php endwhile; } ?>
+                                <?php
+                                            endwhile;
+                                        } else {
+                                            echo "<li class='nav-item'>Không có danh mục nào.</li>";
+                                        }
+                                    }
+                                }
+                            ?>
                             
                             <li class="nav-item">
                                 <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
