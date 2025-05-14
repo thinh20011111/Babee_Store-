@@ -157,7 +157,7 @@ class ProductController {
         // Load product detail view
         try {
             extract($data);
-            $view_path = __DIR__ . '/../views/products/detail.php'; // Sửa đường dẫn
+            $view_path = __DIR__ . '/../views/products/detail.php';
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đường dẫn view được thử: $view_path\n", FILE_APPEND);
             if (!file_exists($view_path)) {
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $view_path không tồn tại\n", FILE_APPEND);
@@ -179,6 +179,16 @@ class ProductController {
             session_start();
         }
 
+        // Khởi tạo file log
+        $log_file = '/tmp/debug.log';
+        if (!file_exists(dirname($log_file))) {
+            mkdir(dirname($log_file), 0755, true);
+        }
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] ProductController::addToCart called\n", FILE_APPEND);
+
+        // Đặt header JSON ngay đầu để tránh HTML
+        header('Content-Type: application/json');
+
         // Kiểm tra nếu là request AJAX
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             // Get product ID, variant ID, and quantity
@@ -186,33 +196,50 @@ class ProductController {
             $variant_id = isset($_POST['variant_id']) ? intval($_POST['variant_id']) : 0;
             $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
             
-            error_log("addToCart AJAX: product_id=$product_id, variant_id=$variant_id, quantity=$quantity");
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Input: product_id=$product_id, variant_id=$variant_id, quantity=$quantity\n", FILE_APPEND);
             
-            if ($product_id <= 0 || $variant_id <= 0 || $quantity <= 0) {
-                echo json_encode(['success' => false, 'message' => 'Invalid product, variant, or quantity.']);
+            // Kiểm tra dữ liệu đầu vào
+            if ($product_id <= 0 || $quantity <= 0) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Invalid input\n", FILE_APPEND);
+                echo json_encode(['success' => false, 'message' => 'Dữ liệu sản phẩm hoặc số lượng không hợp lệ.']);
                 exit;
             }
             
             // Get product details
-            $this->product->id = $product_id;
-            if (!$this->product->readOne()) {
-                echo json_encode(['success' => false, 'message' => 'Product not found.']);
+            try {
+                $this->product->id = $product_id;
+                if (!$this->product->readOne()) {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product not found: ID $product_id\n", FILE_APPEND);
+                    echo json_encode(['success' => false, 'message' => 'Không tìm thấy sản phẩm.']);
+                    exit;
+                }
+            } catch (Exception $e) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error reading product: " . $e->getMessage() . "\n", FILE_APPEND);
+                echo json_encode(['success' => false, 'message' => 'Lỗi khi đọc dữ liệu sản phẩm: ' . $e->getMessage()]);
                 exit;
             }
             
             // Check variant details and stock availability
-            $query = "SELECT stock, price FROM product_variants WHERE id = ? AND product_id = ?";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute([$variant_id, $product_id]);
-            $variant = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$variant) {
-                echo json_encode(['success' => false, 'message' => 'Variant not found.']);
-                exit;
-            }
-            
-            if ($variant['stock'] < $quantity) {
-                echo json_encode(['success' => false, 'message' => 'Not enough stock available for this variant.']);
+            try {
+                $query = "SELECT stock, price FROM product_variants WHERE id = ? AND product_id = ?";
+                $stmt = $this->conn->prepare($query);
+                $stmt->execute([$variant_id, $product_id]);
+                $variant = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$variant && $variant_id > 0) {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variant not found: ID $variant_id\n", FILE_APPEND);
+                    echo json_encode(['success' => false, 'message' => 'Không tìm thấy biến thể sản phẩm.']);
+                    exit;
+                }
+                
+                if ($variant_id > 0 && $variant['stock'] < $quantity) {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Not enough stock for variant ID $variant_id: stock={$variant['stock']}, requested=$quantity\n", FILE_APPEND);
+                    echo json_encode(['success' => false, 'message' => 'Không đủ hàng trong kho cho biến thể này.']);
+                    exit;
+                }
+            } catch (Exception $e) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error querying variant: " . $e->getMessage() . "\n", FILE_APPEND);
+                echo json_encode(['success' => false, 'message' => 'Lỗi khi kiểm tra biến thể: ' . $e->getMessage()]);
                 exit;
             }
             
@@ -229,7 +256,7 @@ class ProductController {
             ];
             
             // Create unique key for cart item (product_id + variant_id)
-            $cart_key = $product_id . '_' . $variant_id;
+            $cart_key = $product_id . '_' . ($variant_id > 0 ? $variant_id : '0');
             
             // Add or update item in cart
             if (isset($cart[$cart_key])) {
@@ -253,9 +280,11 @@ class ProductController {
                 return $item['quantity'] * $price;
             }, $cart));
             
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cart updated: count=$cart_count, total=$cart_total\n", FILE_APPEND);
+            
             echo json_encode([
                 'success' => true,
-                'message' => 'Product added to cart.',
+                'message' => 'Đã thêm sản phẩm vào giỏ hàng.',
                 'cart_count' => $cart_count,
                 'cart_total' => $cart_total
             ]);
@@ -264,7 +293,7 @@ class ProductController {
         
         // Nếu không phải AJAX
         $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-        error_log("addToCart non-AJAX: product_id=$product_id");
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Non-AJAX request: product_id=$product_id\n", FILE_APPEND);
         
         if ($product_id <= 0) {
             header("Location: index.php?controller=product&action=list");

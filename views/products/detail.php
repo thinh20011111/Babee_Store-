@@ -1003,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // AJAX request to add to cart
-            fetch('index.php?controller=cart&action=add', {
+            fetch('index.php?controller=product&action=addToCart', { // Sửa URL
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -1012,25 +1012,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: `product_id=${encodeURIComponent(productId)}&variant_id=${encodeURIComponent(variantId)}&quantity=${encodeURIComponent(quantity)}`
             })
             .then(response => {
-                console.log('AJAX response received');
-                return response.json();
+                console.log('AJAX response received', { status: response.status, ok: response.ok });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text(); // Lấy text trước để debug
             })
-            .then(data => {
-                console.log('AJAX data:', data);
-                if (data.success) {
-                    alert(data.message || 'Đã thêm vào giỏ hàng!');
-                    const cartBadge = document.querySelector('.fa-shopping-cart')?.nextElementSibling;
-                    if (cartBadge) {
-                        cartBadge.textContent = data.cart_count || 0;
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const data = JSON.parse(text);
+                    console.log('AJAX data:', data);
+                    if (data.success) {
+                        alert(data.message || 'Đã thêm vào giỏ hàng!');
+                        const cartBadge = document.querySelector('.fa-shopping-cart')?.nextElementSibling;
+                        if (cartBadge) {
+                            cartBadge.textContent = data.cart_count || 0;
+                        }
+                    } else {
+                        console.error('Lỗi từ server:', data.message);
+                        alert(data.message || 'Không thể thêm vào giỏ hàng. Vui lòng thử lại.');
                     }
-                } else {
-                    console.error('Lỗi từ server:', data.message);
-                    alert(data.message || 'Không thể thêm vào giỏ hàng. Vui lòng thử lại.');
+                } catch (e) {
+                    console.error('Lỗi phân tích JSON:', e, 'Response text:', text);
+                    alert('Lỗi server: Không nhận được dữ liệu hợp lệ. Vui lòng thử lại.');
                 }
             })
             .catch(error => {
                 console.error('Lỗi AJAX:', error);
-                alert('Đã xảy ra lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.');
+                if (error.message.includes('timeout')) {
+                    alert('Yêu cầu quá lâu, vui lòng kiểm tra kết nối và thử lại.');
+                } else {
+                    alert('Đã xảy ra lỗi khi thêm vào giỏ hàng: ' + error.message);
+                }
             });
         });
     } else {
