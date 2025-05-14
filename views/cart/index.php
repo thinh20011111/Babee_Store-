@@ -13,19 +13,26 @@ file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu render 
 
 // Kiểm tra các biến cần thiết
 $page_title = "Giỏ hàng";
+$debug_log = []; // Lưu log để echo
 if (!isset($cart_items)) {
+    $debug_log[] = "Cảnh báo: Biến \$cart_items không được định nghĩa";
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$cart_items không được định nghĩa\n", FILE_APPEND);
     $cart_items = [];
 }
 if (!isset($cart_total)) {
+    $debug_log[] = "Cảnh báo: Biến \$cart_total không được định nghĩa";
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$cart_total không được định nghĩa\n", FILE_APPEND);
     $cart_total = 0;
 }
+$debug_log[] = "Cart items count: " . count($cart_items);
+$debug_log[] = "Cart total: " . (defined('CURRENCY') ? CURRENCY : 'VND') . number_format($cart_total);
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cart items count: " . count($cart_items) . ", Cart total: $cart_total\n", FILE_APPEND);
 
 // Kiểm tra và log stock của từng item
 foreach ($cart_items as $item) {
     $stock = isset($item['stock']) ? $item['stock'] : 'N/A';
+    $price = (!empty($item['sale_price']) && $item['sale_price'] > 0) ? $item['sale_price'] : $item['price'];
+    $debug_log[] = "Item ID: {$item['id']}, Name: {$item['name']}, Quantity: {$item['quantity']}, Stock: $stock, Price: " . (defined('CURRENCY') ? CURRENCY : 'VND') . number_format($price);
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Item ID: {$item['id']}, Name: {$item['name']}, Quantity: {$item['quantity']}, Stock: $stock\n", FILE_APPEND);
 }
 
@@ -33,16 +40,34 @@ foreach ($cart_items as $item) {
 try {
     $header_path = __DIR__ . '/layouts/header.php';
     if (!file_exists($header_path)) {
+        $debug_log[] = "Lỗi: File $header_path không tồn tại";
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $header_path không tồn tại\n", FILE_APPEND);
         die("Lỗi: File header.php không tồn tại tại " . htmlspecialchars($header_path));
     }
     include $header_path;
+    $debug_log[] = "Đã include header.php";
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include header.php\n", FILE_APPEND);
 } catch (Exception $e) {
+    $debug_log[] = "Lỗi khi include header.php: " . $e->getMessage();
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include header.php: " . $e->getMessage() . "\n", FILE_APPEND);
     die("Lỗi khi load header: " . htmlspecialchars($e->getMessage()));
 }
 ?>
+
+<style>
+.debug-info, .debug-log {
+    margin-bottom: 20px;
+}
+.debug-log {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 15px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+}
+</style>
 
 <div class="container mt-5 mb-5">
     <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
@@ -50,7 +75,7 @@ try {
     <div class="debug-info alert alert-info">
         <strong>Debug Info:</strong><br>
         Cart Items Count: <?php echo count($cart_items); ?><br>
-        Cart Total: <?php echo CURRENCY . number_format($cart_total); ?><br>
+        Cart Total: <?php echo (defined('CURRENCY') ? CURRENCY : 'VND') . number_format($cart_total); ?><br>
         <?php if (!empty($cart_items)): ?>
         Cart Items Details:<br>
         <ul>
@@ -60,14 +85,15 @@ try {
                 Name: <?php echo htmlspecialchars($item['name'] ?? 'N/A'); ?>,
                 Quantity: <?php echo htmlspecialchars($item['quantity'] ?? 'N/A'); ?>,
                 Stock: <?php echo isset($item['stock']) ? htmlspecialchars($item['stock']) : 'N/A'; ?>,
-                Price: <?php echo CURRENCY . number_format((!empty($item['sale_price']) && $item['sale_price'] > 0) ? $item['sale_price'] : $item['price']); ?>
+                Price: <?php echo (defined('CURRENCY') ? CURRENCY : 'VND') . number_format((!empty($item['sale_price']) && $item['sale_price'] > 0) ? $item['sale_price'] : $item['price']); ?>
             </li>
             <?php endforeach; ?>
         </ul>
         <?php endif; ?>
     </div>
+    <pre class="debug-log"><?php echo implode("\n", array_map('htmlspecialchars', $debug_log)); ?></pre>
     <?php
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info\n", FILE_APPEND);
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info và debug log\n", FILE_APPEND);
     endif; ?>
 
     <div class="row">
@@ -114,7 +140,7 @@ try {
                                             <td>
                                                 <?php 
                                                 $price = (!empty($item['sale_price']) && $item['sale_price'] > 0) ? $item['sale_price'] : $item['price'];
-                                                echo CURRENCY . number_format($price);
+                                                echo (defined('CURRENCY') ? CURRENCY : 'VND') . number_format($price);
                                                 ?>
                                             </td>
                                             <td>
@@ -125,7 +151,7 @@ try {
                                                 </div>
                                             </td>
                                             <td class="text-end item-total">
-                                                <?php echo CURRENCY . number_format($price * $item['quantity']); ?>
+                                                <?php echo (defined('CURRENCY') ? CURRENCY : 'VND') . number_format($price * $item['quantity']); ?>
                                             </td>
                                             <td class="text-end">
                                                 <a href="index.php?controller=cart&action=remove&id=<?php echo $item['id']; ?>" class="btn btn-sm btn-outline-danger remove-item-btn">
@@ -159,7 +185,7 @@ try {
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-3">
                             <span>Tạm tính:</span>
-                            <span class="fw-bold cart-subtotal"><?php echo CURRENCY . number_format($cart_total); ?></span>
+                            <span class="fw-bold cart-subtotal"><?php echo (defined('CURRENCY') ? CURRENCY : 'VND') . number_format($cart_total); ?></span>
                         </div>
                         
                         <!-- Promotion code input -->
@@ -175,14 +201,14 @@ try {
                         <!-- Discount amount -->
                         <div id="discount-row" class="d-flex justify-content-between mb-3" style="display: none;">
                             <span>Giảm giá:</span>
-                            <span class="fw-bold text-danger" id="discount-amount">- <?php echo CURRENCY; ?>0</span>
+                            <span class="fw-bold text-danger" id="discount-amount">- <?php echo (defined('CURRENCY') ? CURRENCY : 'VND'); ?>0</span>
                         </div>
                         
                         <!-- Total with horizontal line above -->
                         <hr>
                         <div class="d-flex justify-content-between mb-3">
                             <span>Tổng cộng:</span>
-                            <span class="fw-bold fs-5 cart-total"><?php echo CURRENCY . number_format($cart_total); ?></span>
+                            <span class="fw-bold fs-5 cart-total"><?php echo (defined('CURRENCY') ? CURRENCY : 'VND') . number_format($cart_total); ?></span>
                         </div>
                         
                         <!-- Checkout button -->
@@ -576,13 +602,19 @@ document.addEventListener('DOMContentLoaded', function() {
 try {
     $footer_path = __DIR__ . '/layouts/footer.php';
     if (!file_exists($footer_path)) {
+        $debug_log[] = "Lỗi: File $footer_path không tồn tại";
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $footer_path không tồn tại\n", FILE_APPEND);
         die("Lỗi: File footer.php không tồn tại tại " . htmlspecialchars($footer_path));
     }
     include $footer_path;
+    $debug_log[] = "Đã include footer.php";
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n", FILE_APPEND);
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành render views/cart/index.php\n", FILE_APPEND);
+    if (defined('DEBUG_MODE') && DEBUG_MODE && !empty($debug_log)) {
+        echo '<pre class="debug-log">' . implode("\n", array_map('htmlspecialchars', $debug_log)) . '</pre>';
+    }
 } catch (Exception $e) {
+    $debug_log[] = "Lỗi khi include footer.php: " . $e->getMessage();
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include footer.php: " . $e->getMessage() . "\n", FILE_APPEND);
     die("Lỗi khi load footer: " . htmlspecialchars($e->getMessage()));
 }
