@@ -32,6 +32,70 @@
             --warning-color: <?php echo isset($site_colors['warning_color']) ? $site_colors['warning_color'] : '#FFBB33'; ?>;
             --danger-color: <?php echo isset($site_colors['danger_color']) ? $site_colors['danger_color'] : '#FF3547'; ?>;
         }
+
+        /* Tùy chỉnh header */
+        .main-header {
+            padding: 10px 0;
+        }
+
+        .site-logo {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .search-form .search-input {
+            border: 1px solid var(--light-bg-color);
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        .search-form .btn {
+            padding: 8px 15px;
+        }
+
+        /* Tùy chỉnh cho mobile */
+        @media (max-width: 767.98px) {
+            .site-logo {
+                font-size: 1.2rem;
+            }
+
+            .main-header .col-8 {
+                display: flex;
+                align-items: center;
+            }
+
+            .main-header .col-4 {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
+            .search-form {
+                margin-top: 10px;
+            }
+
+            .search-form .search-input {
+                font-size: 0.85rem;
+            }
+
+            .btn-link i {
+                font-size: 1.2rem;
+            }
+
+            .badge {
+                font-size: 0.65rem;
+                padding: 3px 6px;
+            }
+        }
+
+        /* Tùy chỉnh top bar */
+        .top-bar .small {
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -82,36 +146,24 @@
     </div>
 
     <!-- Main Header - Bold & Modern -->
-    <header class="main-header py-3 bg-white">
+    <header class="main-header bg-white">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-3 col-6 mb-2 mb-md-0">
+                <!-- Logo -->
+                <div class="col-8 col-md-3">
                     <a href="index.php" class="text-decoration-none">
                         <h1 class="site-logo m-0">
                             <span class="text-primary fw-black logo-text">STREET</span><span class="text-secondary fw-light logo-text">STYLE</span>
                         </h1>
                     </a>
                 </div>
-                <div class="col-md-5 col-12 order-3 order-md-2 mt-3 mt-md-0">
-                    <form action="index.php" method="GET" class="search-form">
-                        <input type="hidden" name="controller" value="product">
-                        <input type="hidden" name="action" value="list">
-                        <div class="input-group">
-                            <input type="text" name="search" class="form-control rounded-pill-start search-input" 
-                                placeholder="Tìm kiếm sản phẩm..." 
-                                value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                            <button class="btn btn-primary rounded-pill-end" type="submit">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <div class="col-md-4 col-6 text-end order-2 order-md-3">
+
+                <!-- Wishlist và Cart -->
+                <div class="col-4 col-md-3 order-md-3 text-end">
                     <div class="d-flex justify-content-end">
                         <a href="index.php?controller=user&action=wishlist" class="btn btn-link text-dark me-2 position-relative">
                             <i class="fas fa-heart fs-5"></i>
                         </a>
-                        
                         <?php
                         // Initialize cart
                         $cart = new Cart();
@@ -126,6 +178,22 @@
                             <?php endif; ?>
                         </a>
                     </div>
+                </div>
+
+                <!-- Thanh tìm kiếm -->
+                <div class="col-md-6 order-md-2">
+                    <form action="index.php" method="GET" class="search-form">
+                        <input type="hidden" name="controller" value="product">
+                        <input type="hidden" name="action" value="list">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control rounded-pill-start search-input" 
+                                   placeholder="Tìm kiếm sản phẩm..." 
+                                   value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                            <button class="btn btn-primary rounded-pill-end" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
