@@ -4,12 +4,17 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Khởi tạo file log
-$log_file = 'logs/debug.log';
-if (!file_exists('logs')) {
-    mkdir('logs', 0755, true);
+// Định nghĩa hằng số CURRENCY nếu chưa có
+if (!defined('CURRENCY')) {
+    define('CURRENCY', '₫');
 }
-file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu render product_detail.php\n", FILE_APPEND);
+
+// Khởi tạo file log
+$log_file = '/tmp/debug.log'; // Dùng /tmp/ để tránh vấn đề quyền
+if (!file_exists(dirname($log_file))) {
+    mkdir(dirname($log_file), 0755, true);
+}
+file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu render views/products/detail.php\n", FILE_APPEND);
 
 // Kiểm tra các biến cần thiết
 if (!isset($product) || !is_object($product)) {
@@ -34,10 +39,10 @@ file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Page title: $page_ti
 
 // Include header
 try {
-    $header_path = __DIR__ . '/layouts/header.php';
+    $header_path = __DIR__ . '/../layouts/header.php';
     if (!file_exists($header_path)) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $header_path không tồn tại\n", FILE_APPEND);
-        die("Lỗi: File header.php không tồn tại");
+        die("Lỗi: File header.php không tồn tại tại " . htmlspecialchars($header_path));
     }
     include $header_path;
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include header.php\n", FILE_APPEND);
@@ -47,9 +52,10 @@ try {
 }
 ?>
 
-<!-- Đảm bảo Bootstrap được include -->
+<!-- Đảm bảo Bootstrap và Font Awesome được include -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
@@ -462,7 +468,7 @@ endif; ?>
 </style>
 
 <script>
-console.log('Bắt đầu script product_detail.php');
+console.log('Bắt đầu script views/products/detail.php');
 console.log('Product ID:', <?php echo json_encode($product->id ?? 'N/A'); ?>);
 console.log('Variants:', <?php echo json_encode($variants ?? []); ?>);
 console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?>);
@@ -669,14 +675,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 // Include footer
 try {
-    $footer_path = __DIR__ . '/layouts/footer.php';
+    $footer_path = __DIR__ . '/../layouts/footer.php';
     if (!file_exists($footer_path)) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $footer_path không tồn tại\n", FILE_APPEND);
-        die("Lỗi: File footer.php không tồn tại");
+        die("Lỗi: File footer.php không tồn tại tại " . htmlspecialchars($footer_path));
     }
     include $footer_path;
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n", FILE_APPEND);
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành render product_detail.php\n", FILE_APPEND);
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành render views/products/detail.php\n", FILE_APPEND);
 } catch (Exception $e) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include footer.php: " . $e->getMessage() . "\n", FILE_APPEND);
     die("Lỗi khi load footer: " . htmlspecialchars($e->getMessage()));
