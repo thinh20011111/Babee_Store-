@@ -63,7 +63,7 @@ echo "<pre>DEBUG: ADMIN_EMAIL: $admin_email</pre>";
 // Include header
 echo "<pre>DEBUG: Chuẩn bị include header.php</pre>";
 try {
-    $header_path = __DIR__ . '/layouts/header.php';
+    $header_path = __DIR__ . '/../layouts/header.php';
     if (!file_exists($header_path)) {
         $debug_log[] = "Lỗi: File $header_path không tồn tại";
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $header_path không tồn tại\n", FILE_APPEND);
@@ -655,7 +655,7 @@ try {
     echo "<pre>DEBUG: Chuẩn bị include footer.php</pre>";
     // Include footer
     try {
-        $footer_path = __DIR__ . '/layouts/footer.php';
+        $footer_path = __DIR__ . '/../layouts/footer.php';
         if (!file_exists($footer_path)) {
             $debug_log[] = "Lỗi: File $footer_path không tồn tại";
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $footer_path không tồn tại\n", FILE_APPEND);
