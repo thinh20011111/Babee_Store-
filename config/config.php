@@ -9,7 +9,7 @@ define('SITE_NAME', 'Babee Store');
 define('SITE_DESCRIPTION', 'Quality Baby Clothing at Affordable Prices');
 
 // Admin email
-define('ADMIN_EMAIL', 'admin@example.com');
+define('ADMIN_EMAIL', 'babeemoonstore@gmail.com');
 define('ADMIN_PHONE', '0359349545');
 
 // Pagination settings
