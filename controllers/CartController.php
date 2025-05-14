@@ -19,9 +19,20 @@ class CartController {
             error_log("DEBUG: Cart class instantiated\n", 3, '/tmp/cart_debug.log');
             echo "<pre>DEBUG: Cart class instantiated</pre>";
             
-            $this->cart->loadProductsData($db);
-            error_log("DEBUG: loadProductsData completed\n", 3, '/tmp/cart_debug.log');
-            echo "<pre>DEBUG: loadProductsData completed</pre>";
+            try {
+                $this->cart->loadProductsData($db);
+                error_log("DEBUG: loadProductsData completed\n", 3, '/tmp/cart_debug.log');
+                echo "<pre>DEBUG: loadProductsData completed</pre>";
+            } catch (Exception $e) {
+                error_log("WARNING: loadProductsData failed: " . $e->getMessage() . ". Proceeding with default stock.\n", 3, '/tmp/cart_debug.log');
+                echo "<pre>WARNING: loadProductsData failed: " . htmlspecialchars($e->getMessage()) . ". Using default stock.</pre>";
+                // Mock stock data
+                $items = $this->cart->getItems();
+                foreach ($items as &$item) {
+                    $item['data']['stock'] = 10; // Default stock value
+                }
+                $this->cart->setItems($items); // Assuming a setter method
+            }
         } catch (Exception $e) {
             error_log("ERROR: CartController::__construct failed: " . $e->getMessage() . "\n", 3, '/tmp/cart_debug.log');
             echo "<pre>ERROR: CartController::__construct failed: " . htmlspecialchars($e->getMessage()) . "</pre>";

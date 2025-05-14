@@ -176,6 +176,26 @@ class Cart {
         $_SESSION['cart_total_items'] = $this->total_items;
         $_SESSION['cart_total_price'] = $this->total_price;
     }
+
+    // Set cart items
+    public function setItems($items) {
+        // Validate input
+        if (!is_array($items)) {
+            error_log("ERROR: Invalid items array provided to setItems\n", 3, '/tmp/cart_debug.log');
+            return false;
+        }
+        
+        // Set items
+        $this->items = $items;
+        
+        // Update totals
+        $this->updateTotals();
+        
+        // Save cart to session
+        $this->saveCart();
+        
+        return true;
+    }
     
     // Load products data from database
     public function loadProductsData($conn) {
