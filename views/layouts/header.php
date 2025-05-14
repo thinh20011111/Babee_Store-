@@ -32,6 +32,73 @@
             --warning-color: <?php echo isset($site_colors['warning_color']) ? $site_colors['warning_color'] : '#FFBB33'; ?>;
             --danger-color: <?php echo isset($site_colors['danger_color']) ? $site_colors['danger_color'] : '#FF3547'; ?>;
         }
+
+        /* Đảm bảo menu hiển thị đúng */
+        .main-nav {
+            z-index: 1000;
+            position: sticky;
+            top: 0;
+            background-color: var(--background-color);
+        }
+
+        .nav-container {
+            padding: 10px 0;
+        }
+
+        .navbar-nav {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap; /* Ngăn xuống dòng */
+            overflow-x: auto; /* Cho phép cuộn ngang trên mobile */
+            justify-content: center;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            -webkit-overflow-scrolling: touch; /* Cuộn mượt trên iOS */
+        }
+
+        .nav-item {
+            flex: 0 0 auto; /* Không co giãn, giữ kích thước tự nhiên */
+            margin: 0 8px;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+            white-space: nowrap; /* Ngăn chữ xuống dòng */
+            font-size: 14px; /* Thu nhỏ chữ để vừa màn hình */
+            padding: 8px 12px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767px) {
+            .nav-link {
+                font-size: 12px; /* Thu nhỏ hơn trên mobile */
+                padding: 6px 8px;
+            }
+            .nav-item {
+                margin: 0 5px;
+            }
+            .navbar-nav::-webkit-scrollbar {
+                height: 5px; /* Thanh cuộn mảnh */
+            }
+            .navbar-nav::-webkit-scrollbar-thumb {
+                background: var(--primary-color);
+                border-radius: 5px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .nav-link {
+                font-size: 16px; /* Kích thước chữ lớn hơn trên desktop */
+            }
+        }
     </style>
 </head>
 <body>
@@ -41,7 +108,7 @@
             <div class="row align-items-center">
                 <div class="col-md-6 d-none d-md-block">
                     <div class="d-flex align-items-center">
-                        <span class="me-3 small"><i class="fas fa-bolt me-1"></i> FREESHIP FOR ORDERS OVER 1.000.000₫</span>
+                        <span class="me-3 small"><i class="fas fa-bolt me-1"></i> MIỄN PHÍ VẬN CHUYỂN CHO ĐƠN HÀNG TRÊN 500.000₫</span>
                         <span class="small"><i class="far fa-clock me-1"></i> SHIP TOÀN QUỐC 1-3 NGÀY</span>
                     </div>
                 </div>
@@ -51,17 +118,17 @@
                             <i class="fas fa-user me-1"></i> <?php echo $_SESSION['username']; ?>
                         </a>
                         <a href="index.php?controller=user&action=orders" class="text-light me-3">
-                            <i class="fas fa-box me-1"></i> Orders
+                            <i class="fas fa-box me-1"></i> ĐƠN HÀNG
                         </a>
                         <a href="index.php?controller=user&action=logout" class="text-light">
-                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                            <i class="fas fa-sign-out-alt me-1"></i> ĐĂNG XUẤT
                         </a>
                     <?php else: ?>
                         <a href="index.php?controller=user&action=login" class="text-light me-3">
-                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                            <i class="fas fa-sign-in-alt me-1"></i> ĐĂNG NHẬP
                         </a>
                         <a href="index.php?controller=user&action=register" class="text-light">
-                            <i class="fas fa-user-plus me-1"></i> Register
+                            <i class="fas fa-user-plus me-1"></i> ĐĂNG KÝ
                         </a>
                     <?php endif; ?>
                 </div>
@@ -76,7 +143,7 @@
                 <div class="col-md-3 col-6 mb-2 mb-md-0">
                     <a href="index.php" class="text-decoration-none">
                         <h1 class="site-logo m-0">
-                            <span class="text-primary fw-black logo-text">STREET</span><span class="text-secondary fw-light logo-text">STYLE</span>
+                            <span class="text-primary fw-black logo-text">BA</span><span class="text-secondary fw-light logo-text">BEE</span>
                         </h1>
                     </a>
                 </div>
@@ -94,7 +161,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="col-md-4 col-6 text-end order-2 order-md-3">
+                < marshes class="col-md-4 col-6 text-end order-2 order-md-3">
                     <div class="d-flex justify-content-end">
                         <a href="index.php?controller=user&action=wishlist" class="btn btn-link text-dark me-2 position-relative">
                             <i class="fas fa-heart fs-5"></i>
@@ -123,46 +190,47 @@
     <nav class="main-nav py-0 sticky-top">
         <div class="container">
             <div class="nav-container bg-white py-2 px-3 rounded-bottom shadow-sm">
-                <div class="d-flex justify-content-between">
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
-                        <i class="fas fa-bars"></i> MENU
-                    </button>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
+                           href="index.php">TRANG CHỦ</a>
+                    </li>
                     
-                    <div class="collapse navbar-collapse" id="mainNavigation">
-                        <ul class="navbar-nav nav-pills nav-fill mx-auto">
-                            <li class="nav-item">
-                                <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
-                                   href="index.php">HOME</a>
-                            </li>
-                            
-                            <?php
-                                $category = new Category($conn);
-                                $categoryStmt = $category->read();
-                                if ($categoryStmt) {
-                                    while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
-                                ?>
-                                <li class="nav-item">
-                                    <a class="nav-link <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active fw-bold' : ''; ?>" 
-                                    href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
-                                        <?php echo strtoupper($row['name']); ?>
-                                    </a>
-                                </li>
-                            <?php endwhile; } ?>
-                            
-                            <li class="nav-item">
-                                <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
-                                   href="index.php?controller=product&action=list&is_sale=1">
-                                   <span class="sale-text">SALE</span>
-                                </a>
-                            </li>
-                            <li class="nav-item d-none d-lg-block">
-                                <a class="nav-link" href="index.php?controller=order&action=track">
-                                    <i class="fas fa-truck me-1"></i> TRACK ORDER
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+                    <?php
+                        try {
+                            $category = new Category($conn);
+                            $categoryStmt = $category->read();
+                            if ($categoryStmt === false) {
+                                echo '<li class="nav-item"><a class="nav-link" href="#">Lỗi: Không tải được danh mục</a></li>';
+                            } else {
+                                while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                    ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active fw-bold' : ''; ?>" 
+                               href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                                <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
+                            </a>
+                        </li>
+                    <?php 
+                                endwhile;
+                            }
+                        } catch (Exception $e) {
+                            echo '<li class="nav-item"><a class="nav-link" href="#">Lỗi: ' . htmlspecialchars($e->getMessage()) . '</a></li>';
+                        }
+                    ?>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
+                           href="index.php?controller=product&action=list&is_sale=1">
+                            <span class="sale-text">SALE</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.php?controller=order&action=track">
+                            <i class="fas fa-truck me-1"></i> THEO DÕI ĐƠN HÀNG
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
@@ -170,3 +238,12 @@
     <!-- Main Content -->
     <main class="main-content py-4">
         <div class="container">
+            <!-- Nội dung chính sẽ được thêm vào đây -->
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS and Popper.js (vẫn giữ để hỗ trợ các thành phần khác nếu cần) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
