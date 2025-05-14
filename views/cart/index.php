@@ -152,15 +152,6 @@ try {
                             <h5 class="mb-0">Thông tin thanh toán</h5>
                         </div>
                         <div class="card-body">
-                            <!-- Debug: Hiển thị thông tin trực tiếp trong môi trường phát triển -->
-                            <div class="alert alert-info">
-                                <strong>DEBUG:</strong><br>
-                                cart_items count: <?php echo count($cart_items); ?><br>
-                                cart_total: <?php echo $currency . number_format($cart_total, 0, ',', '.'); ?><br>
-                                promotion_discount: <?php echo $currency . number_format($promotion_discount, 0, ',', '.'); ?><br>
-                                final_total: <?php echo $currency . number_format($final_total, 0, ',', '.'); ?>
-                            </div>
-
                             <div class="d-flex justify-content-between mb-3">
                                 <span>Tạm tính:</span>
                                 <span class="fw-bold cart-subtotal"><?php echo $currency . number_format($cart_total, 0, ',', '.'); ?></span>
@@ -194,11 +185,6 @@ try {
                                 Thanh toán <i class="fas fa-arrow-right ms-2"></i>
                             </a>
                         </div>
-                    </div>
-                <?php else: ?>
-                    <!-- Debug: Thông báo khi giỏ hàng rỗng -->
-                    <div class="alert alert-warning">
-                        <strong>DEBUG:</strong> Giỏ hàng rỗng. Kiểm tra CartController hoặc dữ liệu session.
                     </div>
                 <?php endif; ?>
                 
