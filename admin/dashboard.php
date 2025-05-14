@@ -11,6 +11,7 @@ require_once '../models/Order.php';
 require_once '../models/Product.php';
 require_once '../models/User.php';
 require_once '../models/Promotion.php';
+require_once '../models/TrafficLog.php';
 
 // Include database connection
 require_once '../config/database.php';
@@ -25,6 +26,7 @@ $order = new Order($conn);
 $product = new Product($conn);
 $user = new User($conn);
 $promotion = new Promotion($conn);
+$traffic = new TrafficLog($conn);
 
 // Get statistics with debug
 try {
@@ -32,7 +34,12 @@ try {
     $order_count = $order->countAll() ?? 0;
     $product_count = $product->countAll() ?? 0;
     $user_count = $user->countAll() ?? 0;
-    $debug_logs[] = "Statistics fetched: Revenue=$total_revenue, Orders=$order_count, Products=$product_count, Users=$user_count";
+    
+    // Lấy thống kê truy cập
+    $total_visits = $traffic->getTotalVisits() ?? 0;
+    $today_visits = $traffic->getTodayVisits() ?? 0;
+    
+    $debug_logs[] = "Statistics fetched: Revenue=$total_revenue, Orders=$order_count, Products=$product_count, Users=$user_count, Visits=$total_visits";
 } catch (Exception $e) {
     $debug_logs[] = "Error fetching statistics: " . $e->getMessage();
     error_log("Dashboard statistics error: " . $e->getMessage());
@@ -158,6 +165,49 @@ if (empty($monthly_revenue_data) || array_sum($monthly_revenue_data) == 0) {
 $monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
 $monthly_revenue_data_json = json_encode($monthly_revenue_data);
 
+// Lấy dữ liệu truy cập theo ngày (7 ngày gần nhất)
+$traffic_stats = [];
+$traffic_labels = [];
+$traffic_data = [];
+
+try {
+    $end_date = date('Y-m-d');
+    $start_date = date('Y-m-d', strtotime('-7 days'));
+    
+    $traffic_stats = $traffic->getStatsRange($start_date, $end_date);
+    
+    if (empty($traffic_stats)) {
+        // Nếu không có dữ liệu thực (mới cài đặt), sử dụng dữ liệu mẫu
+        if (file_exists('../models/sample/traffic_data.php')) {
+            require_once '../models/sample/traffic_data.php';
+            $traffic_stats = getSampleDailyTraffic();
+            // Chỉ lấy 7 ngày gần nhất
+            $traffic_stats = array_slice($traffic_stats, -7);
+        }
+    }
+    
+    foreach ($traffic_stats as $stat) {
+        $traffic_labels[] = date('d/m', strtotime($stat['period']));
+        $traffic_data[] = $stat['count'];
+    }
+    
+    $debug_logs[] = "Traffic data fetched: " . count($traffic_stats) . " days";
+} catch (Exception $e) {
+    $debug_logs[] = "Error fetching traffic data: " . $e->getMessage();
+    error_log("Traffic data error: " . $e->getMessage());
+}
+
+// Ensure traffic data is valid
+if (empty($traffic_data)) {
+    $traffic_labels = ['No Data'];
+    $traffic_data = [0];
+    $debug_logs[] = "No valid traffic data, setting default to 'No Data'";
+}
+
+// Convert to JSON
+$traffic_labels_json = json_encode($traffic_labels);
+$traffic_data_json = json_encode($traffic_data);
+
 // Define currency constant
 if (!defined('CURRENCY')) {
     define('CURRENCY', 'đ');
@@ -255,6 +305,9 @@ if (!defined('CURRENCY')) {
                 <li class="nav-item">
                     <a class="nav-link text-white" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
+                </li>
             </ul>
         </div>
 
@@ -314,10 +367,38 @@ if (!defined('CURRENCY')) {
                             </div>
                         </div>
                     </div>
+                    <!-- Website Visits Card -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card shadow-sm border-0 rounded">
+                            <div class="card-body d-flex align-items-center">
+                                <i class="fas fa-chart-line fa-3x text-primary me-3"></i>
+                                <div>
+                                    <h6 class="text-uppercase text-muted mb-1">Lượt truy cập</h6>
+                                    <h4 class="mb-0"><?php echo number_format($total_visits); ?></h4>
+                                    <small class="text-muted">Hôm nay: <?php echo number_format($today_visits); ?></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Charts -->
                 <div class="row mb-4">
+                    <!-- Website Traffic Chart -->
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm rounded">
+                            <div class="card-header">
+                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-line me-2"></i> Lượt truy cập 7 ngày gần đây</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="traffic-chart-container">
+                                    <canvas id="trafficChart" width="100%" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Revenue Chart -->
                     <div class="col-lg-6">
                         <div class="card shadow-sm rounded">
                             <div class="card-header">
@@ -580,6 +661,76 @@ if (!defined('CURRENCY')) {
                 "Cancelled": <?php echo $order->countByStatus("cancelled"); ?>
             };
             console.log("Order Status Data:", statusCounts);
+            
+            // Traffic Chart - Vẽ biểu đồ lượt truy cập
+            const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+            const trafficLabels = <?php echo $traffic_labels_json; ?>;
+            const trafficData = <?php echo $traffic_data_json; ?>;
+            
+            // Tạo gradient cho biểu đồ traffic
+            const trafficGradient = trafficCtx.createLinearGradient(0, 0, 0, 400);
+            trafficGradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
+            trafficGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
+            
+            // Vẽ biểu đồ lượt truy cập
+            new Chart(trafficCtx, {
+                type: 'line',
+                data: {
+                    labels: trafficLabels,
+                    datasets: [{
+                        label: 'Lượt truy cập',
+                        data: trafficData,
+                        backgroundColor: trafficGradient,
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointHoverBorderColor: '#fff',
+                        pointHitRadius: 10,
+                        lineTension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return tooltipItems[0].label;
+                                },
+                                label: function(context) {
+                                    return `Lượt truy cập: ${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+            
+            console.log("Traffic data:", {
+                labels: trafficLabels,
+                data: trafficData
+            });
         });
     </script>
 </body>
