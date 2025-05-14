@@ -240,7 +240,7 @@ endif; ?>
                         <label for="quantity" class="form-label fw-bold mb-2">Số lượng:</label>
                         <div class="input-group quantity-selector">
                             <button type="button" class="btn btn-outline-secondary" onclick="decreaseQuantity()">-</button>
-                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>" readonly>
+                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
                             <button type="button" class="btn btn-outline-secondary" onclick="increaseQuantity()">+</button>
                         </div>
                     </div>
@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const availableColors = variants
                     .filter(v => v.size === selectedSize && v.stock > 0)
                     .map(v => v.color)
-                    .filter(color => color); // Loại bỏ color rỗng
+                    .filter(color => color);
                 const uniqueColors = [...new Set(availableColors)];
                 
                 uniqueColors.forEach(color => {
@@ -577,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             console.log('No valid variant selected');
             variantIdInput.value = '';
-            quantityInput.max = 1;
+            quantityInput.max = variants.length > 0 ? 1 : totalStock;
             quantityInput.value = 1;
         }
         console.log('Cập nhật quantity:', { value: quantityInput.value, max: quantityInput.max });
@@ -586,25 +586,54 @@ document.addEventListener('DOMContentLoaded', function() {
     // Quantity increase/decrease handling
     window.decreaseQuantity = function() {
         if (quantityInput) {
-            let value = parseInt(quantityInput.value);
+            let value = parseInt(quantityInput.value) || 1;
             const min = parseInt(quantityInput.min) || 1;
             if (value > min) {
                 quantityInput.value = value - 1;
                 console.log('Quantity decreased:', quantityInput.value);
+            } else {
+                quantityInput.value = min;
+                console.log('Quantity at minimum:', quantityInput.value);
             }
+        } else {
+            console.error('Không tìm thấy quantityInput');
         }
     };
     
     window.increaseQuantity = function() {
         if (quantityInput) {
-            let value = parseInt(quantityInput.value);
+            let value = parseInt(quantityInput.value) || 1;
             const max = parseInt(quantityInput.max) || totalStock;
             if (value < max) {
                 quantityInput.value = value + 1;
                 console.log('Quantity increased:', quantityInput.value);
+            } else {
+                quantityInput.value = max;
+                console.log('Quantity at maximum:', quantityInput.value);
             }
+        } else {
+            console.error('Không tìm thấy quantityInput');
         }
     };
+    
+    // Validate quantity input
+    if (quantityInput) {
+        quantityInput.addEventListener('input', function() {
+            let value = parseInt(this.value);
+            const min = parseInt(this.min) || 1;
+            const max = parseInt(this.max) || totalStock;
+            
+            console.log('Quantity input changed:', { value, min, max });
+            if (isNaN(value) || value < min) {
+                this.value = min;
+            } else if (value > max) {
+                this.value = max;
+            }
+            console.log('Quantity validated:', this.value);
+        });
+    } else {
+        console.error('Không tìm thấy quantityInput element');
+    }
     
     // Form submission
     if (form) {
