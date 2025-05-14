@@ -10,7 +10,7 @@ if (!defined('CURRENCY')) {
 }
 
 // Khởi tạo file log
-$log_file = '/tmp/debug.log'; // Dùng /tmp/ để tránh vấn đề quyền
+$log_file = '/tmp/debug.log';
 if (!file_exists(dirname($log_file))) {
     mkdir(dirname($log_file), 0755, true);
 }
@@ -185,11 +185,12 @@ endif; ?>
             </div>
         
             <!-- Add to Cart Form -->
-            <?php if($total_stock > 0 && !empty($variants) && is_array($variants)): ?>
+            <?php if($total_stock > 0): ?>
             <form id="add-to-cart-form" class="mb-4">
                 <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product->id ?? 0); ?>">
                 
-                <!-- Variant Selector -->
+                <!-- Variant Selector (chỉ hiển thị nếu có variants) -->
+                <?php if(!empty($variants) && is_array($variants)): ?>
                 <div class="product-variants mb-4">
                     <label class="fw-bold d-block mb-2">Biến thể:</label>
                     <div class="row">
@@ -224,6 +225,7 @@ endif; ?>
                     </div>
                     <input type="hidden" name="variant_id" id="variant-id">
                 </div>
+                <?php endif; ?>
                 
                 <div class="row align-items-end mb-4">
                     <div class="col-5 col-md-3">
@@ -232,7 +234,7 @@ endif; ?>
                             <button type="button" class="btn btn-outline-secondary qty-btn" data-action="decrease">
                                 <i class="fas fa-minus"></i>
                             </button>
-                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="1">
+                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
                             <button type="button" class="btn btn-outline-secondary qty-btn" data-action="increase">
                                 <i class="fas fa-plus"></i>
                             </button>
@@ -465,6 +467,9 @@ endif; ?>
 .product-image-container img:hover {
     opacity: 0.9;
 }
+.quantity-selector input {
+    max-width: 80px;
+}
 </style>
 
 <script>
@@ -473,6 +478,7 @@ console.log('Product ID:', <?php echo json_encode($product->id ?? 'N/A'); ?>);
 console.log('Variants:', <?php echo json_encode($variants ?? []); ?>);
 console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?>);
 console.log('Related Products Count:', <?php echo json_encode(count($related_products ?? [])); ?>);
+console.log('Total Stock:', <?php echo json_encode($total_stock); ?>);
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded');
@@ -482,6 +488,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const variantIdInput = document.getElementById('variant-id');
     const quantityInput = document.getElementById('quantity');
     const variants = <?php echo json_encode($variants ?? []); ?>;
+    const totalStock = <?php echo json_encode($total_stock); ?>;
+    
+    // Khởi tạo số lượng ban đầu
+    if (quantityInput) {
+        quantityInput.value = 1;
+        quantityInput.max = variants.length > 0 ? 1 : totalStock;
+        console.log('Khởi tạo quantity:', { value: quantityInput.value, max: quantityInput.max });
+    }
     
     // Thumbnail click handling
     try {
@@ -492,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.add('active');
                 const mainImage = document.querySelector('.main-image');
                 const imageSrc = this.dataset.image;
-                if(mainImage && imageSrc) {
+                if (mainImage && imageSrc) {
                     mainImage.src = imageSrc;
                 }
             });
@@ -502,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Update color options based on size
-    if(sizeSelect) {
+    if (sizeSelect) {
         sizeSelect.addEventListener('change', function() {
             console.log('Size selected:', this.value);
             const selectedSize = this.value;
@@ -520,29 +534,31 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             colorSelect.disabled = uniqueColors.length === 0;
-            if(uniqueColors.length > 0) {
+            if (uniqueColors.length > 0) {
                 colorSelect.disabled = false;
                 colorSelect.focus();
             }
             updateVariant();
         });
     } else {
-        console.error('Không tìm thấy sizeSelect element');
+        console.log('Không có sizeSelect, bỏ qua xử lý biến thể');
     }
     
     // Update variant ID and max quantity
-    if(colorSelect) {
+    if (colorSelect) {
         colorSelect.addEventListener('change', updateVariant);
-    } else {
-        console.error('Không tìm thấy colorSelect element');
     }
     
     function updateVariant() {
-        const selectedSize = sizeSelect ? sizeSelect.value : '';
-        const selectedColor = colorSelect ? colorSelect.value : '';
+        if (!sizeSelect || !colorSelect) {
+            console.log('Bỏ qua updateVariant vì không có sizeSelect hoặc colorSelect');
+            return;
+        }
+        const selectedSize = sizeSelect.value;
+        const selectedColor = colorSelect.value;
         const variant = variants.find(v => v.size === selectedSize && v.color === selectedColor);
         
-        if(variant && variant.stock > 0) {
+        if (variant && variant.stock > 0) {
             console.log('Selected variant:', variant);
             variantIdInput.value = variant.id;
             quantityInput.max = variant.stock;
@@ -553,6 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
             quantityInput.max = 1;
             quantityInput.value = 1;
         }
+        console.log('Cập nhật quantity:', { value: quantityInput.value, max: quantityInput.max });
     }
     
     // Quantity buttons
@@ -560,15 +577,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.qty-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const action = this.dataset.action;
-                let currentQuantity = parseInt(quantityInput.value);
-                const maxQuantity = parseInt(quantityInput.max) || 1;
+                let currentQuantity = parseInt(quantityInput.value) || 1;
+                const maxQuantity = parseInt(quantityInput.max) || totalStock;
                 
-                console.log('Quantity button clicked:', action, 'Current:', currentQuantity, 'Max:', maxQuantity);
+                console.log('Quantity button clicked:', { action, currentQuantity, maxQuantity });
                 if (action === 'increase' && currentQuantity < maxQuantity) {
                     quantityInput.value = currentQuantity + 1;
                 } else if (action === 'decrease' && currentQuantity > 1) {
                     quantityInput.value = currentQuantity - 1;
                 }
+                console.log('Quantity updated:', quantityInput.value);
             });
         });
     } catch (e) {
@@ -576,41 +594,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Prevent invalid quantity input
-    if(quantityInput) {
+    if (quantityInput) {
         quantityInput.addEventListener('input', function() {
-            const maxQuantity = parseInt(this.max) || 1;
+            const maxQuantity = parseInt(this.max) || totalStock;
             const minQuantity = parseInt(this.min) || 1;
             let value = parseInt(this.value);
             
-            console.log('Quantity input changed:', value);
-            if(isNaN(value) || value < minQuantity) {
+            console.log('Quantity input changed:', { value, maxQuantity, minQuantity });
+            if (isNaN(value) || value < minQuantity) {
                 this.value = minQuantity;
-            } else if(value > maxQuantity) {
+            } else if (value > maxQuantity) {
                 this.value = maxQuantity;
             }
+            console.log('Quantity validated:', this.value);
         });
     } else {
         console.error('Không tìm thấy quantityInput element');
     }
     
     // Form submission
-    if(form) {
+    if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const productId = this.querySelector('[name="product_id"]').value;
-            const variantId = this.querySelector('[name="variant_id"]').value;
+            const variantId = variants.length > 0 ? this.querySelector('[name="variant_id"]').value : '';
             const quantity = parseInt(this.querySelector('[name="quantity"]').value);
             
             console.log('Form submitted:', { productId, variantId, quantity });
             
-            if(!variantId) {
+            if (variants.length > 0 && !variantId) {
                 console.error('Lỗi: Chưa chọn biến thể hợp lệ');
                 alert('Vui lòng chọn kích cỡ và màu sắc hợp lệ.');
                 return;
             }
             
-            if(quantity < 1 || isNaN(quantity)) {
+            if (quantity < 1 || isNaN(quantity)) {
                 console.error('Lỗi: Số lượng không hợp lệ');
                 alert('Số lượng không hợp lệ.');
                 return;
@@ -631,10 +650,10 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 console.log('AJAX data:', data);
-                if(data.success) {
+                if (data.success) {
                     alert(data.message || 'Đã thêm vào giỏ hàng!');
                     const cartBadge = document.querySelector('.fa-shopping-cart')?.nextElementSibling;
-                    if(cartBadge) {
+                    if (cartBadge) {
                         cartBadge.textContent = data.cart_count || 0;
                     }
                 } else {
@@ -653,12 +672,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Notify form submission
     const notifyForm = document.getElementById('notify-form');
-    if(notifyForm) {
+    if (notifyForm) {
         notifyForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const email = this.querySelector('[name="email"]').value;
             console.log('Notify form submitted:', email);
-            if(email) {
+            if (email) {
                 alert('Cảm ơn bạn! Chúng tôi sẽ thông báo khi sản phẩm có hàng.');
                 this.reset();
             } else {
@@ -667,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     } else {
-        console.error('Không tìm thấy notify-form');
+        console.log('Không có notify-form (sản phẩm còn hàng)');
     }
 });
 </script>
