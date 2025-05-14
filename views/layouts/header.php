@@ -32,6 +32,39 @@
             --warning-color: <?php echo isset($site_colors['warning_color']) ? $site_colors['warning_color'] : '#FFBB33'; ?>;
             --danger-color: <?php echo isset($site_colors['danger_color']) ? $site_colors['danger_color'] : '#FF3547'; ?>;
         }
+
+        /* Đảm bảo menu hiển thị đúng */
+        .main-nav {
+            z-index: 1000;
+            position: sticky;
+            top: 0;
+        }
+
+        @media (min-width: 992px) {
+            .navbar-collapse {
+                display: flex !important;
+            }
+        }
+
+        .navbar-nav {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .nav-item {
+            margin: 0 10px;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -123,8 +156,8 @@
     <nav class="main-nav py-0 sticky-top">
         <div class="container">
             <div class="nav-container bg-white py-2 px-3 rounded-bottom shadow-sm">
-                <div class="d-flex justify-content-between">
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
+                <div class="d-flex justify-content-between align-items-center">
+                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation" aria-controls="mainNavigation" aria-expanded="false" aria-label="Toggle navigation">
                         <i class="fas fa-bars"></i> MENU
                     </button>
                     
@@ -136,18 +169,27 @@
                             </li>
                             
                             <?php
-                                $category = new Category($conn);
-                                $categoryStmt = $category->read();
-                                if ($categoryStmt) {
-                                    while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
-                                ?>
+                                try {
+                                    $category = new Category($conn);
+                                    $categoryStmt = $category->read();
+                                    if ($categoryStmt === false) {
+                                        echo '<li class="nav-item"><a class="nav-link" href="#">Lỗi: Không tải được danh mục</a></li>';
+                                    } else {
+                                        while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                            ?>
                                 <li class="nav-item">
                                     <a class="nav-link <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active fw-bold' : ''; ?>" 
                                     href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
-                                        <?php echo strtoupper($row['name']); ?>
+                                        <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
                                     </a>
                                 </li>
-                            <?php endwhile; } ?>
+                            <?php 
+                                        endwhile;
+                                    }
+                                } catch (Exception $e) {
+                                    echo '<li class="nav-item"><a class="nav-link" href="#">Lỗi: ' . htmlspecialchars($e->getMessage()) . '</a></li>';
+                                }
+                            ?>
                             
                             <li class="nav-item">
                                 <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
@@ -170,3 +212,12 @@
     <!-- Main Content -->
     <main class="main-content py-4">
         <div class="container">
+            <!-- Nội dung chính sẽ được thêm vào đây -->
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
