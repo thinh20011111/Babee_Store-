@@ -10,6 +10,7 @@ define('SITE_DESCRIPTION', 'Quality Baby Clothing at Affordable Prices');
 
 // Admin email
 define('ADMIN_EMAIL', 'admin@example.com');
+define('ADMIN_PHONE', '0359349545');
 
 // Pagination settings
 define('ITEMS_PER_PAGE', 12);
