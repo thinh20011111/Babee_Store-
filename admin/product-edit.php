@@ -11,37 +11,61 @@ if (!file_exists('logs')) {
 }
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu render product_detail.php\n", FILE_APPEND);
 
+// Debug: Hiển thị thông tin ban đầu
+echo "<pre>DEBUG: Bắt đầu product_detail.php\n";
+echo "DEBUG: URL truy cập: " . htmlspecialchars($_SERVER['REQUEST_URI']) . "\n";
+echo "DEBUG: GET params: " . print_r($_GET, true) . "\n</pre>";
+
 // Kiểm tra các biến cần thiết
 if (!isset($product) || !is_object($product)) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: Biến \$product không tồn tại hoặc không hợp lệ\n", FILE_APPEND);
+    echo "<pre>DEBUG ERROR: Biến \$product không tồn tại hoặc không hợp lệ\n";
+    echo "DEBUG: Kết thúc tại kiểm tra \$product\n</pre>";
     die("Lỗi: Dữ liệu sản phẩm không hợp lệ");
 }
+echo "<pre>DEBUG: \$product tồn tại và là đối tượng\n";
+echo "DEBUG: Product ID: " . htmlspecialchars($product->id ?? 'N/A') . "\n";
+echo "DEBUG: Product Name: " . htmlspecialchars($product->name ?? 'N/A') . "\n</pre>";
+
 if (!isset($variants)) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$variants không được định nghĩa\n", FILE_APPEND);
+    echo "<pre>DEBUG WARNING: Biến \$variants không được định nghĩa\n</pre>";
     $variants = [];
 }
+echo "<pre>DEBUG: Số lượng variants: " . count($variants) . "\n</pre>";
+
 if (!isset($category_name)) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$category_name không được định nghĩa\n", FILE_APPEND);
+    echo "<pre>DEBUG WARNING: Biến \$category_name không được định nghĩa\n</pre>";
     $category_name = 'Danh mục không xác định';
 }
+echo "<pre>DEBUG: Category Name: " . htmlspecialchars($category_name) . "\n</pre>";
+
 if (!isset($related_products)) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$related_products không được định nghĩa\n", FILE_APPEND);
+    echo "<pre>DEBUG WARNING: Biến \$related_products không được định nghĩa\n</pre>";
     $related_products = [];
 }
+echo "<pre>DEBUG: Số lượng related_products: " . count($related_products) . "\n</pre>";
 
 $page_title = htmlspecialchars($product->name ?? 'Sản phẩm');
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Page title: $page_title\n", FILE_APPEND);
+echo "<pre>DEBUG: Page title: $page_title\n</pre>";
 
 // Include header
 try {
     if (!file_exists('views/layouts/header.php')) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File views/layouts/header.php không tồn tại\n", FILE_APPEND);
+        echo "<pre>DEBUG ERROR: File views/layouts/header.php không tồn tại\n</pre>";
         die("Lỗi: File header.php không tồn tại");
     }
+    echo "<pre>DEBUG: Bắt đầu include header.php\n</pre>";
     include 'views/layouts/header.php';
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include header.php\n", FILE_APPEND);
+    echo "<pre>DEBUG: Đã include header.php\n</pre>";
 } catch (Exception $e) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include header.php: " . $e->getMessage() . "\n", FILE_APPEND);
+    echo "<pre>DEBUG ERROR: Lỗi khi include header.php: " . htmlspecialchars($e->getMessage()) . "\n</pre>";
     die("Lỗi khi load header: " . htmlspecialchars($e->getMessage()));
 }
 ?>
@@ -64,9 +88,13 @@ try {
 </div>
 <?php
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info\n", FILE_APPEND);
+echo "<pre>DEBUG: Đã hiển thị debug info\n</pre>";
 endif; ?>
 
 <!-- Page Header with Breadcrumb -->
+<?php
+echo "<pre>DEBUG: Bắt đầu render Page Header\n</pre>";
+?>
 <div class="category-header position-relative mb-5">
     <div class="category-header-bg" style="background-color: var(--light-bg-color); height: 120px; position: relative; overflow: hidden;">
         <div class="container h-100">
@@ -86,10 +114,16 @@ endif; ?>
         <div class="position-absolute" style="top:0; right:0; bottom:0; left:0; background: linear-gradient(135deg, rgba(255,45,85,0.1) 0%, rgba(74,0,224,0.05) 100%);"></div>
     </div>
 </div>
+<?php
+echo "<pre>DEBUG: Đã render Page Header\n</pre>";
+?>
 
 <div class="container mb-5">
     <div class="row">
         <!-- Product Images -->
+        <?php
+        echo "<pre>DEBUG: Bắt đầu render Product Images\n</pre>";
+        ?>
         <div class="col-lg-6 mb-4 mb-lg-0">
             <div class="product-image-container position-relative">
                 <?php if(!empty($product->image)): ?>
@@ -136,8 +170,14 @@ endif; ?>
                 </div>
             </div>
         </div>
+        <?php
+        echo "<pre>DEBUG: Đã render Product Images\n</pre>";
+        ?>
         
         <!-- Product Details -->
+        <?php
+        echo "<pre>DEBUG: Bắt đầu render Product Details\n</pre>";
+        ?>
         <div class="col-lg-6">
             <div class="product-category text-uppercase mb-2"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></div>
             <h1 class="product-title mb-3"><?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?></h1>
@@ -159,6 +199,7 @@ endif; ?>
                     <?php
                     $total_stock = !empty($product->id) ? $product->getTotalStock() : 0;
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Total stock: $total_stock\n", FILE_APPEND);
+                    echo "<pre>DEBUG: Total stock: $total_stock\n</pre>";
                     ?>
                     <?php if($total_stock > 0): ?>
                     <span class="badge bg-success rounded-0 py-2 px-3">CÒN HÀNG</span>
@@ -178,6 +219,9 @@ endif; ?>
             </div>
         
             <!-- Add to Cart Form -->
+            <?php
+            echo "<pre>DEBUG: Bắt đầu render Add to Cart Form\n</pre>";
+            ?>
             <?php if($total_stock > 0 && !empty($variants) && is_array($variants)): ?>
             <form id="add-to-cart-form" class="mb-4">
                 <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product->id ?? 0); ?>">
@@ -201,6 +245,7 @@ endif; ?>
                                     return false;
                                 })) : [];
                                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Sizes available: " . json_encode($sizes) . "\n", FILE_APPEND);
+                                echo "<pre>DEBUG: Sizes available: " . json_encode($sizes) . "\n</pre>";
                                 foreach($sizes as $size):
                                 ?>
                                 <option value="<?php echo htmlspecialchars($size); ?>"><?php echo htmlspecialchars($size); ?></option>
@@ -253,8 +298,14 @@ endif; ?>
                 </form>
             </div>
             <?php endif; ?>
+            <?php
+            echo "<pre>DEBUG: Đã render Add to Cart Form\n</pre>";
+            ?>
             
             <!-- Product Features -->
+            <?php
+            echo "<pre>DEBUG: Bắt đầu render Product Features\n</pre>";
+            ?>
             <div class="product-features mb-4">
                 <div class="row g-3">
                     <div class="col-6 col-md-3">
@@ -283,8 +334,14 @@ endif; ?>
                     </div>
                 </div>
             </div>
+            <?php
+            echo "<pre>DEBUG: Đã render Product Features\n</pre>";
+            ?>
             
             <!-- Product Information Tabs -->
+            <?php
+            echo "<pre>DEBUG: Bắt đầu render Product Information Tabs\n</pre>";
+            ?>
             <div class="product-info mb-4">
                 <ul class="nav nav-tabs" id="productTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -363,8 +420,14 @@ endif; ?>
                     </div>
                 </div>
             </div>
+            <?php
+            echo "<pre>DEBUG: Đã render Product Information Tabs\n</pre>";
+            ?>
             
             <!-- Social Sharing -->
+            <?php
+            echo "<pre>DEBUG: Bắt đầu render Social Sharing\n</pre>";
+            ?>
             <div class="product-share border-top pt-4">
                 <div class="d-flex align-items-center">
                     <span class="fw-bold me-3">CHIA SẺ:</span>
@@ -376,11 +439,17 @@ endif; ?>
                     </div>
                 </div>
             </div>
+            <?php
+            echo "<pre>DEBUG: Đã render Social Sharing\n</pre>";
+            ?>
         </div>
     </div>
 </div>
 
 <!-- Related Products -->
+<?php
+echo "<pre>DEBUG: Bắt đầu render Related Products\n</pre>";
+?>
 <?php if(!empty($related_products)): ?>
 <section class="related-products mt-5">
     <h3 class="mb-4">Sản phẩm liên quan</h3>
@@ -429,15 +498,22 @@ endif; ?>
 </section>
 <?php
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã render related products\n", FILE_APPEND);
+echo "<pre>DEBUG: Đã render Related Products\n</pre>";
 endif; ?>
 
 <!-- Customer Reviews Section -->
+<?php
+echo "<pre>DEBUG: Bắt đầu render Customer Reviews\n</pre>";
+?>
 <section class="customer-reviews mt-5">
     <h3 class="mb-4">Đánh giá của khách hàng</h3>
     <div class="alert alert-info">
         <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
     </div>
 </section>
+<?php
+echo "<pre>DEBUG: Đã render Customer Reviews\n</pre>";
+?>
 
 <style>
 .thumbnail-item {
@@ -670,13 +746,17 @@ document.addEventListener('DOMContentLoaded', function() {
 try {
     if (!file_exists('views/layouts/footer.php')) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File views/layouts/footer.php không tồn tại\n", FILE_APPEND);
+        echo "<pre>DEBUG ERROR: File views/layouts/footer.php không tồn tại\n</pre>";
         die("Lỗi: File footer.php không tồn tại");
     }
+    echo "<pre>DEBUG: Bắt đầu include footer.php\n</pre>";
     include 'views/layouts/footer.php';
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n", FILE_APPEND);
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành render product_detail.php\n", FILE_APPEND);
+    echo "<pre>DEBUG: Đã include footer.php\n";
+    echo "DEBUG: Hoàn thành render product_detail.php\n</pre>";
 } catch (Exception $e) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include footer.php: " . $e->getMessage() . "\n", FILE_APPEND);
+    echo "<pre>DEBUG ERROR: Lỗi khi include footer.php: " . htmlspecialchars($e->getMessage()) . "\n</pre>";
     die("Lỗi khi load footer: " . htmlspecialchars($e->getMessage()));
 }
 ?>
