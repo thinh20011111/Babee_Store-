@@ -4,18 +4,10 @@ if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
-// Define debug mode
-define('DEBUG_MODE', true);
-
-// Initialize debug log
-$debug_logs = [];
-
 // Kết nối cơ sở dữ liệu đảm bảo hỗ trợ UTF-8
 try {
     $conn->exec("SET NAMES utf8mb4");
-    $debug_logs[] = "Database connection set to utf8mb4";
 } catch (PDOException $e) {
-    $debug_logs[] = "Database charset error: " . $e->getMessage();
     error_log("Database charset error: " . $e->getMessage());
 }
 
@@ -27,9 +19,7 @@ require_once '../models/Category.php';
 try {
     $product = new Product($conn);
     $category = new Category($conn);
-    $debug_logs[] = "Product and Category models initialized";
 } catch (Exception $e) {
-    $debug_logs[] = "Model initialization error: " . $e->getMessage();
     error_log("Model initialization error: " . $e->getMessage());
 }
 
@@ -40,9 +30,7 @@ try {
     while ($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
         $categories[] = $row;
     }
-    $debug_logs[] = "Fetched " . count($categories) . " categories";
 } catch (PDOException $e) {
-    $debug_logs[] = "Error fetching categories: " . $e->getMessage();
     error_log("Error fetching categories: " . $e->getMessage());
 }
 
@@ -57,17 +45,10 @@ if ($product_id > 0) {
     // Get product data
     try {
         if (!$product->readOne()) {
-            $debug_logs[] = "Product ID $product_id not found";
             header("Location: index.php?page=products");
             exit;
         }
-        $debug_logs[] = "Product ID $product_id loaded: " . json_encode([
-            'name' => $product->name,
-            'category_id' => $product->category_id,
-            'price' => $product->price
-        ]);
     } catch (Exception $e) {
-        $debug_logs[] = "Error reading product ID $product_id: " . $e->getMessage();
         error_log("Error reading product ID $product_id: " . $e->getMessage());
         header("Location: index.php?page=products");
         exit;
@@ -76,15 +57,12 @@ if ($product_id > 0) {
     // Get variants
     try {
         $variants = $product->getVariants();
-        $debug_logs[] = "Fetched " . count($variants) . " variants for product ID $product_id";
     } catch (Exception $e) {
-        $debug_logs[] = "Error fetching variants: " . $e->getMessage();
         error_log("Error fetching variants: " . $e->getMessage());
         $variants = [];
     }
 } else {
     $variants = [];
-    $debug_logs[] = "New product mode, no variants loaded";
 }
 
 // Process form submission
@@ -92,8 +70,6 @@ $success_message = '';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $debug_logs[] = "Processing form submission: " . json_encode($_POST);
-
     // Get form data
     $product->name = isset($_POST['name']) ? trim($_POST['name']) : '';
     $product->description = isset($_POST['description']) ? trim($_POST['description']) : '';
@@ -115,24 +91,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'stock' => max(0, intval($variant['stock'] ?? 0))
             ];
         }
-        $debug_logs[] = "Received " . count($variants_data) . " variants from form: " . json_encode($variants_data);
-    } else {
-        $debug_logs[] = "No variants submitted in form";
     }
 
     // Validate form data
     if (empty($product->name)) {
         $error_message = "Vui lòng nhập tên sản phẩm.";
-        $debug_logs[] = "Validation error: Product name is empty";
     } elseif ($product->price <= 0) {
         $error_message = "Giá sản phẩm phải lớn hơn 0.";
-        $debug_logs[] = "Validation error: Price <= 0";
     } elseif ($product->category_id <= 0) {
         $error_message = "Vui lòng chọn danh mục.";
-        $debug_logs[] = "Validation error: Invalid category_id";
     } elseif (empty($variants_data)) {
         $error_message = "Vui lòng thêm ít nhất một biến thể.";
-        $debug_logs[] = "Validation error: No variants provided";
     } else {
         // Save product
         try {
@@ -140,38 +109,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 if ($product->update()) {
                     if (method_exists($product, 'saveVariants')) {
                         $product->saveVariants($variants_data);
-                        $debug_logs[] = "Variants saved for product ID $product_id";
                     } else {
-                        $debug_logs[] = "Error: saveVariants() method not defined in Product class";
                         $error_message = "Không thể lưu biến thể: Hàm saveVariants() không tồn tại.";
                     }
                     $success_message = "Cập nhật sản phẩm thành công.";
-                    $debug_logs[] = "Product ID $product_id updated successfully";
                 } else {
                     $error_message = "Cập nhật sản phẩm thất bại.";
-                    $debug_logs[] = "Failed to update product ID $product_id";
                 }
             } else {
                 if ($product_id = $product->create()) {
                     $product->id = $product_id;
                     if (method_exists($product, 'saveVariants')) {
                         $product->saveVariants($variants_data);
-                        $debug_logs[] = "Variants saved for new product ID $product_id";
                     } else {
-                        $debug_logs[] = "Error: saveVariants() method not defined in Product class";
                         $error_message = "Không thể lưu biến thể: Hàm saveVariants() không tồn tại.";
                     }
-                    $debug_logs[] = "Created new product ID $product_id";
                     header("Location: index.php?page=product-edit&id=" . $product_id . "&success=1");
                     exit;
                 } else {
                     $error_message = "Thêm sản phẩm thất bại.";
-                    $debug_logs[] = "Failed to create new product";
                 }
             }
         } catch (Exception $e) {
             $error_message = "Lỗi khi lưu sản phẩm: " . $e->getMessage();
-            $debug_logs[] = "Save product error: " . $e->getMessage();
             error_log("Save product error: " . $e->getMessage());
         }
     }
@@ -180,7 +140,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 // Show success if redirected from create
 if (isset($_GET['success']) && $_GET['success'] == 1) {
     $success_message = "Lưu sản phẩm thành công.";
-    $debug_logs[] = "Success message triggered from redirect";
 }
 
 // Define currency if not defined
@@ -215,14 +174,6 @@ if (!defined('CURRENCY')) {
         }
         .table-variants th, .table-variants td {
             vertical-align: middle;
-        }
-        .debug-info {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9em;
-            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
         }
     </style>
 </head>
@@ -381,27 +332,6 @@ if (!defined('CURRENCY')) {
                             <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i> Hủy</a>
                         </div>
                     </form>
-
-                    <!-- Debug Info -->
-                    <?php if (DEBUG_MODE): ?>
-                    <div class="debug-info mt-4">
-                        <h6>Debug Information</h6>
-                        <ul>
-                            <?php foreach ($debug_logs as $log): ?>
-                            <li><?php echo htmlspecialchars($log); ?></li>
-                            <?php endforeach; ?>
-                            <li>Categories: <?php echo htmlspecialchars(json_encode($categories)); ?></li>
-                            <li>Variants: <?php echo htmlspecialchars(json_encode($variants)); ?></li>
-                            <li>Product Data: <?php echo htmlspecialchars(json_encode([
-                                'id' => $product->id,
-                                'name' => $product->name,
-                                'category_id' => $product->category_id,
-                                'price' => $product->price,
-                                'image' => $product->image
-                            ])); ?></li>
-                        </ul>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -410,12 +340,9 @@ if (!defined('CURRENCY')) {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
-    console.log("Product edit script started at <?php echo date('Y-m-d H:i:s'); ?>");
-
     let variantIndex = <?php echo count($variants); ?>;
 
     function addVariantRow() {
-        console.log("Adding new variant row, index: " + variantIndex);
         const tbody = document.getElementById('variants-table-body');
         const row = document.createElement('tr');
         row.className = 'variant-row';
@@ -443,36 +370,11 @@ if (!defined('CURRENCY')) {
         `;
         tbody.appendChild(row);
         variantIndex++;
-        console.log("Variant row added, new index: " + variantIndex);
     }
 
     function removeVariantRow(button) {
-        console.log("Removing variant row");
         button.closest('tr').remove();
-        console.log("Variant row removed");
     }
-
-    document.addEventListener("DOMContentLoaded", function() {
-        console.log("DOM fully loaded. Checking Bootstrap components...");
-
-        // Debug Bootstrap components
-        const cards = document.querySelectorAll('.card');
-        console.log(`Found ${cards.length} card elements`);
-        if (cards.length === 0) {
-            console.error("No Bootstrap cards found. Check Bootstrap CSS inclusion.");
-        }
-
-        const variantRows = document.querySelectorAll('.variant-row');
-        console.log(`Found ${variantRows.length} variant rows`);
-
-        const images = document.querySelectorAll('.img-preview');
-        console.log(`Found ${images.length} images`);
-        images.forEach((img, index) => {
-            if (!img.complete || img.naturalWidth === 0) {
-                console.warn(`Image ${index + 1} failed to load: ${img.src}`);
-            }
-        });
-    });
 </script>
 </body>
 </html>
