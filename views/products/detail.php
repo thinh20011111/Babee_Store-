@@ -5,9 +5,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Khởi tạo file log
-$log_file = '/tmp/debug.log'; // Dùng /tmp/ để tránh vấn đề quyền trên InfinityFree
-if (!file_exists(dirname($log_file))) {
-    mkdir(dirname($log_file), 0755, true);
+$log_file = 'logs/debug.log';
+if (!file_exists('logs')) {
+    mkdir('logs', 0755, true);
 }
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu render product_detail.php\n", FILE_APPEND);
 
@@ -37,7 +37,7 @@ try {
     $header_path = __DIR__ . '/layouts/header.php';
     if (!file_exists($header_path)) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $header_path không tồn tại\n", FILE_APPEND);
-        die("Lỗi: File header.php không tồn tại tại " . htmlspecialchars($header_path));
+        die("Lỗi: File header.php không tồn tại");
     }
     include $header_path;
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include header.php\n", FILE_APPEND);
@@ -50,7 +50,6 @@ try {
 <!-- Đảm bảo Bootstrap được include -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
@@ -147,10 +146,10 @@ endif; ?>
             <!-- Price -->
             <div class="product-price mb-4">
                 <?php if(($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
-                <span class="text-danger fs-3 fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($product->sale_price); ?></span>
-                <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($product->price); ?></span>
+                <span class="text-danger fs-3 fw-bold"><?php echo CURRENCY . number_format($product->sale_price); ?></span>
+                <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo CURRENCY . number_format($product->price); ?></span>
                 <?php else: ?>
-                <span class="fs-3 fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($product->price ?? 0); ?></span>
+                <span class="fs-3 fw-bold"><?php echo CURRENCY . number_format($product->price ?? 0); ?></span>
                 <?php endif; ?>
             </div>
             
@@ -312,7 +311,7 @@ endif; ?>
                     </div>
                     <div class="tab-pane fade" id="shipping" role="tabpanel">
                         <h5 class="fw-bold mb-3">Thông tin vận chuyển</h5>
-                        <p>Miễn phí vận chuyển cho đơn hàng trên <?php echo (defined('CURRENCY') ? CURRENCY : '₫'); ?>500.000.</p>
+                        <p>Miễn phí vận chuyển cho đơn hàng trên <?php echo CURRENCY; ?>500.000.</p>
                         <ul>
                             <li>Giao hàng tiêu chuẩn: 2-3 ngày làm việc</li>
                             <li>Giao hàng nhanh: 1-2 ngày làm việc (phí bổ sung)</li>
@@ -411,10 +410,10 @@ endif; ?>
                         </h5>
                         <div class="price-block mb-3">
                             <?php if(($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
-                            <span class="text-danger fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($related_product['sale_price']); ?></span>
-                            <span class="text-muted text-decoration-line-through ms-2"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($related_product['price']); ?></span>
+                            <span class="text-danger fw-bold"><?php echo CURRENCY . number_format($related_product['sale_price']); ?></span>
+                            <span class="text-muted text-decoration-line-through ms-2"><?php echo CURRENCY . number_format($related_product['price']); ?></span>
                             <?php else: ?>
-                            <span class="fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($related_product['price'] ?? 0); ?></span>
+                            <span class="fw-bold"><?php echo CURRENCY . number_format($related_product['price'] ?? 0); ?></span>
                             <?php endif; ?>
                         </div>
                         <div class="mt-auto">
@@ -673,7 +672,7 @@ try {
     $footer_path = __DIR__ . '/layouts/footer.php';
     if (!file_exists($footer_path)) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $footer_path không tồn tại\n", FILE_APPEND);
-        die("Lỗi: File footer.php không tồn tại tại " . htmlspecialchars($footer_path));
+        die("Lỗi: File footer.php không tồn tại");
     }
     include $footer_path;
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n", FILE_APPEND);

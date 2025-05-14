@@ -78,9 +78,9 @@ class ProductController {
         error_reporting(E_ALL);
         
         // Khởi tạo file log
-        $log_file = 'logs/debug.log';
-        if (!file_exists('logs')) {
-            mkdir('logs', 0755, true);
+        $log_file = '/tmp/debug.log'; // Dùng /tmp/ để tránh vấn đề quyền trên InfinityFree
+        if (!file_exists(dirname($log_file))) {
+            mkdir(dirname($log_file), 0755, true);
         }
         
         // Ghi log bắt đầu
@@ -157,10 +157,11 @@ class ProductController {
         // Load product detail view
         try {
             extract($data);
-            $view_path = __DIR__ . '/../views/product_detail.php';
+            $view_path = __DIR__ . '/../views/products/detail.php'; // Sửa đường dẫn
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đường dẫn view được thử: $view_path\n", FILE_APPEND);
             if (!file_exists($view_path)) {
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $view_path không tồn tại\n", FILE_APPEND);
-                die("Lỗi: Không tìm thấy file product_detail.php tại $view_path");
+                die("Lỗi: Không tìm thấy file detail.php tại $view_path. Vui lòng kiểm tra thư mục /htdocs/views/products/.");
             }
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu load $view_path\n", FILE_APPEND);
             include $view_path;
