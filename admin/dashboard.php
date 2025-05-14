@@ -39,7 +39,7 @@ try {
     $total_visits = $traffic->getTotalVisits() ?? 0;
     $today_visits = $traffic->getTodayVisits() ?? 0;
     
-    $debug_logs[] = "Statistics fetched: Revenue=$total_revenue, Orders=$order_count, Products=$product_count, Users=$user_count, Visits=$total_visits";
+    $debug_logs[] = "Statistics fetched: Revenue=$total_revenue, Orders=$order_count, Products=$product_count, Users=$user_count, Total Visits=$total_visits, Today Visits=$today_visits";
 } catch (Exception $e) {
     $debug_logs[] = "Error fetching statistics: " . $e->getMessage();
     error_log("Dashboard statistics error: " . $e->getMessage());
@@ -126,45 +126,6 @@ try {
     error_log("Monthly revenue error: " . $e->getMessage());
 }
 
-// Debug raw revenue data
-if (empty($raw_revenue_data)) {
-    $debug_raw_revenue = "No data returned from getMonthlyRevenue. Check orders table for non-cancelled orders.";
-    try {
-        $debug_orders_query = "SELECT id, status, total_amount, created_at FROM orders WHERE status != 'cancelled' LIMIT 5";
-        $debug_orders_stmt = $conn->prepare($debug_orders_query);
-        $debug_orders_stmt->execute();
-        $debug_orders = [];
-        while ($row = $debug_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
-            $debug_orders[] = $row;
-        }
-        if (!empty($debug_orders)) {
-            $debug_raw_revenue = "Found orders but no monthly revenue data. Sample orders: " . json_encode($debug_orders);
-        }
-    } catch (Exception $e) {
-        $debug_logs[] = "Error debugging orders: " . $e->getMessage();
-        error_log("Debug orders error: " . $e->getMessage());
-    }
-} else {
-    $debug_raw_revenue = $raw_revenue_data;
-}
-
-// Debug mapped data
-$debug_mapped_data = [
-    'labels' => $monthly_revenue_labels,
-    'data' => $monthly_revenue_data
-];
-
-// Ensure data is valid
-if (empty($monthly_revenue_data) || array_sum($monthly_revenue_data) == 0) {
-    $monthly_revenue_labels = ['No Data'];
-    $monthly_revenue_data = [0];
-    $debug_logs[] = "No valid monthly revenue data, setting default to 'No Data'";
-}
-
-// Convert to JSON
-$monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
-$monthly_revenue_data_json = json_encode($monthly_revenue_data);
-
 // Lấy dữ liệu truy cập theo ngày (7 ngày gần nhất)
 $traffic_stats = [];
 $traffic_labels = [];
@@ -176,22 +137,33 @@ try {
     
     $traffic_stats = $traffic->getStatsRange($start_date, $end_date);
     
+    $debug_logs[] = "Raw traffic stats from DB: " . json_encode($traffic_stats);
+    
     if (empty($traffic_stats)) {
+        $debug_logs[] = "No traffic data found in DB for range $start_date to $end_date";
         // Nếu không có dữ liệu thực (mới cài đặt), sử dụng dữ liệu mẫu
         if (file_exists('../models/sample/traffic_data.php')) {
             require_once '../models/sample/traffic_data.php';
             $traffic_stats = getSampleDailyTraffic();
-            // Chỉ lấy 7 ngày gần nhất
-            $traffic_stats = array_slice($traffic_stats, -7);
+            $traffic_stats = array_slice($traffic_stats, -7); // Chỉ lấy 7 ngày gần nhất
+            $debug_logs[] = "Using sample traffic data: " . json_encode($traffic_stats);
+        } else {
+            $debug_logs[] = "Sample traffic data file not found at ../models/sample/traffic_data.php";
         }
     }
     
     foreach ($traffic_stats as $stat) {
-        $traffic_labels[] = date('d/m', strtotime($stat['period']));
-        $traffic_data[] = $stat['count'];
+        if (isset($stat['period']) && isset($stat['count'])) {
+            $traffic_labels[] = date('d/m', strtotime($stat['period']));
+            $traffic_data[] = (int)$stat['count'];
+            $debug_logs[] = "Processed traffic stat: Period={$stat['period']}, Count={$stat['count']}";
+        } else {
+            $debug_logs[] = "Invalid traffic stat entry: " . json_encode($stat);
+        }
     }
     
-    $debug_logs[] = "Traffic data fetched: " . count($traffic_stats) . " days";
+    $debug_logs[] = "Traffic labels: " . json_encode($traffic_labels);
+    $debug_logs[] = "Traffic data: " . json_encode($traffic_data);
 } catch (Exception $e) {
     $debug_logs[] = "Error fetching traffic data: " . $e->getMessage();
     error_log("Traffic data error: " . $e->getMessage());
@@ -207,6 +179,8 @@ if (empty($traffic_data)) {
 // Convert to JSON
 $traffic_labels_json = json_encode($traffic_labels);
 $traffic_data_json = json_encode($traffic_data);
+$monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
+$monthly_revenue_data_json = json_encode($monthly_revenue_data);
 
 // Define currency constant
 if (!defined('CURRENCY')) {
@@ -223,6 +197,7 @@ if (!defined('CURRENCY')) {
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .sidebar {
             min-height: 100vh;
@@ -236,6 +211,13 @@ if (!defined('CURRENCY')) {
             transform: translateY(-5px);
         }
         .chart-container {
+            position: relative;
+            height: 400px;
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 0.375rem;
+        }
+        .traffic-chart-container {
             position: relative;
             height: 400px;
             background-color: #f8f9fa;
@@ -394,6 +376,7 @@ if (!defined('CURRENCY')) {
                                 <div class="traffic-chart-container">
                                     <canvas id="trafficChart" width="100%" height="300"></canvas>
                                 </div>
+                                <div id="trafficChartError" class="error-message"></div>
                             </div>
                         </div>
                     </div>
@@ -615,6 +598,15 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
+                <!-- Debug Information -->
+                <div class="debug-info">
+                    <h6>Debug Logs:</h6>
+                    <ul>
+                        <?php foreach ($debug_logs as $log): ?>
+                            <li><?php echo htmlspecialchars($log); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -663,74 +655,96 @@ if (!defined('CURRENCY')) {
             console.log("Order Status Data:", statusCounts);
             
             // Traffic Chart - Vẽ biểu đồ lượt truy cập
-            const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+            const trafficCtx = document.getElementById('trafficChart');
+            if (!trafficCtx) {
+                console.error("Traffic chart canvas element not found!");
+                document.getElementById('trafficChartError').innerText = "Error: Traffic chart canvas not found.";
+                return;
+            }
+            const trafficContext = trafficCtx.getContext('2d');
+            
             const trafficLabels = <?php echo $traffic_labels_json; ?>;
             const trafficData = <?php echo $traffic_data_json; ?>;
+            console.log("Traffic Labels:", trafficLabels);
+            console.log("Traffic Data:", trafficData);
+            
+            if (trafficLabels.length !== trafficData.length) {
+                console.error("Mismatch between labels and data length: Labels=", trafficLabels.length, "Data=", trafficData.length);
+                document.getElementById('trafficChartError').innerText = "Error: Mismatch between labels and data length.";
+                return;
+            }
+            
+            if (trafficLabels[0] === 'No Data' || trafficData[0] === 0) {
+                console.warn("No valid traffic data available, displaying placeholder.");
+                document.getElementById('trafficChartError').innerText = "No traffic data available.";
+                return;
+            }
             
             // Tạo gradient cho biểu đồ traffic
-            const trafficGradient = trafficCtx.createLinearGradient(0, 0, 0, 400);
+            const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 400);
             trafficGradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
             trafficGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
             
-            // Vẽ biểu đồ lượt truy cập
-            new Chart(trafficCtx, {
-                type: 'line',
-                data: {
-                    labels: trafficLabels,
-                    datasets: [{
-                        label: 'Lượt truy cập',
-                        data: trafficData,
-                        backgroundColor: trafficGradient,
-                        borderColor: 'rgba(78, 115, 223, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverRadius: 5,
-                        pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
-                        pointHoverBorderColor: '#fff',
-                        pointHitRadius: 10,
-                        lineTension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
+            try {
+                // Vẽ biểu đồ lượt truy cập
+                new Chart(trafficContext, {
+                    type: 'line',
+                    data: {
+                        labels: trafficLabels,
+                        datasets: [{
+                            label: 'Lượt truy cập',
+                            data: trafficData,
+                            backgroundColor: trafficGradient,
+                            borderColor: 'rgba(78, 115, 223, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                            pointHoverBorderColor: '#fff',
+                            pointHitRadius: 10,
+                            lineTension: 0.3,
+                            fill: true
+                        }]
                     },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    return tooltipItems[0].label;
-                                },
-                                label: function(context) {
-                                    return `Lượt truy cập: ${context.parsed.y.toLocaleString()}`;
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
                                 }
                             }
                         },
-                        legend: {
-                            display: true,
-                            position: 'top'
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    },
+                                    label: function(context) {
+                                        return `Lượt truy cập: ${context.parsed.y.toLocaleString()}`;
+                                    }
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
                         }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
                     }
-                }
-            });
-            
-            console.log("Traffic data:", {
-                labels: trafficLabels,
-                data: trafficData
-            });
+                });
+                console.log("Traffic chart initialized successfully.");
+            } catch (error) {
+                console.error("Error initializing traffic chart:", error);
+                document.getElementById('trafficChartError').innerText = "Error initializing chart: " + error.message;
+            }
         });
     </script>
 </body>
