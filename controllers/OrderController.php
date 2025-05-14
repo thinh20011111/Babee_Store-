@@ -293,7 +293,7 @@ class OrderController {
         }
         
         // Load success view
-        include 'views/order/success.php';
+        include 'views/order/view.php';
     }
 }
 ?>
