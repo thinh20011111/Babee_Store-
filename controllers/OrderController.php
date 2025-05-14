@@ -281,6 +281,7 @@ class OrderController {
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
         if ($order_id <= 0) {
+            error_log("DEBUG: OrderController::success - Invalid order_id: $order_id\n", 3, '/tmp/cart_debug.log');
             header("Location: index.php?controller=home");
             exit;
         }
@@ -288,11 +289,25 @@ class OrderController {
         // Get order details
         $this->order->id = $order_id;
         if (!$this->order->readOne()) {
+            error_log("DEBUG: OrderController::success - readOne failed for order_id: $order_id\n", 3, '/tmp/cart_debug.log');
             header("Location: index.php?controller=home");
             exit;
         }
         
-        // Load success view
+        // Get order items with variant details
+        $order_items = $this->order->getOrderDetails();
+        
+        // Debug: Log order items
+        $items_debug = [];
+        while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
+            $items_debug[] = $item;
+        }
+        error_log("DEBUG: OrderController::success - order_items for order_id $order_id: " . print_r($items_debug, true) . "\n", 3, '/tmp/cart_debug.log');
+        
+        // Reset order_items cursor
+        $order_items = $this->order->getOrderDetails();
+        
+        // Load view
         include 'views/order/view.php';
     }
 }
