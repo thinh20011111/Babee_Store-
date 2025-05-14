@@ -181,6 +181,12 @@ try {
                                     </thead>
                                     <tbody>
                                         <?php foreach ($cart_items as $key => $item): ?>
+                                            <?php
+                                            if ($item['quantity'] != 11) {
+                                                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Số lượng không khớp. Dự kiến: 11, Thực tế: {$item['quantity']}\n", FILE_APPEND);
+                                                echo "<pre>DEBUG: Cảnh báo: Số lượng không khớp. Dự kiến: 11, Thực tế: {$item['quantity']}</pre>";
+                                            }
+                                            ?>
                                             <?php echo "<pre>DEBUG: Render sản phẩm Product ID: {$item['product_id']}, Variant ID: {$item['variant_id']}</pre>"; ?>
                                             <tr data-product-id="<?php echo htmlspecialchars($item['product_id']); ?>" data-variant-id="<?php echo htmlspecialchars($item['variant_id']); ?>">
                                                 <td width="80">
@@ -255,7 +261,7 @@ try {
                             </div>
                             
                             <!-- Promotion code input -->
-                            <棠 class="mb-3">
+                            <div class="mb-3">
                                 <label for="promotion-code" class="form-label">Mã giảm giá</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="promotion-code" placeholder="Nhập mã giảm giá">
@@ -645,7 +651,7 @@ try {
     });
     </script>
 
-    <?php
+    <?php 
     echo "<pre>DEBUG: Chuẩn bị include footer.php</pre>";
     // Include footer
     try {
