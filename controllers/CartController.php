@@ -219,10 +219,13 @@ class CartController {
         // Calculate final total
         $cart_total = $cart_subtotal - $promotion_discount;
         
-        // Check if user is logged in
+        // Debug: Log cart data
+        error_log("DEBUG: CartController::checkout - cart_items: " . print_r($cart_items, true) . "\n", 3, '/tmp/cart_debug.log');
+        error_log("DEBUG: CartController::checkout - cart_subtotal: $cart_subtotal, promotion_discount: $promotion_discount, cart_total: $cart_total\n", 3, '/tmp/cart_debug.log');
+        
+        // Get user data if logged in
         $user_data = [];
         if (isset($_SESSION['user_id'])) {
-            // Get user data for pre-filling checkout form
             $user = new User($this->conn);
             $user->id = $_SESSION['user_id'];
             if ($user->readOne()) {
@@ -240,8 +243,8 @@ class CartController {
         $success = '';
         
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Process checkout form
-            $shipping_name = isset($_POST['shipping_name']) ? trim($_POST['shipping_name']) : '';
+            // Get form data
+            $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
             $email = isset($_POST['email']) ? trim($_POST['email']) : '';
             $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
             $address = isset($_POST['address']) ? trim($_POST['address']) : '';
@@ -250,7 +253,7 @@ class CartController {
             $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
             
             // Validate form data
-            if (empty($shipping_name)) {
+            if (empty($full_name)) {
                 $error = "Vui lòng nhập tên người nhận.";
             } elseif (empty($email)) {
                 $error = "Vui lòng nhập email.";
@@ -274,7 +277,7 @@ class CartController {
                 $order->shipping_address = $address;
                 $order->shipping_city = $city;
                 $order->shipping_phone = $phone;
-                $order->shipping_name = $shipping_name;
+                $order->shipping_name = $full_name; // Use full_name from form
                 $order->notes = $notes;
                 
                 $this->conn->beginTransaction();
@@ -310,15 +313,14 @@ class CartController {
                     $this->cart->clear();
                     unset($_SESSION['promotion']);
                     
-                    // Redirect to success page
-                    header("Location: index.php?controller=order&action=success&id=$order_id");
-                    exit;
+                    $success = "Đơn hàng của bạn đã được đặt thành công! Mã đơn hàng: #$order_id.";
                 } catch (Exception $e) {
                     $this->conn->rollBack();
                     $error = "Không thể xử lý đơn hàng: " . $e->getMessage();
                 }
             }
         }
+        
         
         // Load checkout view
         $view_path = 'views/checkout/index.php';
