@@ -69,6 +69,14 @@ require_once 'config/database.php';
                 margin: 0.25rem 0;
             }
         }
+
+        /* Desktop: Đảm bảo menu hiển thị */
+        @media (min-width: 992px) {
+            .navbar-nav {
+                display: flex !important;
+                justify-content: start !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -163,7 +171,7 @@ require_once 'config/database.php';
                     <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation" aria-controls="mainNavigation" aria-expanded="false" aria-label="Toggle navigation">
                         <i class="fas fa-bars"></i> MENU
                     </button>
-                    <div class="collapse navbar-collapse" id="mainNavigation">
+                    <div class="d-none d-lg-block">
                         <ul class="navbar-nav nav-pills justify-content-start">
                             <li class="nav-item ms-2">
                                 <a class="nav-link py-2 <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
@@ -204,7 +212,55 @@ require_once 'config/database.php';
                                     <span class="sale-text">SALE</span>
                                 </a>
                             </li>
-                            <li class="nav-item ms-2 d-none d-lg-block">
+                            <li class="nav-item ms-2">
+                                <a class="nav-link py-2" href="index.php?controller=order&action=track">
+                                    <i class="fas fa-truck me-1"></i> THEO DÕI ĐƠN HÀNG
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="collapse navbar-collapse d-lg-none" id="mainNavigation">
+                        <ul class="navbar-nav nav-pills justify-content-start">
+                            <li class="nav-item ms-2">
+                                <a class="nav-link py-2 <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
+                                   href="index.php">TRANG CHỦ</a>
+                            </li>
+                            <?php
+                            try {
+                                $category = new Category($conn);
+                                $categoryStmt = $category->read();
+                                if ($categoryStmt === false) {
+                                    error_log("Lỗi: Không thể thực thi truy vấn danh mục");
+                                    echo '<li class="nav-item ms-2"><a class="nav-link py-2" href="#">Lỗi: Không tải được danh mục</a></li>';
+                                } else {
+                                    if ($categoryStmt->rowCount() == 0) {
+                                        error_log("Cảnh báo: Bảng danh mục trống");
+                                        echo '<li class="nav-item ms-2"><a class="nav-link py-2" href="#">Không có danh mục</a></li>';
+                                    } else {
+                                        while($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                            ?>
+                            <li class="nav-item ms-2">
+                                <a class="nav-link py-2 <?php echo (isset($_GET['category_id']) && $_GET['category_id'] == $row['id']) ? 'active fw-bold' : ''; ?>" 
+                                   href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                                    <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
+                                </a>
+                            </li>
+                            <?php 
+                                        endwhile;
+                                    }
+                                }
+                            } catch (Exception $e) {
+                                error_log("Lỗi danh mục: " . $e->getMessage());
+                                echo '<li class="nav-item ms-2"><a class="nav-link py-2" href="#">Lỗi: ' . htmlspecialchars($e->getMessage()) . '</a></li>';
+                            }
+                            ?>
+                            <li class="nav-item ms-2">
+                                <a class="nav-link py-2 <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold' : ''; ?> sale-link" 
+                                   href="index.php?controller=product&action=list&is_sale=1">
+                                    <span class="sale-text">SALE</span>
+                                </a>
+                            </li>
+                            <li class="nav-item ms-2">
                                 <a class="nav-link py-2" href="index.php?controller=order&action=track">
                                     <i class="fas fa-truck me-1"></i> THEO DÕI ĐƠN HÀNG
                                 </a>
