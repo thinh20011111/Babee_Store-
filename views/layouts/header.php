@@ -41,7 +41,7 @@
             <div class="row align-items-center">
                 <div class="col-md-6 d-none d-md-block">
                     <div class="d-flex align-items-center">
-                        <span class="me-3 small"><i class="fas fa-bolt me-1"></i> FREESHIP FOR ORDERS OVER 1.000.000₫</span>
+                        <span class="me-3 small"><i class="fas fa-bolt me-1"></i> MIỄN PHÍ VẬN CHUYỂN CHO ĐƠN HÀNG TRÊN 500.000₫</span>
                         <span class="small"><i class="far fa-clock me-1"></i> SHIP TOÀN QUỐC 1-3 NGÀY</span>
                     </div>
                 </div>
@@ -51,17 +51,17 @@
                             <i class="fas fa-user me-1"></i> <?php echo $_SESSION['username']; ?>
                         </a>
                         <a href="index.php?controller=user&action=orders" class="text-light me-3">
-                            <i class="fas fa-box me-1"></i> Orders
+                            <i class="fas fa-box me-1"></i> ĐƠN HÀNG
                         </a>
                         <a href="index.php?controller=user&action=logout" class="text-light">
-                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                            <i class="fas fa-sign-out-alt me-1"></i> ĐĂNG XUẤT
                         </a>
                     <?php else: ?>
                         <a href="index.php?controller=user&action=login" class="text-light me-3">
-                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                            <i class="fas fa-sign-in-alt me-1"></i> ĐĂNG NHẬP
                         </a>
                         <a href="index.php?controller=user&action=register" class="text-light">
-                            <i class="fas fa-user-plus me-1"></i> Register
+                            <i class="fas fa-user-plus me-1"></i> ĐĂNG KÝ
                         </a>
                     <?php endif; ?>
                 </div>
@@ -76,7 +76,7 @@
                 <div class="col-md-3 col-6 mb-2 mb-md-0">
                     <a href="index.php" class="text-decoration-none">
                         <h1 class="site-logo m-0">
-                            <span class="text-primary fw-black logo-text">STREET</span><span class="text-secondary fw-light logo-text">STYLE</span>
+                            <span class="text-primary fw-black logo-text">BA</span><span class="text-secondary fw-light logo-text">BEE</span>
                         </h1>
                     </a>
                 </div>
@@ -132,7 +132,7 @@
                         <ul class="navbar-nav nav-pills nav-fill mx-auto">
                             <li class="nav-item">
                                 <a class="nav-link <?php echo (!isset($_GET['controller']) || $_GET['controller'] == 'home') ? 'active fw-bold' : ''; ?>" 
-                                   href="index.php">HOME</a>
+                                   href="index.php">TRANG CHỦ</a>
                             </li>
                             
                             <?php
@@ -157,7 +157,7 @@
                             </li>
                             <li class="nav-item d-none d-lg-block">
                                 <a class="nav-link" href="index.php?controller=order&action=track">
-                                    <i class="fas fa-truck me-1"></i> TRACK ORDER
+                                    <i class="fas fa-truck me-1"></i> THEO DÕI ĐƠN HÀNG
                                 </a>
                             </li>
                         </ul>

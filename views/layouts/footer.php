@@ -11,7 +11,7 @@
                     <form action="#" method="POST" class="newsletter-form">
                         <div class="input-group mb-3">
                             <input type="email" class="form-control form-control-lg rounded-start" placeholder="Email của bạn" required>
-                            <button class="btn btn-dark btn-lg rounded-end px-4" type="submit">SUBSCRIBE</button>
+                            <button class="btn btn-dark btn-lg rounded-end px-4" type="submit">ĐĂNG KÝ</button>
                         </div>
                     </form>
                 </div>
@@ -25,7 +25,7 @@
             <div class="row">
                 <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
                     <div class="footer-brand mb-4">
-                        <h2 class="text-white"><span class="text-primary fw-black">STREET</span><span style="color: var(--accent-color);">STYLE</span></h2>
+                        <h2 class="text-white"><span class="text-primary fw-black">BA</span><span style="color: var(--accent-color);">BEE</span></h2>
                     </div>
                     <p class="text-white-50 mb-4">Thời trang đường phố dành cho giới trẻ. Nổi bật, phá cách và luôn dẫn đầu xu hướng.</p>
                     <div class="social-links">
@@ -39,12 +39,12 @@
                 <div class="col-lg-2 col-md-6 mb-4 mb-lg-0">
                     <h5 class="text-white mb-4 footer-heading">SHOP</h5>
                     <ul class="list-unstyled footer-links">
-                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=1" class="footer-link">Tops</a></li>
-                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=2" class="footer-link">Bottoms</a></li>
-                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=3" class="footer-link">Outerwear</a></li>
-                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=4" class="footer-link">Accessories</a></li>
-                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=5" class="footer-link">Footwear</a></li>
-                        <li class="mb-2"><a href="index.php?controller=product&action=list&is_sale=1" class="footer-link">Sale</a></li>
+                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=1" class="footer-link">Áo</a></li>
+                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=2" class="footer-link">Quần</a></li>
+                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=3" class="footer-link">Áo khoác</a></li>
+                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=4" class="footer-link">Phụ kiện</a></li>
+                        <li class="mb-2"><a href="index.php?controller=product&action=list&category_id=5" class="footer-link">Giày dép</a></li>
+                        <li class="mb-2"><a href="index.php?controller=product&action=list&is_sale=1" class="footer-link">Khuyến mãi</a></li>
                     </ul>
                 </div>
                 
@@ -53,13 +53,11 @@
                     <ul class="list-unstyled footer-links">
                         <li class="mb-2"><a href="index.php?controller=home&action=about" class="footer-link">About Us</a></li>
                         <li class="mb-2"><a href="index.php?controller=home&action=contact" class="footer-link">Contact</a></li>
-                        <li class="mb-2"><a href="#" class="footer-link">Careers</a></li>
-                        <li class="mb-2"><a href="#" class="footer-link">Blog</a></li>
                     </ul>
                 </div>
                 
                 <div class="col-lg-4 col-md-6">
-                    <h5 class="text-white mb-4 footer-heading">CONTACT US</h5>
+                    <h5 class="text-white mb-4 footer-heading">LIÊN HỆ VỚI CHÚNG TÔI</h5>
                     <ul class="list-unstyled contact-info">
                         <?php
                         $settings = new Settings($conn);
@@ -74,7 +72,7 @@
                         <li class="mb-3"><i class="fas fa-phone me-2 text-primary"></i> <span class="text-white-50"><?php echo $contact_phone; ?></span></li>
                         <?php endif; ?>
                         <li class="mb-3"><i class="fas fa-envelope me-2 text-primary"></i> <span class="text-white-50"><?php echo $contact_email; ?></span></li>
-                        <li class="mb-3"><i class="fas fa-clock me-2 text-primary"></i> <span class="text-white-50">Monday - Sunday: 10:00 - 22:00</span></li>
+                        <li class="mb-3"><i class="fas fa-clock me-2 text-primary"></i> <span class="text-white-50">Thứ 2 - Chủ nhật: 10:00 - 22:00</span></li>
                     </ul>
                 </div>
             </div>
@@ -83,16 +81,16 @@
             
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                    <p class="mb-0 text-white-50">&copy; <?php echo date('Y'); ?> STREETSTYLE. All rights reserved.</p>
+                    <p class="mb-0 text-white-50">&copy; <?php echo date('Y'); ?> BABEE - Thời trang cho bé.</p>
                 </div>
-                <div class="col-md-6 text-center text-md-end">
+                <!-- <div class="col-md-6 text-center text-md-end">
                     <ul class="list-inline mb-0">
                         <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=VISA" alt="Visa" class="payment-icon"></li>
                         <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=MC" alt="MasterCard" class="payment-icon"></li>
                         <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=PayPal" alt="PayPal" class="payment-icon"></li>
                         <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=Momo" alt="Momo" class="payment-icon"></li>
                     </ul>
-                </div>
+                </div> -->
             </div>
         </div>
     </footer>
