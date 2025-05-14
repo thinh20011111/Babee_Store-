@@ -20,7 +20,7 @@ class Category {
     // Read all categories
     public function read() {
         if (!$this->conn) {
-            // Return false if no connection
+            error_log("Error in Category::read: Database connection is null");
             return false;
         }
         
@@ -30,7 +30,6 @@ class Category {
             $stmt->execute();
             return $stmt;
         } catch(PDOException $e) {
-            // Handle database error gracefully
             error_log("Database error in Category::read: " . $e->getMessage());
             return false;
         }
@@ -38,6 +37,11 @@ class Category {
     
     // Read single category
     public function readOne() {
+        if (!$this->conn) {
+            error_log("Error in Category::readOne: Database connection is null");
+            return false;
+        }
+
         $query = "SELECT * FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
@@ -58,6 +62,11 @@ class Category {
     
     // Create category
     public function create() {
+        if (!$this->conn) {
+            error_log("Error in Category::create: Database connection is null");
+            return false;
+        }
+
         $query = "INSERT INTO " . $this->table_name . " 
                 SET 
                     name = :name, 
@@ -92,6 +101,11 @@ class Category {
     
     // Update category
     public function update() {
+        if (!$this->conn) {
+            error_log("Error in Category::update: Database connection is null");
+            return false;
+        }
+
         $query = "UPDATE " . $this->table_name . " 
                 SET 
                     name = :name, 
@@ -126,6 +140,11 @@ class Category {
     
     // Delete category
     public function delete() {
+        if (!$this->conn) {
+            error_log("Error in Category::delete: Database connection is null");
+            return false;
+        }
+
         $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
@@ -139,6 +158,11 @@ class Category {
     
     // Get category name by ID
     public function getNameById($id) {
+        if (!$this->conn) {
+            error_log("Error in Category::getNameById: Database connection is null");
+            return "";
+        }
+
         $query = "SELECT name FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $id);
@@ -151,6 +175,11 @@ class Category {
     
     // Count products in category
     public function countProducts() {
+        if (!$this->conn) {
+            error_log("Error in Category::countProducts: Database connection is null");
+            return 0;
+        }
+
         $query = "SELECT COUNT(*) as total FROM products WHERE category_id = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
@@ -162,6 +191,11 @@ class Category {
     
     // Count all categories
     public function countAll() {
+        if (!$this->conn) {
+            error_log("Error in Category::countAll: Database connection is null");
+            return 0;
+        }
+
         $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
         $stmt = $this->conn->prepare($query);
         $stmt->execute();

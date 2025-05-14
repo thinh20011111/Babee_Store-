@@ -35,6 +35,18 @@
     </style>
 </head>
 <body>
+    <?php
+    // Khởi tạo kết nối cơ sở dữ liệu nếu chưa có
+    if (!isset($conn)) {
+        require_once 'config/database.php';
+        $db = new Database();
+        $conn = $db->getConnection();
+        if (!$conn) {
+            echo "<div class='alert alert-danger'>Lỗi: Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình.</div>";
+        }
+    }
+    ?>
+
     <!-- Top Bar - Simple with high contrast -->
     <div class="top-bar py-2" style="background-color: var(--dark-bg-color); color: white;">
         <div class="container">
@@ -136,43 +148,33 @@
                             </li>
                             
                             <?php
-                                // Kiểm tra kết nối cơ sở dữ liệu
-                                if (!$conn) {
-                                    echo "<li class='nav-item'><strong>DEBUG:</strong> Lỗi: Kết nối cơ sở dữ liệu thất bại.</li>";
+                            if (!$conn) {
+                                echo "<li class='nav-item'>Lỗi: Kết nối cơ sở dữ liệu thất bại.</li>";
+                            } else {
+                                $category = new Category($conn);
+                                $categoryStmt = $category->read();
+
+                                if ($categoryStmt === false) {
+                                    echo "<li class='nav-item'>Lỗi: Không thể lấy danh sách danh mục.</li>";
                                 } else {
-                                    $category = new Category($conn);
-                                    echo "<li class='nav-item'><strong>DEBUG:</strong> Category object created with conn.</li>";
-                                    
-                                    $categoryStmt = $category->read();
-                                    echo "<li class='nav-item'><strong>DEBUG:</strong> read() returned: " . ($categoryStmt === false ? 'false' : 'PDOStatement') . "</li>";
+                                    $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
 
-                                    // Kiểm tra kết quả trả về từ read()
-                                    if ($categoryStmt === false) {
-                                        echo "<li class='nav-item'><strong>DEBUG:</strong> Lỗi: Không thể lấy danh sách danh mục.</li>";
+                                    if ($categoryStmt->rowCount() > 0) {
+                                        while ($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                            ?>
+                            <li class="nav-item">
+                                <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold' : ''; ?>" 
+                                   href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                                    <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
+                                </a>
+                            </li>
+                            <?php
+                                        endwhile;
                                     } else {
-                                        $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
-                                        echo "<li class='nav-item'><strong>DEBUG:</strong> category_id from GET: " . $category_id . "</li>";
-
-                                        $rowCount = $categoryStmt->rowCount();
-                                        echo "<li class='nav-item'><strong>DEBUG:</strong> Number of categories: " . $rowCount . "</li>";
-
-                                        if ($rowCount > 0) {
-                                            while ($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
-                                                echo "<li class='nav-item'><strong>DEBUG:</strong> Processing category ID: " . $row['id'] . ", Name: " . htmlspecialchars($row['name']) . "</li>";
-                                ?>
-                                <li class="nav-item">
-                                    <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold' : ''; ?>" 
-                                    href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
-                                        <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
-                                    </a>
-                                </li>
-                                <?php
-                                            endwhile;
-                                        } else {
-                                            echo "<li class='nav-item'><strong>DEBUG:</strong> Không có danh mục nào.</li>";
-                                        }
+                                        echo "<li class='nav-item'>Không có danh mục nào.</li>";
                                     }
                                 }
+                            }
                             ?>
                             
                             <li class="nav-item">
