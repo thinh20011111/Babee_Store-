@@ -53,3 +53,4 @@ if (file_exists($controller_file)) {
     // Controller không tồn tại -> 404
     include 'views/404.php';
 }
+?>
