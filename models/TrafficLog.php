@@ -58,7 +58,7 @@ class TrafficLog {
         error_log("Logging access: session_id=$session_id, ip=$ip_address, page=$page_url, user_id=" . ($user_id ?? 'null') . " at " . date('Y-m-d H:i:s'));
         
         // Kiểm tra xem session_id đã tồn tại trong ngày hiện tại chưa
-        $check_query = "SELECT id, visit_count FROM " . $this->table_name . "
+        $check_query = "SELECT id, COALESCE(visit_count, 1) as visit_count FROM " . $this->table_name . "
                        WHERE session_id = :session_id AND visit_date = :current_date";
         
         try {
@@ -69,8 +69,8 @@ class TrafficLog {
             $existing_record = $check_stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($existing_record) {
-                // Nếu đã tồn tại, tăng visit_count
-                $new_visit_count = ($existing_record['visit_count'] ?? 1) + 1;
+                // Tăng visit_count nếu đã tồn tại
+                $new_visit_count = $existing_record['visit_count'] + 1;
                 $update_query = "UPDATE " . $this->table_name . "
                                SET visit_count = :visit_count, page_url = :page_url, last_updated = CURRENT_TIMESTAMP
                                WHERE id = :id";
@@ -87,7 +87,7 @@ class TrafficLog {
                 }
                 return $result;
             } else {
-                // Nếu chưa tồn tại, thêm bản ghi mới
+                // Thêm bản ghi mới với visit_count = 1
                 $insert_query = "INSERT INTO " . $this->table_name . " 
                                (ip_address, user_agent, page_url, referer_url, user_id, session_id, visit_date, visit_count)
                                VALUES (:ip_address, :user_agent, :page_url, :referer_url, :user_id, :session_id, :visit_date, :visit_count)";
@@ -100,12 +100,12 @@ class TrafficLog {
                 $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
                 $stmt->bindParam(':session_id', $session_id);
                 $stmt->bindParam(':visit_date', $current_date);
-                $visit_count = 1;
+                $visit_count = 1; // Đảm bảo giá trị mặc định là 1
                 $stmt->bindParam(':visit_count', $visit_count, PDO::PARAM_INT);
                 
                 $result = $stmt->execute();
                 if ($result) {
-                    error_log("Successfully inserted record for session_id: $session_id at " . date('Y-m-d H:i:s'));
+                    error_log("Successfully inserted record for session_id: $session_id with visit_count=1 at " . date('Y-m-d H:i:s'));
                 } else {
                     error_log("Failed to insert record for session_id: $session_id - " . print_r($stmt->errorInfo(), true));
                 }
@@ -182,7 +182,7 @@ class TrafficLog {
             $stmt->execute();
             
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            error_log("Stats range fetched for $start_date to $end_date: " . json_encode($result) . " at " . date('Y-m-d H:i:s'));
+            error_log("Raw stats range fetched for $start_date to $end_date: " . json_encode($result) . " at " . date('Y-m-d H:i:s'));
             
             // Fill missing days with 0 count
             $current_date = new DateTime($start_date);
