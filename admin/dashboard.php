@@ -7,7 +7,7 @@ if (!defined('ADMIN_INCLUDED')) {
 // Define debug mode
 define('DEBUG_MODE', true); // Set to false in production
 
-// Initialize debug log
+// Initialize debug log and error tracking
 $debug_logs = [];
 $error_occurred = false;
 
@@ -16,11 +16,11 @@ require_once '../config/database.php';
 try {
     $db = new Database();
     $conn = $db->getConnection();
-    $debug_logs[] = "Database connection established successfully.";
+    $debug_logs[] = "Database connection established successfully at " . date('Y-m-d H:i:s');
 } catch (Exception $e) {
     $error_occurred = true;
     $debug_logs[] = "Database connection error: " . $e->getMessage();
-    error_log("Database connection error: " . $e->getMessage());
+    error_log("Dashboard - Database connection error: " . $e->getMessage());
     die("Internal Server Error - Check logs for details.");
 }
 
@@ -35,17 +35,17 @@ $required_files = [
 foreach ($required_files as $file) {
     if (!file_exists($file)) {
         $error_occurred = true;
-        $debug_logs[] = "Required file not found: $file";
-        error_log("Required file not found: $file");
+        $debug_logs[] = "Required file not found: $file at " . date('Y-m-d H:i:s');
+        error_log("Dashboard - Required file not found: $file");
         die("Internal Server Error - Missing file: $file");
     }
     try {
         require_once $file;
-        $debug_logs[] = "Successfully included: $file";
+        $debug_logs[] = "Successfully included: $file at " . date('Y-m-d H:i:s');
     } catch (Exception $e) {
         $error_occurred = true;
         $debug_logs[] = "Error including $file: " . $e->getMessage();
-        error_log("Error including $file: " . $e->getMessage());
+        error_log("Dashboard - Error including $file: " . $e->getMessage());
         die("Internal Server Error - Check logs for details.");
     }
 }
@@ -57,11 +57,11 @@ try {
     $user = new User($conn);
     $promotion = new Promotion($conn);
     $traffic = new TrafficLog($conn);
-    $debug_logs[] = "Objects initialized successfully.";
+    $debug_logs[] = "Objects initialized successfully at " . date('Y-m-d H:i:s');
 } catch (Exception $e) {
     $error_occurred = true;
     $debug_logs[] = "Error initializing objects: " . $e->getMessage();
-    error_log("Error initializing objects: " . $e->getMessage());
+    error_log("Dashboard - Error initializing objects: " . $e->getMessage());
     die("Internal Server Error - Check logs for details.");
 }
 
@@ -79,40 +79,37 @@ try {
     $debug_logs[] = "Statistics fetched: Revenue=$total_revenue, Orders=$order_count, Products=$product_count, Users=$user_count, Total Visits=$total_visits, Today Visits=$today_visits";
 } catch (Exception $e) {
     $error_occurred = true;
-    $debug_logs[] = "Error fetching statistics: " . $e->getMessage();
-    error_log("Dashboard statistics error: " . $e->getMessage());
+    $debug_logs[] = "Error fetching statistics: " . $e->getMessage() . " at " . date('Y-m-d H:i:s');
+    error_log("Dashboard - Statistics error: " . $e->getMessage());
 }
 
 // Get recent orders
 try {
     $recent_orders_stmt = $order->getRecentOrders(5);
-    $recent_orders = [];
-    while ($row = $recent_orders_stmt->fetch(PDO::FETCH_ASSOC)) {
-        $recent_orders[] = $row;
-    }
-    $debug_logs[] = "Recent orders fetched: " . count($recent_orders) . " records";
+    $recent_orders = $recent_orders_stmt ? $recent_orders_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    $debug_logs[] = "Recent orders fetched: " . count($recent_orders) . " records at " . date('Y-m-d H:i:s');
 } catch (Exception $e) {
     $error_occurred = true;
-    $debug_logs[] = "Error fetching recent orders: " . $e->getMessage();
-    error_log("Recent orders error: " . $e->getMessage());
+    $debug_logs[] = "Error fetching recent orders: " . $e->getMessage() . " at " . date('Y-m-d H:i:s');
+    error_log("Dashboard - Recent orders error: " . $e->getMessage());
 }
 
 // Get bestsellers with image validation
 try {
     $bestsellers_stmt = $product->getBestsellers(5);
-    $bestsellers = [];
-    while ($row = $bestsellers_stmt->fetch(PDO::FETCH_ASSOC)) {
-        if (!empty($row['image']) && !file_exists($_SERVER['DOCUMENT_ROOT'] . $row['image'])) {
-            $debug_logs[] = "Invalid image for product ID {$row['id']}: {$row['image']}";
-            $row['image'] = null;
+    $bestsellers = $bestsellers_stmt ? $bestsellers_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($bestsellers as &$product) {
+        if (!empty($product['image']) && !file_exists($_SERVER['DOCUMENT_ROOT'] . $product['image'])) {
+            $debug_logs[] = "Invalid image for product ID {$product['id']}: {$product['image']} at " . date('Y-m-d H:i:s');
+            $product['image'] = null;
         }
-        $bestsellers[] = $row;
     }
-    $debug_logs[] = "Bestsellers fetched: " . count($bestsellers) . " records";
+    unset($product); // Unset reference
+    $debug_logs[] = "Bestsellers fetched: " . count($bestsellers) . " records at " . date('Y-m-d H:i:s');
 } catch (Exception $e) {
     $error_occurred = true;
-    $debug_logs[] = "Error fetching bestsellers: " . $e->getMessage();
-    error_log("Bestsellers error: " . $e->getMessage());
+    $debug_logs[] = "Error fetching bestsellers: " . $e->getMessage() . " at " . date('Y-m-d H:i:s');
+    error_log("Dashboard - Bestsellers error: " . $e->getMessage());
 }
 
 // Get monthly revenue data
@@ -127,46 +124,29 @@ for ($i = 11; $i >= 0; $i--) {
 
 try {
     $monthly_revenue_stmt = $order->getMonthlyRevenue();
-    $raw_revenue_data = [];
-    while ($row = $monthly_revenue_stmt->fetch(PDO::FETCH_ASSOC)) {
-        $raw_revenue_data[] = $row;
-        try {
-            $year = intval($row['year']);
-            $month = intval($row['month']);
-            $date_string = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01';
-            $date = DateTime::createFromFormat('Y-m-d', $date_string);
-            
-            if ($date === false) {
-                $errors = DateTime::getLastErrors();
-                $error_msg = "Invalid date format for year: $year, month: $month, date string: $date_string";
-                if ($errors) {
-                    $error_msg .= " - DateTime errors: " . json_encode($errors);
-                }
-                $debug_logs[] = $error_msg;
-                error_log($error_msg);
-                continue;
-            }
-            
+    $raw_revenue_data = $monthly_revenue_stmt ? $monthly_revenue_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($raw_revenue_data as $row) {
+        $year = intval($row['year']);
+        $month = intval($row['month']);
+        $date_string = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01';
+        $date = DateTime::createFromFormat('Y-m-d', $date_string);
+        if ($date !== false) {
             $month_year = $date->format('M Y');
             $index = array_search($month_year, $monthly_revenue_labels);
             if ($index !== false) {
                 $monthly_revenue_data[$index] = (float)($row['revenue'] ?? 0);
-                $debug_logs[] = "Mapped revenue $month_year to index $index: {$monthly_revenue_data[$index]}";
-            } else {
-                $debug_logs[] = "No match for month_year: $month_year in labels";
+                $debug_logs[] = "Mapped revenue $month_year to index $index: {$monthly_revenue_data[$index]} at " . date('Y-m-d H:i:s');
             }
-        } catch (Exception $e) {
-            $debug_logs[] = "Error processing revenue data: " . $e->getMessage();
-            error_log("Revenue processing error: " . $e->getMessage());
         }
     }
+    $debug_logs[] = "Monthly revenue data processed at " . date('Y-m-d H:i:s');
 } catch (Exception $e) {
     $error_occurred = true;
-    $debug_logs[] = "Error fetching monthly revenue: " . $e->getMessage();
-    error_log("Monthly revenue error: " . $e->getMessage());
+    $debug_logs[] = "Error fetching monthly revenue: " . $e->getMessage() . " at " . date('Y-m-d H:i:s');
+    error_log("Dashboard - Monthly revenue error: " . $e->getMessage());
 }
 
-// Lấy dữ liệu truy cập theo ngày (7 ngày gần nhất)
+// Get traffic data for 7 days
 $traffic_stats = [];
 $traffic_labels = [];
 $traffic_data = [];
@@ -174,46 +154,43 @@ $traffic_data = [];
 try {
     $end_date = date('Y-m-d');
     $start_date = date('Y-m-d', strtotime('-7 days'));
+    $traffic_stats = $traffic->getStatsRange($start_date, $end_date, 'day');
     
-    $traffic_stats = $traffic->getStatsRange($start_date, $end_date);
-    
-    $debug_logs[] = "Raw traffic stats from DB: " . json_encode($traffic_stats);
+    $debug_logs[] = "Raw traffic stats from DB: " . json_encode($traffic_stats) . " at " . date('Y-m-d H:i:s');
     
     if (empty($traffic_stats)) {
-        $debug_logs[] = "No traffic data found in DB for range $start_date to $end_date";
-        if (file_exists('../models/sample/traffic_data.php')) {
-            require_once '../models/sample/traffic_data.php';
-            $sample_data = getSampleDailyTraffic();
-            $traffic_stats = array_slice($sample_data, -7);
-            $debug_logs[] = "Using sample traffic data: " . json_encode($traffic_stats);
-        } else {
-            $debug_logs[] = "Sample traffic data file not found at ../models/sample/traffic_data.php";
-            $current_date = new DateTime($start_date);
-            $end = new DateTime($end_date);
-            $interval_obj = new DateInterval('P1D');
-            $date_range = new DatePeriod($current_date, $interval_obj, $end->modify('+1 day'));
-            foreach ($date_range as $date) {
-                $traffic_stats[] = ['period' => $date->format('Y-m-d'), 'count' => 0];
-            }
-            $debug_logs[] = "Generated default traffic data: " . json_encode($traffic_stats);
+        $debug_logs[] = "No traffic data found in DB for range $start_date to $end_date at " . date('Y-m-d H:i:s');
+        $current_date = new DateTime($start_date);
+        $end = new DateTime($end_date);
+        $interval_obj = new DateInterval('P1D');
+        $date_range = new DatePeriod($current_date, $interval_obj, $end->modify('+1 day'));
+        foreach ($date_range as $date) {
+            $traffic_stats[] = ['period' => $date->format('Y-m-d'), 'count' => 0];
         }
+        $debug_logs[] = "Generated default traffic data: " . json_encode($traffic_stats) . " at " . date('Y-m-d H:i:s');
     }
     
     foreach ($traffic_stats as $stat) {
-        if (isset($stat['period']) && isset($stat['count']) && strtotime($stat['period']) !== false) {
-            $traffic_labels[] = date('d/m', strtotime($stat['period']));
-            $traffic_data[] = (int)$stat['count'];
-            $debug_logs[] = "Processed traffic stat: Period={$stat['period']}, Count={$stat['count']}";
+        if (isset($stat['period']) && isset($stat['count'])) {
+            $parsed_date = DateTime::createFromFormat('Y-m-d', $stat['period']);
+            if ($parsed_date !== false) {
+                $traffic_labels[] = $parsed_date->format('d/m');
+                $traffic_data[] = (int)$stat['count'];
+                $debug_logs[] = "Processed traffic stat: Period={$stat['period']}, Count={$stat['count']} at " . date('Y-m-d H:i:s');
+            } else {
+                $debug_logs[] = "Invalid date format in traffic stat: " . json_encode($stat) . " at " . date('Y-m-d H:i:s');
+            }
         } else {
-            $debug_logs[] = "Invalid traffic stat entry: " . json_encode($stat);
+            $debug_logs[] = "Invalid traffic stat entry: " . json_encode($stat) . " at " . date('Y-m-d H:i:s');
         }
     }
     
-    $debug_logs[] = "Traffic labels: " . json_encode($traffic_labels);
-    $debug_logs[] = "Traffic data: " . json_encode($traffic_data);
+    $debug_logs[] = "Traffic labels: " . json_encode($traffic_labels) . " at " . date('Y-m-d H:i:s');
+    $debug_logs[] = "Traffic data: " . json_encode($traffic_data) . " at " . date('Y-m-d H:i:s');
 } catch (Exception $e) {
-    $debug_logs[] = "Error fetching traffic data: " . $e->getMessage();
-    error_log("Traffic data error: " . $e->getMessage());
+    $error_occurred = true;
+    $debug_logs[] = "Error fetching traffic data: " . $e->getMessage() . " at " . date('Y-m-d H:i:s');
+    error_log("Dashboard - Traffic data error: " . $e->getMessage());
     $traffic_labels = ['No Data'];
     $traffic_data = [0];
 }
@@ -221,7 +198,7 @@ try {
 if (empty($traffic_data) || empty($traffic_labels)) {
     $traffic_labels = ['No Data'];
     $traffic_data = [0];
-    $debug_logs[] = "No valid traffic data, setting default to 'No Data'";
+    $debug_logs[] = "No valid traffic data, setting default to 'No Data' at " . date('Y-m-d H:i:s');
 }
 
 try {
@@ -229,11 +206,11 @@ try {
     $traffic_data_json = json_encode($traffic_data, JSON_INVALID_UTF8_SUBSTITUTE);
     $monthly_revenue_labels_json = json_encode($monthly_revenue_labels, JSON_INVALID_UTF8_SUBSTITUTE);
     $monthly_revenue_data_json = json_encode($monthly_revenue_data, JSON_INVALID_UTF8_SUBSTITUTE);
-    $debug_logs[] = "JSON encoding successful.";
+    $debug_logs[] = "JSON encoding successful at " . date('Y-m-d H:i:s');
 } catch (Exception $e) {
     $error_occurred = true;
-    $debug_logs[] = "Error encoding JSON: " . $e->getMessage();
-    error_log("JSON encoding error: " . $e->getMessage());
+    $debug_logs[] = "Error encoding JSON: " . $e->getMessage() . " at " . date('Y-m-d H:i:s');
+    error_log("Dashboard - JSON encoding error: " . $e->getMessage());
     $traffic_labels_json = json_encode(['Error']);
     $traffic_data_json = json_encode([0]);
     $monthly_revenue_labels_json = json_encode(['Error']);
@@ -256,101 +233,24 @@ if (!defined('CURRENCY')) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .sidebar {
-            min-height: 100vh;
-            position: sticky;
-            top: 0;
-        }
-        .card {
-            transition: transform 0.3s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .chart-container {
-            position: relative;
-            height: 400px;
-            background-color: #f8f9fa;
-            border: 2px solid #007bff;
-            border-radius: 0.375rem;
-        }
-        .traffic-chart-container {
-            position: relative;
-            height: 350px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
-        }
-        .traffic-chart-container:hover {
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        .traffic-chart-container canvas {
-            border-radius: 8px;
-        }
-        .traffic-chart-header {
-            background-color: #007bff;
-            color: white;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
-            padding: 10px 15px;
-            margin: -15px -15px 15px -15px;
-        }
-        .traffic-chart-header h6 {
-            margin: 0;
-            font-weight: 600;
-        }
-        .traffic-chart-footer {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-        .badge {
-            padding: 8px 12px;
-        }
-        .list-group-item {
-            border: none;
-            border-radius: 0.375rem;
-        }
-        .table img {
-            object-fit: cover;
-            transition: opacity 0.3s ease;
-        }
-        .table img:hover {
-            opacity: 0.9;
-        }
-        .debug-info {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9em;
-            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
-        }
-        .error-message {
-            color: red;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        .bestseller-img {
-            width: 60px;
-            height: 60px;
-            border-radius: 0.25rem;
-            border: 1px solid #dee2e6;
-        }
-        .bestseller-img-placeholder {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fa;
-            border-radius: 0.25rem;
-            border: 1px solid #dee2e6;
-        }
+        .sidebar { min-height: 100vh; position: sticky; top: 0; }
+        .card { transition: transform 0.3s; }
+        .card:hover { transform: translateY(-5px); }
+        .chart-container { position: relative; height: 400px; background-color: #f8f9fa; border: 2px solid #007bff; border-radius: 0.375rem; }
+        .traffic-chart-container { position: relative; height: 350px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: box-shadow 0.3s ease; }
+        .traffic-chart-container:hover { box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }
+        .traffic-chart-container canvas { border-radius: 8px; }
+        .traffic-chart-header { background-color: #007bff; color: white; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 10px 15px; margin: -15px -15px 15px -15px; }
+        .traffic-chart-header h6 { margin: 0; font-weight: 600; }
+        .traffic-chart-footer { text-align: center; margin-top: 10px; font-size: 0.9rem; color: #6c757d; }
+        .badge { padding: 8px 12px; }
+        .list-group-item { border: none; border-radius: 0.375rem; }
+        .table img { object-fit: cover; transition: opacity 0.3s ease; }
+        .table img:hover { opacity: 0.9; }
+        .debug-info { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.9em; display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>; }
+        .error-message { color: red; margin-top: 10px; font-weight: bold; }
+        .bestseller-img { width: 60px; height: 60px; border-radius: 0.25rem; border: 1px solid #dee2e6; }
+        .bestseller-img-placeholder { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border-radius: 0.25rem; border: 1px solid #dee2e6; }
     </style>
 </head>
 <body>
@@ -480,11 +380,7 @@ if (!defined('CURRENCY')) {
                                             <?php foreach ($monthly_revenue_data as $index => $value): ?>
                                                 <?php 
                                                     $month = $monthly_revenue_labels[$index] ?? 'Unknown';
-                                                    $height_percentage = 0;
-                                                    $max_value = max($monthly_revenue_data);
-                                                    if ($max_value > 0) {
-                                                        $height_percentage = ($value / $max_value) * 100;
-                                                    }
+                                                    $height_percentage = max(5, ($value / max($monthly_revenue_data)) * 100); // Minimum 5% height
                                                 ?>
                                                 <div class="col px-1 text-center">
                                                     <div class="d-flex flex-column align-items-center">
@@ -498,84 +394,6 @@ if (!defined('CURRENCY')) {
                                     <?php endif; ?>
                                 </div>
                                 <div id="monthlyRevenueError" class="error-message"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card shadow-sm rounded">
-                            <div class="card-header">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-pie me-2"></i> Order Status</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="order-status-chart">
-                                    <?php
-                                    $status_labels = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-                                    $status_counts = [
-                                        $order->countByStatus('pending'),
-                                        $order->countByStatus('processing'),
-                                        $order->countByStatus('shipped'),
-                                        $order->countByStatus('delivered'),
-                                        $order->countByStatus('cancelled')
-                                    ];
-                                    $status_colors = ['warning', 'info', 'primary', 'success', 'danger'];
-                                    $total_orders = array_sum($status_counts);
-                                    $debug_logs[] = "Order status counts: " . json_encode(array_combine($status_labels, $status_counts));
-                                    ?>
-                                    <?php if ($total_orders == 0): ?>
-                                        <div class="text-center text-muted py-4">No order status data available.</div>
-                                    <?php else: ?>
-                                        <div class="row mb-4">
-                                            <?php foreach ($status_labels as $index => $label): 
-                                                $count = $status_counts[$index];
-                                                $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
-                                                $color = $status_colors[$index];
-                                            ?>
-                                            <div class="col">
-                                                <div class="card border-<?php echo $color; ?> h-100 shadow-sm rounded">
-                                                    <div class="card-body p-2 text-center">
-                                                        <h6 class="text-<?php echo $color; ?>"><?php echo $label; ?></h6>
-                                                        <h3 class="mb-0"><?php echo $count; ?></h3>
-                                                        <div class="progress mt-2" style="height: 10px;">
-                                                            <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
-                                                                style="width: <?php echo $percentage; ?>%" 
-                                                                aria-valuenow="<?php echo $percentage; ?>" 
-                                                                aria-valuemin="0" 
-                                                                aria-valuemax="100">
-                                                            </div>
-                                                        </div>
-                                                        <small class="text-muted"><?php echo $percentage; ?>%</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                        <div class="row justify-content-center">
-                                            <div class="col-md-10">
-                                                <div class="progress" style="height: 25px;">
-                                                    <?php foreach ($status_labels as $index => $label): 
-                                                        $count = $status_counts[$index];
-                                                        $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
-                                                        $color = $status_colors[$index];
-                                                        if ($percentage > 0):
-                                                    ?>
-                                                    <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
-                                                        style="width: <?php echo $percentage; ?>%" 
-                                                        aria-valuenow="<?php echo $percentage; ?>" 
-                                                        aria-valuemin="0" 
-                                                        aria-valuemax="100" 
-                                                        title="<?php echo $label; ?>: <?php echo $count; ?> (<?php echo $percentage; ?>%)">
-                                                        <?php if ($percentage >= 10): ?>
-                                                            <?php echo $label; ?> <?php echo $percentage; ?>%
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <?php endif; ?>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div id="orderStatusError" class="error-message"></div>
                             </div>
                         </div>
                     </div>
@@ -610,7 +428,7 @@ if (!defined('CURRENCY')) {
                                             <?php foreach ($recent_orders as $order): ?>
                                             <tr>
                                                 <td>
-                                                    <a href="index.php?page=orders&action=view&id=<?php echo $order['id']; ?>" class="text-decoration-none">
+                                                    <a href="index.php?page=orders&action=view&id=<?php echo htmlspecialchars($order['id']); ?>" class="text-decoration-none">
                                                         #<?php echo htmlspecialchars($order['order_number']); ?>
                                                     </a>
                                                 </td>
@@ -620,15 +438,14 @@ if (!defined('CURRENCY')) {
                                                 <td><?php echo CURRENCY . number_format($order['total_amount']); ?></td>
                                                 <td>
                                                     <?php
-                                                    $status_class = '';
-                                                    switch($order['status']) {
-                                                        case 'pending': $status_class = 'bg-warning text-dark'; break;
-                                                        case 'processing': $status_class = 'bg-info text-dark'; break;
-                                                        case 'shipped': $status_class = 'bg-primary text-white'; break;
-                                                        case 'delivered': $status_class = 'bg-success text-white'; break;
-                                                        case 'cancelled': $status_class = 'bg-danger text-white'; break;
-                                                        default: $status_class = 'bg-secondary text-white';
-                                                    }
+                                                    $status_class = match ($order['status']) {
+                                                        'pending' => 'bg-warning text-dark',
+                                                        'processing' => 'bg-info text-dark',
+                                                        'shipped' => 'bg-primary text-white',
+                                                        'delivered' => 'bg-success text-white',
+                                                        'cancelled' => 'bg-danger text-white',
+                                                        default => 'bg-secondary text-white',
+                                                    };
                                                     ?>
                                                     <span class="badge <?php echo $status_class; ?> rounded-pill"><?php echo ucfirst($order['status']); ?></span>
                                                 </td>
@@ -680,6 +497,20 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Debug Information -->
+                <div class="debug-info">
+                    <h6>Debug Logs</h6>
+                    <?php if (!empty($debug_logs)): ?>
+                        <ul class="list-unstyled">
+                            <?php foreach ($debug_logs as $log): ?>
+                                <li><?php echo htmlspecialchars($log); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php else: ?>
+                        <p>No debug information available.</p>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -689,33 +520,16 @@ if (!defined('CURRENCY')) {
         console.log("Dashboard script started at <?php echo date('Y-m-d H:i:s'); ?>");
 
         function refreshDashboard() {
-            console.log("Refreshing dashboard...");
+            console.log("Refreshing dashboard at <?php echo date('Y-m-d H:i:s'); ?>...");
             location.reload();
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            console.log("DOM fully loaded. Checking Bootstrap components...");
-
-            const cards = document.querySelectorAll('.card');
-            console.log(`Found ${cards.length} card elements`);
-            if (cards.length === 0) {
-                console.error("No Bootstrap cards found. Check Bootstrap CSS inclusion.");
-            }
-
-            const images = document.querySelectorAll('.bestseller-img');
-            console.log(`Found ${images.length} bestseller images`);
-            images.forEach((img, index) => {
-                if (!img.complete || img.naturalWidth === 0) {
-                    console.warn(`Bestseller image ${index + 1} failed to load: ${img.src}`);
-                }
-            });
-
-            const placeholders = document.querySelectorAll('.bestseller-img-placeholder');
-            console.log(`Found ${placeholders.length} bestseller image placeholders`);
+            console.log("DOM fully loaded. Initializing traffic chart at <?php echo date('Y-m-d H:i:s'); ?>");
 
             const trafficCtx = document.getElementById('trafficChart');
             if (!trafficCtx) {
-                console.error("Traffic chart canvas element not found!");
+                console.error("Traffic chart canvas element not found at <?php echo date('Y-m-d H:i:s'); ?>");
                 document.getElementById('trafficChartError').innerText = "Error: Traffic chart canvas not found.";
                 return;
             }
@@ -723,31 +537,26 @@ if (!defined('CURRENCY')) {
             
             const trafficLabels = <?php echo $traffic_labels_json; ?>;
             const trafficData = <?php echo $traffic_data_json; ?>;
-            console.log("Traffic Labels (raw):", trafficLabels);
-            console.log("Traffic Data (raw):", trafficData);
+            console.log("Traffic Labels:", trafficLabels);
+            console.log("Traffic Data:", trafficData);
             
             if (!Array.isArray(trafficLabels) || !Array.isArray(trafficData)) {
-                console.error("Invalid data format - Labels or Data is not an array:", { trafficLabels, trafficData });
+                console.error("Invalid data format - Labels or Data is not an array at <?php echo date('Y-m-d H:i:s'); ?>:", { trafficLabels, trafficData });
                 document.getElementById('trafficChartError').innerText = "Error: Invalid data format for chart.";
                 return;
             }
             
             if (trafficLabels.length !== trafficData.length) {
-                console.error("Mismatch between labels and data length: Labels=", trafficLabels.length, "Data=", trafficData.length);
+                console.error("Mismatch between labels and data length at <?php echo date('Y-m-d H:i:s'); ?>: Labels=", trafficLabels.length, "Data=", trafficData.length);
                 document.getElementById('trafficChartError').innerText = "Error: Mismatch between labels and data length.";
                 return;
             }
             
-            // Kiểm tra dữ liệu thưa thớt
             const nonZeroCount = trafficData.filter(value => value > 0).length;
             if (nonZeroCount === 0) {
-                console.warn("All traffic data is zero, displaying placeholder.");
+                console.warn("All traffic data is zero at <?php echo date('Y-m-d H:i:s'); ?>, displaying placeholder.");
                 document.getElementById('trafficChartError').innerText = "No traffic data available (all values are 0).";
                 return;
-            }
-            if (nonZeroCount <= 1) {
-                console.warn("Sparse traffic data, only one non-zero value.");
-                document.getElementById('trafficChartError').innerText = "Sparse data: Only one day has traffic data.";
             }
             
             const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 400);
@@ -764,7 +573,7 @@ if (!defined('CURRENCY')) {
                             data: trafficData,
                             backgroundColor: trafficGradient,
                             borderColor: 'rgba(78, 115, 223, 1)',
-                            borderWidth: 3, // Tăng độ dày đường
+                            borderWidth: 3,
                             pointBackgroundColor: 'rgba(78, 115, 223, 1)',
                             pointBorderColor: '#fff',
                             pointHoverRadius: 6,
@@ -780,10 +589,10 @@ if (!defined('CURRENCY')) {
                         maintainAspectRatio: false,
                         scales: {
                             y: {
-                                beginAtZero: false, // Tự động điều chỉnh trục Y
+                                beginAtZero: true,
                                 ticks: {
                                     precision: 0,
-                                    stepSize: 1 // Đảm bảo các bước là số nguyên
+                                    stepSize: 1
                                 },
                                 title: {
                                     display: true,
@@ -830,9 +639,9 @@ if (!defined('CURRENCY')) {
                         }
                     }
                 });
-                console.log("Traffic chart initialized successfully:", chart);
+                console.log("Traffic chart initialized successfully at <?php echo date('Y-m-d H:i:s'); ?>:", chart);
             } catch (error) {
-                console.error("Error initializing traffic chart:", error.stack || error.message);
+                console.error("Error initializing traffic chart at <?php echo date('Y-m-d H:i:s'); ?>:", error.stack || error.message);
                 document.getElementById('trafficChartError').innerText = "Error initializing chart: " + (error.message || 'Unknown error');
             }
         });
