@@ -7,26 +7,64 @@ if (!defined('ADMIN_INCLUDED')) {
 // Define debug mode
 define('DEBUG_MODE', true); // Set to false in production
 
-require_once '../models/Order.php';
-require_once '../models/Product.php';
-require_once '../models/User.php';
-require_once '../models/Promotion.php';
-require_once '../models/TrafficLog.php';
-
-// Include database connection
-require_once '../config/database.php';
-$db = new Database();
-$conn = $db->getConnection();
-
 // Initialize debug log
 $debug_logs = [];
+$error_occurred = false;
+
+// Include database connection with error handling
+require_once '../config/database.php';
+try {
+    $db = new Database();
+    $conn = $db->getConnection();
+    $debug_logs[] = "Database connection established successfully.";
+} catch (Exception $e) {
+    $error_occurred = true;
+    $debug_logs[] = "Database connection error: " . $e->getMessage();
+    error_log("Database connection error: " . $e->getMessage());
+    // Dừng thực thi nếu không kết nối được
+    die("Internal Server Error - Check logs for details.");
+}
+
+// Include models with error handling
+$required_files = [
+    '../models/Order.php',
+    '../models/Product.php',
+    '../models/User.php',
+    '../models/Promotion.php',
+    '../models/TrafficLog.php'
+];
+foreach ($required_files as $file) {
+    if (!file_exists($file)) {
+        $error_occurred = true;
+        $debug_logs[] = "Required file not found: $file";
+        error_log("Required file not found: $file");
+        die("Internal Server Error - Missing file: $file");
+    }
+    try {
+        require_once $file;
+        $debug_logs[] = "Successfully included: $file";
+    } catch (Exception $e) {
+        $error_occurred = true;
+        $debug_logs[] = "Error including $file: " . $e->getMessage();
+        error_log("Error including $file: " . $e->getMessage());
+        die("Internal Server Error - Check logs for details.");
+    }
+}
 
 // Initialize objects
-$order = new Order($conn);
-$product = new Product($conn);
-$user = new User($conn);
-$promotion = new Promotion($conn);
-$traffic = new TrafficLog($conn);
+try {
+    $order = new Order($conn);
+    $product = new Product($conn);
+    $user = new User($conn);
+    $promotion = new Promotion($conn);
+    $traffic = new TrafficLog($conn);
+    $debug_logs[] = "Objects initialized successfully.";
+} catch (Exception $e) {
+    $error_occurred = true;
+    $debug_logs[] = "Error initializing objects: " . $e->getMessage();
+    error_log("Error initializing objects: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
+}
 
 // Get statistics with debug
 try {
@@ -41,6 +79,7 @@ try {
     
     $debug_logs[] = "Statistics fetched: Revenue=$total_revenue, Orders=$order_count, Products=$product_count, Users=$user_count, Total Visits=$total_visits, Today Visits=$today_visits";
 } catch (Exception $e) {
+    $error_occurred = true;
     $debug_logs[] = "Error fetching statistics: " . $e->getMessage();
     error_log("Dashboard statistics error: " . $e->getMessage());
 }
@@ -54,6 +93,7 @@ try {
     }
     $debug_logs[] = "Recent orders fetched: " . count($recent_orders) . " records";
 } catch (Exception $e) {
+    $error_occurred = true;
     $debug_logs[] = "Error fetching recent orders: " . $e->getMessage();
     error_log("Recent orders error: " . $e->getMessage());
 }
@@ -72,6 +112,7 @@ try {
     }
     $debug_logs[] = "Bestsellers fetched: " . count($bestsellers) . " records";
 } catch (Exception $e) {
+    $error_occurred = true;
     $debug_logs[] = "Error fetching bestsellers: " . $e->getMessage();
     error_log("Bestsellers error: " . $e->getMessage());
 }
@@ -122,6 +163,7 @@ try {
         }
     }
 } catch (Exception $e) {
+    $error_occurred = true;
     $debug_logs[] = "Error fetching monthly revenue: " . $e->getMessage();
     error_log("Monthly revenue error: " . $e->getMessage());
 }
@@ -165,6 +207,7 @@ try {
     $debug_logs[] = "Traffic labels: " . json_encode($traffic_labels);
     $debug_logs[] = "Traffic data: " . json_encode($traffic_data);
 } catch (Exception $e) {
+    $error_occurred = true;
     $debug_logs[] = "Error fetching traffic data: " . $e->getMessage();
     error_log("Traffic data error: " . $e->getMessage());
 }
@@ -176,11 +219,22 @@ if (empty($traffic_data)) {
     $debug_logs[] = "No valid traffic data, setting default to 'No Data'";
 }
 
-// Convert to JSON
-$traffic_labels_json = json_encode($traffic_labels);
-$traffic_data_json = json_encode($traffic_data);
-$monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
-$monthly_revenue_data_json = json_encode($monthly_revenue_data);
+// Convert to JSON with error handling
+try {
+    $traffic_labels_json = json_encode($traffic_labels);
+    $traffic_data_json = json_encode($traffic_data);
+    $monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
+    $monthly_revenue_data_json = json_encode($monthly_revenue_data);
+    $debug_logs[] = "JSON encoding successful.";
+} catch (Exception $e) {
+    $error_occurred = true;
+    $debug_logs[] = "Error encoding JSON: " . $e->getMessage();
+    error_log("JSON encoding error: " . $e->getMessage());
+    $traffic_labels_json = json_encode(['Error']);
+    $traffic_data_json = json_encode([0]);
+    $monthly_revenue_labels_json = json_encode(['Error']);
+    $monthly_revenue_data_json = json_encode([0]);
+}
 
 // Define currency constant
 if (!defined('CURRENCY')) {
@@ -606,6 +660,9 @@ if (!defined('CURRENCY')) {
                             <li><?php echo htmlspecialchars($log); ?></li>
                         <?php endforeach; ?>
                     </ul>
+                    <?php if ($error_occurred): ?>
+                        <p class="text-danger">An error occurred. Please check the server logs for more details.</p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
