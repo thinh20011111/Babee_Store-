@@ -379,13 +379,14 @@ include 'views/layouts/header.php';
         border-radius: 10px;
         max-width: 600px;
         width: 70%;
+        margin-top: 20px; /* Thêm khoảng cách phía trên */
     }
 
     .banner-carousel .carousel-caption h2 {
         font-family: 'Poppins', sans-serif;
         font-size: 2.5rem;
         font-weight: 700;
-        margin: 10px 0 15px; /* Thêm margin-top và bottom */
+        margin: 20px 0 15px; /* Tăng margin-top để tạo khoảng cách */
         line-height: 1.2;
         color: #f8f9fa;
     }
@@ -394,7 +395,7 @@ include 'views/layouts/header.php';
         font-family: 'Poppins', sans-serif;
         font-size: 1.2rem;
         font-weight: 400;
-        margin: 10px 0 20px; /* Thêm margin-top và bottom */
+        margin: 15px 0 20px; /* Tăng margin-top để tạo khoảng cách */
         line-height: 1.5;
         color: #e9ecef;
     }
@@ -406,7 +407,7 @@ include 'views/layouts/header.php';
         background-color: #f8f9fa;
         color: #212529;
         border: none;
-        margin: 10px 0; /* Thêm margin-top và bottom */
+        margin: 15px 0; /* Tăng margin-top để tạo khoảng cách */
         transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
@@ -441,6 +442,19 @@ include 'views/layouts/header.php';
         border-radius: 10px;
         max-width: 600px;
         width: 70%;
+        margin-top: 20px; /* Thêm khoảng cách phía trên */
+    }
+
+    .hero-banner .hero-banner-image .position-absolute h1 {
+        margin-top: 20px; /* Thêm khoảng cách phía trên cho h1 */
+    }
+
+    .hero-banner .hero-banner-image .position-absolute p {
+        margin-top: 15px; /* Thêm khoảng cách phía trên cho p */
+    }
+
+    .hero-banner .hero-banner-image .position-absolute a {
+        margin-top: 15px; /* Thêm khoảng cách phía trên cho nút */
     }
 
     /* Responsive Adjustments */
@@ -454,22 +468,35 @@ include 'views/layouts/header.php';
         .hero-banner .hero-banner-image .position-absolute {
             width: 80%;
             padding: 20px 30px;
+            margin-top: 15px; /* Giảm khoảng cách phía trên cho màn hình nhỏ */
         }
 
         .banner-carousel .carousel-caption h2 {
             font-size: 1.5rem;
-            margin: 5px 0 10px;
+            margin: 15px 0 10px; /* Giảm margin-top */
         }
 
         .banner-carousel .carousel-caption p {
             font-size: 1rem;
-            margin: 5px 0 15px;
+            margin: 10px 0 15px; /* Giảm margin-top */
         }
 
         .banner-carousel .carousel-caption .btn {
             font-size: 1rem;
             padding: 8px 16px;
-            margin: 5px 0;
+            margin: 10px 0; /* Giảm margin-top */
+        }
+
+        .hero-banner .hero-banner-image .position-absolute h1 {
+            margin-top: 15px; /* Giảm margin-top */
+        }
+
+        .hero-banner .hero-banner-image .position-absolute p {
+            margin-top: 10px; /* Giảm margin-top */
+        }
+
+        .hero-banner .hero-banner-image .position-absolute a {
+            margin-top: 10px; /* Giảm margin-top */
         }
     }
 
@@ -483,22 +510,35 @@ include 'views/layouts/header.php';
         .hero-banner .hero-banner-image .position-absolute {
             width: 90%;
             padding: 15px 20px;
+            margin-top: 10px; /* Giảm khoảng cách phía trên hơn nữa */
         }
 
         .banner-carousel .carousel-caption h2 {
             font-size: 1.2rem;
-            margin: 5px 0 10px;
+            margin: 10px 0 10px; /* Giảm margin-top */
         }
 
         .banner-carousel .carousel-caption p {
             font-size: 0.9rem;
-            margin: 5px 0 15px;
+            margin: 8px 0 12px; /* Giảm margin-top */
         }
 
         .banner-carousel .carousel-caption .btn {
             font-size: 0.9rem;
             padding: 6px 12px;
-            margin: 5px 0;
+            margin: 8px 0; /* Giảm margin-top */
+        }
+
+        .hero-banner .hero-banner-image .position-absolute h1 {
+            margin-top: 10px; /* Giảm margin-top */
+        }
+
+        .hero-banner .hero-banner-image .position-absolute p {
+            margin-top: 8px; /* Giảm margin-top */
+        }
+
+        .hero-banner .hero-banner-image .position-absolute a {
+            margin-top: 8px; /* Giảm margin-top */
         }
     }
 </style>
