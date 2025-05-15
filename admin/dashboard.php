@@ -274,7 +274,6 @@ if (!defined('CURRENCY')) {
             border: 2px solid #007bff;
             border-radius: 0.375rem;
         }
-        /* Cải thiện giao diện biểu đồ Traffic */
         .traffic-chart-container {
             position: relative;
             height: 350px;
@@ -757,7 +756,7 @@ if (!defined('CURRENCY')) {
             
             try {
                 new Chart(trafficContext, {
-                    type: 'line',
+                    type: 'line', // Sử dụng biểu đồ đường
                     data: {
                         labels: trafficLabels,
                         datasets: [{
@@ -784,13 +783,21 @@ if (!defined('CURRENCY')) {
                                 beginAtZero: true,
                                 ticks: {
                                     precision: 0
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Số lượt truy cập',
+                                    font: { size: 14 }
                                 }
                             },
                             x: {
                                 ticks: {
-                                    font: {
-                                        size: 12
-                                    }
+                                    font: { size: 12 }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Ngày',
+                                    font: { size: 14 }
                                 }
                             }
                         },
@@ -812,9 +819,7 @@ if (!defined('CURRENCY')) {
                                 display: true,
                                 position: 'top',
                                 labels: {
-                                    font: {
-                                        size: 14
-                                    }
+                                    font: { size: 14 }
                                 }
                             }
                         },
