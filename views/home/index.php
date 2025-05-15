@@ -38,7 +38,7 @@ include 'views/layouts/header.php';
 <!-- Fallback Hero Banner -->
 <div class="hero-banner mb-5 position-relative">
     <div class="hero-banner-image" style="background-image: url('https://via.placeholder.com/1200x500/000000/FFFFFF/?text=STREETSTYLE'); background-size: cover; background-position: center; height: 500px;">
-        <div class="position-absolute top-50 start-50 translate-middle text-center text-white p-4" style="background-color: rgba(0,0,0,0.5); max-width: 600px; width: 80%;">
+        <div class="position-absolute top-50 start-50 translate-middle text-center text-white p-4" style="background-color: rgba(0,0,0,0.4); max-width: 600px; width: 70%;">
             <h1 class="display-4 fw-bold mb-3">NEW ARRIVALS</h1>
             <p class="lead mb-4">Phong cách thời trang đường phố táo bạo và nổi bật dành cho giới trẻ</p>
             <a href="index.php?controller=product&action=list" class="btn btn-light btn-lg">SHOP NOW</a>
@@ -352,6 +352,9 @@ include 'views/layouts/header.php';
 <?php include 'views/layouts/footer.php'; ?>
 
 <style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
     /* Banner Carousel Styling */
     .banner-carousel {
         position: relative;
@@ -371,34 +374,44 @@ include 'views/layouts/header.php';
         transform: translate(-50%, -50%);
         text-align: center;
         color: white;
-        padding: 20px 30px; /* Tăng padding để tạo khoảng cách */
-        background: rgba(0, 0, 0, 0.4); /* Làm mờ hơn */
+        padding: 30px 40px; /* Tăng padding để thoáng hơn */
+        background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
-        max-width: 600px; /* Thu nhỏ kích thước caption */
+        max-width: 600px;
         width: 70%;
     }
 
     .banner-carousel .carousel-caption h2 {
+        font-family: 'Poppins', sans-serif;
         font-size: 2.5rem;
         font-weight: 700;
-        margin-bottom: 15px; /* Tăng khoảng cách giữa các phần tử */
+        margin-bottom: 15px;
         line-height: 1.2;
+        color: #f8f9fa; /* Màu trắng nhẹ nhàng */
     }
 
     .banner-carousel .carousel-caption p {
+        font-family: 'Poppins', sans-serif;
         font-size: 1.2rem;
+        font-weight: 400;
         margin-bottom: 20px;
         line-height: 1.5;
+        color: #e9ecef; /* Màu xám nhạt, thân thiện */
     }
 
     .banner-carousel .carousel-caption .btn {
+        font-family: 'Poppins', sans-serif;
         padding: 10px 25px;
         font-weight: 500;
-        transition: background-color 0.3s ease;
+        background-color: #f8f9fa;
+        color: #212529;
+        border: none;
+        transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
     .banner-carousel .carousel-caption .btn:hover {
-        background-color: #e9ecef;
+        background-color: #dee2e6;
+        transform: translateY(-2px);
     }
 
     .banner-carousel .fade-in {
@@ -423,7 +436,7 @@ include 'views/layouts/header.php';
     .hero-banner .hero-banner-image .position-absolute {
         transform: translate(-50%, -50%);
         padding: 20px;
-        background: rgba(0, 0, 0, 0.4); /* Đồng bộ độ mờ với carousel */
+        background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
         max-width: 600px;
         width: 70%;
@@ -439,7 +452,7 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 80%;
-            padding: 15px;
+            padding: 20px 30px; /* Giảm padding trên tablet */
         }
 
         .banner-carousel .carousel-caption h2 {
@@ -465,7 +478,7 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 90%;
-            padding: 10px;
+            padding: 15px 20px; /* Giảm padding trên mobile */
         }
 
         .banner-carousel .carousel-caption h2 {
