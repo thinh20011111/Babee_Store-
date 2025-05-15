@@ -21,7 +21,6 @@ try {
     $error_occurred = true;
     $debug_logs[] = "Database connection error: " . $e->getMessage();
     error_log("Database connection error: " . $e->getMessage());
-    // Dừng thực thi nếu không kết nối được
     die("Internal Server Error - Check logs for details.");
 }
 
@@ -103,10 +102,9 @@ try {
     $bestsellers_stmt = $product->getBestsellers(5);
     $bestsellers = [];
     while ($row = $bestsellers_stmt->fetch(PDO::FETCH_ASSOC)) {
-        // Validate image
         if (!empty($row['image']) && !file_exists($_SERVER['DOCUMENT_ROOT'] . $row['image'])) {
             $debug_logs[] = "Invalid image for product ID {$row['id']}: {$row['image']}";
-            $row['image'] = null; // Set to null if image file doesn't exist
+            $row['image'] = null;
         }
         $bestsellers[] = $row;
     }
@@ -183,15 +181,13 @@ try {
     
     if (empty($traffic_stats)) {
         $debug_logs[] = "No traffic data found in DB for range $start_date to $end_date";
-        // Sử dụng dữ liệu mẫu nếu không có dữ liệu thực
         if (file_exists('../models/sample/traffic_data.php')) {
             require_once '../models/sample/traffic_data.php';
             $sample_data = getSampleDailyTraffic();
-            $traffic_stats = array_slice($sample_data, -7); // Lấy 7 ngày gần nhất
+            $traffic_stats = array_slice($sample_data, -7);
             $debug_logs[] = "Using sample traffic data: " . json_encode($traffic_stats);
         } else {
             $debug_logs[] = "Sample traffic data file not found at ../models/sample/traffic_data.php";
-            // Tạo dữ liệu mặc định nếu không có file mẫu
             $current_date = new DateTime($start_date);
             $end = new DateTime($end_date);
             $interval_obj = new DateInterval('P1D');
@@ -222,14 +218,12 @@ try {
     $traffic_data = [0];
 }
 
-// Ensure traffic data is valid
 if (empty($traffic_data) || empty($traffic_labels)) {
     $traffic_labels = ['No Data'];
     $traffic_data = [0];
     $debug_logs[] = "No valid traffic data, setting default to 'No Data'";
 }
 
-// Convert to JSON with error handling
 try {
     $traffic_labels_json = json_encode($traffic_labels, JSON_INVALID_UTF8_SUBSTITUTE);
     $traffic_data_json = json_encode($traffic_data, JSON_INVALID_UTF8_SUBSTITUTE);
@@ -246,7 +240,6 @@ try {
     $monthly_revenue_data_json = json_encode([0]);
 }
 
-// Define currency constant
 if (!defined('CURRENCY')) {
     define('CURRENCY', 'đ');
 }
@@ -281,12 +274,40 @@ if (!defined('CURRENCY')) {
             border: 2px solid #007bff;
             border-radius: 0.375rem;
         }
+        /* Cải thiện giao diện biểu đồ Traffic */
         .traffic-chart-container {
             position: relative;
-            height: 400px;
-            background-color: #f8f9fa;
-            border: 2px solid #007bff;
-            border-radius: 0.375rem;
+            height: 350px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        .traffic-chart-container:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .traffic-chart-container canvas {
+            border-radius: 8px;
+        }
+        .traffic-chart-header {
+            background-color: #007bff;
+            color: white;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            padding: 10px 15px;
+            margin: -15px -15px 15px -15px;
+        }
+        .traffic-chart-header h6 {
+            margin: 0;
+            font-weight: 600;
+        }
+        .traffic-chart-footer {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
         }
         .badge {
             padding: 8px 12px;
@@ -413,7 +434,6 @@ if (!defined('CURRENCY')) {
                             </div>
                         </div>
                     </div>
-                    <!-- Website Visits Card -->
                     <div class="col-md-6 col-lg-3">
                         <div class="card shadow-sm border-0 rounded">
                             <div class="card-body d-flex align-items-center">
@@ -432,16 +452,17 @@ if (!defined('CURRENCY')) {
                 <div class="row mb-4">
                     <!-- Website Traffic Chart -->
                     <div class="col-lg-6">
-                        <div class="card shadow-sm rounded">
-                            <div class="card-header">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-line me-2"></i> Lượt truy cập 7 ngày gần đây</h6>
+                        <div class="traffic-chart-container">
+                            <div class="traffic-chart-header">
+                                <h6><i class="fas fa-chart-line me-2"></i> Lượt truy cập 7 ngày gần đây</h6>
                             </div>
-                            <div class="card-body">
-                                <div class="traffic-chart-container">
-                                    <canvas id="trafficChart" width="100%" height="300"></canvas>
-                                </div>
-                                <div id="trafficChartError" class="error-message"></div>
+                            <div class="position-relative">
+                                <canvas id="trafficChart" height="300"></canvas>
                             </div>
+                            <div class="traffic-chart-footer">
+                                Dữ liệu cập nhật đến ngày <?php echo date('d/m/Y'); ?>
+                            </div>
+                            <div id="trafficChartError" class="error-message"></div>
                         </div>
                     </div>
                     
@@ -563,7 +584,6 @@ if (!defined('CURRENCY')) {
 
                 <!-- Recent Orders & Best Sellers -->
                 <div class="row">
-                    <!-- Recent Orders -->
                     <div class="col-lg-8">
                         <div class="card shadow-sm rounded">
                             <div class="card-header d-flex justify-content-between align-items-center">
@@ -624,7 +644,6 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
 
-                    <!-- Best Selling Products -->
                     <div class="col-lg-4">
                         <div class="card shadow-sm rounded">
                             <div class="card-header">
@@ -662,7 +681,7 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
-                <!-- Debug Information -->
+
                 <div class="debug-info">
                     <h6>Debug Logs:</h6>
                     <ul>
@@ -690,7 +709,6 @@ if (!defined('CURRENCY')) {
         document.addEventListener("DOMContentLoaded", function() {
             console.log("DOM fully loaded. Checking Bootstrap components...");
 
-            // Debug Bootstrap components
             const cards = document.querySelectorAll('.card');
             console.log(`Found ${cards.length} card elements`);
             if (cards.length === 0) {
@@ -708,20 +726,6 @@ if (!defined('CURRENCY')) {
             const placeholders = document.querySelectorAll('.bestseller-img-placeholder');
             console.log(`Found ${placeholders.length} bestseller image placeholders`);
 
-            // Log data for debugging
-            console.log("Raw Revenue Data:", <?php echo json_encode($debug_raw_revenue); ?>);
-            console.log("Mapped Revenue Data:", <?php echo json_encode($debug_mapped_data); ?>);
-            
-            const statusCounts = {
-                "Pending": <?php echo $order->countByStatus("pending"); ?>,
-                "Processing": <?php echo $order->countByStatus("processing"); ?>,
-                "Shipped": <?php echo $order->countByStatus("shipped"); ?>,
-                "Delivered": <?php echo $order->countByStatus("delivered"); ?>,
-                "Cancelled": <?php echo $order->countByStatus("cancelled"); ?>
-            };
-            console.log("Order Status Data:", statusCounts);
-            
-            // Traffic Chart - Vẽ biểu đồ lượt truy cập
             const trafficCtx = document.getElementById('trafficChart');
             if (!trafficCtx) {
                 console.error("Traffic chart canvas element not found!");
@@ -747,13 +751,11 @@ if (!defined('CURRENCY')) {
                 return;
             }
             
-            // Tạo gradient cho biểu đồ traffic
             const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 400);
             trafficGradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
             trafficGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
             
             try {
-                // Vẽ biểu đồ lượt truy cập
                 new Chart(trafficContext, {
                     type: 'line',
                     data: {
@@ -783,10 +785,20 @@ if (!defined('CURRENCY')) {
                                 ticks: {
                                     precision: 0
                                 }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
                             }
                         },
                         plugins: {
                             tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleFont: { size: 14 },
+                                bodyFont: { size: 12 },
                                 callbacks: {
                                     title: function(tooltipItems) {
                                         return tooltipItems[0].label;
@@ -798,7 +810,12 @@ if (!defined('CURRENCY')) {
                             },
                             legend: {
                                 display: true,
-                                position: 'top'
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        size: 14
+                                    }
+                                }
                             }
                         },
                         interaction: {
