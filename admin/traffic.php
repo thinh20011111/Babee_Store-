@@ -35,11 +35,13 @@ try {
     
     if ($view_mode == 'monthly') {
         $traffic_stats = $traffic->getStatsRange($start_date, $end_date, 'month');
+        $debug_logs[] = "Fetched monthly traffic stats from $start_date to $end_date: " . count($traffic_stats) . " data points";
     } else {
         $traffic_stats = $traffic->getStatsRange($start_date, $end_date, 'day');
+        $debug_logs[] = "Fetched daily traffic stats from $start_date to $end_date: " . count($traffic_stats) . " data points";
     }
     
-    $debug_logs[] = "Traffic statistics fetched: Total=$total_visits, Today=$today_visits, Data points=" . count($traffic_stats);
+    $debug_logs[] = "Traffic statistics fetched: Total=$total_visits, Today=$today_visits";
 } catch (Exception $e) {
     $debug_logs[] = "Error fetching traffic statistics: " . $e->getMessage();
     error_log("Traffic statistics error: " . $e->getMessage());
@@ -48,18 +50,18 @@ try {
 
 // Nếu không có dữ liệu thực (bảng mới tạo), dùng dữ liệu mẫu để hiển thị demo
 if (empty($traffic_stats)) {
-    // Include sample data for demonstration
     require_once '../models/sample/traffic_data.php';
     
     if ($view_mode == 'monthly') {
         $traffic_stats = getSampleMonthlyTraffic();
+        $debug_logs[] = "Using sample monthly data: " . count($traffic_stats) . " data points";
     } else {
         $traffic_stats = getSampleDailyTraffic();
+        $debug_logs[] = "Using sample daily data: " . count($traffic_stats) . " data points";
     }
     
-    $debug_logs[] = "Using sample data for demonstration: " . count($traffic_stats) . " data points";
     $total_visits = array_sum(array_column($traffic_stats, 'count'));
-    $today_visits = $traffic_stats[count($traffic_stats)-1]['count'];
+    $today_visits = end($traffic_stats)['count'] ?? 0;
 }
 
 // Prepare chart data
@@ -67,7 +69,11 @@ $chart_labels = [];
 $chart_data = [];
 
 foreach ($traffic_stats as $stat) {
-    $chart_labels[] = $stat['period'];
+    if ($view_mode == 'monthly') {
+        $chart_labels[] = date('M Y', strtotime($stat['period'] . '-01'));
+    } else {
+        $chart_labels[] = date('d/m', strtotime($stat['period']));
+    }
     $chart_data[] = $stat['count'];
 }
 
@@ -183,30 +189,30 @@ if (!defined('CURRENCY')) {
 
                 <!-- Filter Controls -->
                 <div class="chart-controls mb-4">
-                    <form id="trafficFilterForm" class="row g-3 align-items-end">
+                    <form id="trafficFilterForm" class="row g-3 align-items-end" method="GET" action="">
                         <div class="col-md-3">
                             <label for="start_date" class="form-label">Từ ngày</label>
                             <input type="date" class="form-control" id="start_date" name="start_date" 
-                                value="<?php echo $start_date; ?>" max="<?php echo date('Y-m-d'); ?>">
+                                value="<?php echo htmlspecialchars($start_date); ?>" max="<?php echo date('Y-m-d'); ?>">
                         </div>
                         <div class="col-md-3">
                             <label for="end_date" class="form-label">Đến ngày</label>
                             <input type="date" class="form-control" id="end_date" name="end_date" 
-                                value="<?php echo $end_date; ?>" max="<?php echo date('Y-m-d'); ?>">
+                                value="<?php echo htmlspecialchars($end_date); ?>" max="<?php echo date('Y-m-d'); ?>">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Chế độ xem</label>
                             <div class="btn-group view-toggle" role="group">
                                 <button type="button" class="btn btn-outline-primary <?php echo $view_mode == 'daily' ? 'active' : ''; ?>" 
-                                    onclick="document.getElementById('view_mode').value='daily'; this.form.submit();">
+                                    onclick="this.form.view.value='daily'; this.form.submit();">
                                     Theo ngày
                                 </button>
                                 <button type="button" class="btn btn-outline-primary <?php echo $view_mode == 'monthly' ? 'active' : ''; ?>"
-                                    onclick="document.getElementById('view_mode').value='monthly'; this.form.submit();">
+                                    onclick="this.form.view.value='monthly'; this.form.submit();">
                                     Theo tháng
                                 </button>
                             </div>
-                            <input type="hidden" id="view_mode" name="view" value="<?php echo $view_mode; ?>">
+                            <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
                         </div>
                         <div class="col-md-3">
                             <button type="submit" class="btn btn-primary w-100">
@@ -287,6 +293,8 @@ if (!defined('CURRENCY')) {
     
     <script>
         // Initialize Chart
+        let trafficChart;
+
         const createTrafficChart = () => {
             const ctx = document.getElementById('trafficChart').getContext('2d');
             
@@ -294,16 +302,17 @@ if (!defined('CURRENCY')) {
             const chartLabels = <?php echo $chart_labels_json; ?>;
             const chartData = <?php echo $chart_data_json; ?>;
             
+            // Destroy existing chart if it exists
+            if (trafficChart) {
+                trafficChart.destroy();
+            }
+
             // Chart colors
             const gradient = ctx.createLinearGradient(0, 0, 0, 400);
             gradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
             gradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
             
-            if (window.trafficChart) {
-                window.trafficChart.destroy();
-            }
-            
-            window.trafficChart = new Chart(ctx, {
+            trafficChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: chartLabels,
@@ -331,6 +340,12 @@ if (!defined('CURRENCY')) {
                             beginAtZero: true,
                             ticks: {
                                 precision: 0
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '<?php echo $view_mode == "monthly" ? "Tháng" : "Ngày"; ?>'
                             }
                         }
                     },
@@ -375,33 +390,42 @@ if (!defined('CURRENCY')) {
             // Handle PDF download
             document.getElementById('downloadPDFBtn').addEventListener('click', function() {
                 const { jsPDF } = window.jspdf;
-                
-                html2canvas(document.querySelector(".chart-container")).then(canvas => {
+                html2canvas(document.querySelector('.chart-container')).then(canvas => {
                     const imgData = canvas.toDataURL('image/png');
                     const pdf = new jsPDF('landscape');
                     const imgProps = pdf.getImageProperties(imgData);
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
                     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
                     
                     // Add header
                     pdf.setFontSize(18);
-                    pdf.text('Báo cáo lượt truy cập website', 14, 15);
+                    pdf.text('Báo cáo lượt truy cập website', 10, 15);
                     
                     // Add date
                     pdf.setFontSize(12);
-                    pdf.text(`Thời gian: ${new Date().toLocaleDateString()}`, 14, 25);
+                    pdf.text(`Thời gian: ${new Date().toLocaleDateString()}`, 10, 25);
                     
                     // Add stats
-                    pdf.text(`Tổng lượt truy cập: ${<?php echo $total_visits; ?>}`, 14, 35);
-                    pdf.text(`Lượt truy cập hôm nay: ${<?php echo $today_visits; ?>}`, 14, 45);
+                    pdf.text(`Tổng lượt truy cập: ${<?php echo number_format($total_visits); ?>}`, 10, 35);
+                    pdf.text(`Lượt truy cập hôm nay: ${<?php echo number_format($today_visits); ?>}`, 10, 45);
                     
                     // Add chart
-                    pdf.addImage(imgData, 'PNG', 10, 55, pdfWidth - 20, pdfHeight * 0.8);
+                    pdf.addImage(imgData, 'PNG', 10, 55, pdfWidth, pdfHeight);
                     
                     // Save the PDF
                     pdf.save(`bao_cao_truy_cap_${new Date().toISOString().slice(0,10)}.pdf`);
+                }).catch(error => {
+                    console.error('Error generating PDF:', error);
                 });
             });
+        });
+
+        // Handle form submission for filter
+        document.getElementById('trafficFilterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const params = new URLSearchParams(formData).toString();
+            window.location.href = `?${params}`;
         });
     </script>
 </body>
