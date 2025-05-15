@@ -20,7 +20,11 @@ class TrafficLog {
             referer_url VARCHAR(255),
             user_id INT NULL,
             session_id VARCHAR(100),
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            visit_count INT DEFAULT 1,
+            visit_date DATE,
+            last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_session_date (session_id, visit_date)
         )";
         
         try {
@@ -32,20 +36,50 @@ class TrafficLog {
     }
     
     public function logAccess() {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        
         $ip_address = $this->getIpAddress();
         $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
         $page_url = $_SERVER['REQUEST_URI'] ?? '/';
         $referer_url = $_SERVER['HTTP_REFERER'] ?? '';
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
         $session_id = session_id();
+        $current_date = date('Y-m-d');
         
-        $query = "INSERT INTO " . $this->table_name . " 
-                (ip_address, user_agent, page_url, referer_url, user_id, session_id) 
-                VALUES (?, ?, ?, ?, ?, ?)";
+        // Kiểm tra xem session_id đã tồn tại trong ngày hiện tại chưa
+        $check_query = "SELECT id, visit_count FROM " . $this->table_name . "
+                       WHERE session_id = :session_id AND visit_date = :current_date";
         
         try {
-            $stmt = $this->conn->prepare($query);
-            return $stmt->execute([$ip_address, $user_agent, $page_url, $referer_url, $user_id, $session_id]);
+            $check_stmt = $this->conn->prepare($check_query);
+            $check_stmt->bindParam(':session_id', $session_id);
+            $check_stmt->bindParam(':current_date', $current_date);
+            $check_stmt->execute();
+            $existing_record = $check_stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existing_record) {
+                // Nếu đã tồn tại, không làm gì thêm (hoặc có thể cập nhật last_updated)
+                error_log("Access already logged for session_id: $session_id on $current_date");
+                return true;
+            } else {
+                // Nếu chưa tồn tại, thêm bản ghi mới
+                $insert_query = "INSERT INTO " . $this->table_name . " 
+                               (ip_address, user_agent, page_url, referer_url, user_id, session_id, visit_date)
+                               VALUES (:ip_address, :user_agent, :page_url, :referer_url, :user_id, :session_id, :visit_date)";
+                
+                $stmt = $this->conn->prepare($insert_query);
+                $stmt->bindParam(':ip_address', $ip_address);
+                $stmt->bindParam(':user_agent', $user_agent);
+                $stmt->bindParam(':page_url', $page_url);
+                $stmt->bindParam(':referer_url', $referer_url);
+                $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+                $stmt->bindParam(':session_id', $session_id);
+                $stmt->bindParam(':visit_date', $current_date);
+                
+                return $stmt->execute();
+            }
         } catch (PDOException $e) {
             error_log("Error logging traffic: " . $e->getMessage());
             return false;
@@ -63,13 +97,13 @@ class TrafficLog {
     }
     
     public function getTotalVisits() {
-        $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
+        $query = "SELECT SUM(visit_count) as total FROM " . $this->table_name;
         
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return (int) $row['total'];
+            return (int) ($row['total'] ?? 0);
         } catch (PDOException $e) {
             error_log("Error getting total visits: " . $e->getMessage());
             return 0;
@@ -77,14 +111,14 @@ class TrafficLog {
     }
     
     public function getTodayVisits() {
-        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . "
-                 WHERE DATE(created_at) = CURDATE()";
+        $query = "SELECT SUM(visit_count) as total FROM " . $this->table_name . "
+                 WHERE visit_date = CURDATE()";
         
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return (int) $row['total'];
+            return (int) ($row['total'] ?? 0);
         } catch (PDOException $e) {
             error_log("Error getting today's visits: " . $e->getMessage());
             return 0;
@@ -95,12 +129,12 @@ class TrafficLog {
         if ($interval == 'month') {
             $group_by = "DATE_FORMAT(created_at, '%Y-%m')";
         } else {
-            $group_by = "DATE(created_at)";
+            $group_by = "visit_date";
         }
         
-        $query = "SELECT " . $group_by . " as period, COUNT(*) as count 
+        $query = "SELECT " . $group_by . " as period, SUM(visit_count) as count 
                 FROM " . $this->table_name . "
-                WHERE DATE(created_at) BETWEEN :start_date AND :end_date
+                WHERE visit_date BETWEEN :start_date AND :end_date
                 GROUP BY " . $group_by . "
                 ORDER BY period ASC";
         
@@ -144,7 +178,7 @@ class TrafficLog {
     public function getUniqueVisitors($start_date, $end_date) {
         $query = "SELECT COUNT(DISTINCT session_id) as unique_count 
                 FROM " . $this->table_name . "
-                WHERE DATE(created_at) BETWEEN :start_date AND :end_date";
+                WHERE visit_date BETWEEN :start_date AND :end_date";
         
         try {
             $stmt = $this->conn->prepare($query);
