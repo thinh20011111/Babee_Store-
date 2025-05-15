@@ -15,7 +15,7 @@ include 'views/layouts/header.php';
         <?php foreach($banners as $index => $banner): ?>
         <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
             <img src="<?php echo htmlspecialchars($banner['image']); ?>" class="d-block w-100" alt="<?php echo htmlspecialchars($banner['title']); ?>">
-            <div class="carousel-caption d-flex flex-column justify-content-center align-items-center h-100">
+            <div class="carousel-caption d-flex flex-column justify-content-center align-items-center">
                 <h2 class="fade-in text-shadow"><?php echo htmlspecialchars($banner['title']); ?></h2>
                 <p class="fade-in text-shadow"><?php echo htmlspecialchars($banner['subtitle']); ?></p>
                 <?php if(!empty($banner['link'])): ?>
@@ -361,7 +361,7 @@ include 'views/layouts/header.php';
     .banner-carousel .carousel-item img {
         object-fit: cover;
         width: 100%;
-        height: 500px; /* Chiều cao cố định để tránh lệch */
+        height: 500px;
     }
 
     .banner-carousel .carousel-caption {
@@ -371,11 +371,34 @@ include 'views/layouts/header.php';
         transform: translate(-50%, -50%);
         text-align: center;
         color: white;
-        padding: 20px;
-        background: rgba(0, 0, 0, 0.6); /* Nền mờ để caption dễ đọc */
+        padding: 20px 30px; /* Tăng padding để tạo khoảng cách */
+        background: rgba(0, 0, 0, 0.4); /* Làm mờ hơn */
         border-radius: 10px;
-        width: 80%;
-        max-width: 800px;
+        max-width: 600px; /* Thu nhỏ kích thước caption */
+        width: 70%;
+    }
+
+    .banner-carousel .carousel-caption h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 15px; /* Tăng khoảng cách giữa các phần tử */
+        line-height: 1.2;
+    }
+
+    .banner-carousel .carousel-caption p {
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .banner-carousel .carousel-caption .btn {
+        padding: 10px 25px;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+    }
+
+    .banner-carousel .carousel-caption .btn:hover {
+        background-color: #e9ecef;
     }
 
     .banner-carousel .fade-in {
@@ -400,20 +423,22 @@ include 'views/layouts/header.php';
     .hero-banner .hero-banner-image .position-absolute {
         transform: translate(-50%, -50%);
         padding: 20px;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(0, 0, 0, 0.4); /* Đồng bộ độ mờ với carousel */
         border-radius: 10px;
+        max-width: 600px;
+        width: 70%;
     }
 
     /* Responsive Adjustments */
     @media (max-width: 768px) {
         .banner-carousel .carousel-item img,
         .hero-banner .hero-banner-image {
-            height: 300px; /* Giảm chiều cao trên thiết bị nhỏ */
+            height: 300px;
         }
 
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
-            width: 90%;
+            width: 80%;
             padding: 15px;
         }
 
@@ -439,7 +464,7 @@ include 'views/layouts/header.php';
 
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
-            width: 95%;
+            width: 90%;
             padding: 10px;
         }
 
