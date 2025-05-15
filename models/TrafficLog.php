@@ -29,8 +29,9 @@ class TrafficLog {
         
         try {
             $this->conn->exec($query);
+            error_log("Traffic logs table initialized successfully at " . date('Y-m-d H:i:s'));
         } catch (PDOException $e) {
-            error_log("Error creating traffic logs table: " . $e->getMessage());
+            error_log("Error creating traffic logs table: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             throw new Exception("Could not initialize traffic logs table");
         }
     }
@@ -38,6 +39,7 @@ class TrafficLog {
     public function logAccess() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
+            session_regenerate_id(true);
         }
         
         $ip_address = $this->getIpAddress();
@@ -47,6 +49,13 @@ class TrafficLog {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
         $session_id = session_id();
         $current_date = date('Y-m-d');
+        
+        if (empty($session_id)) {
+            error_log("Session ID is empty at " . date('Y-m-d H:i:s'));
+            return false;
+        }
+        
+        error_log("Logging access: session_id=$session_id, ip=$ip_address, page=$page_url, user_id=" . ($user_id ?? 'null') . " at " . date('Y-m-d H:i:s'));
         
         // Kiểm tra xem session_id đã tồn tại trong ngày hiện tại chưa
         $check_query = "SELECT id, visit_count FROM " . $this->table_name . "
@@ -60,14 +69,28 @@ class TrafficLog {
             $existing_record = $check_stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($existing_record) {
-                // Nếu đã tồn tại, không làm gì thêm (hoặc có thể cập nhật last_updated)
-                error_log("Access already logged for session_id: $session_id on $current_date");
-                return true;
+                // Nếu đã tồn tại, tăng visit_count
+                $new_visit_count = ($existing_record['visit_count'] ?? 1) + 1;
+                $update_query = "UPDATE " . $this->table_name . "
+                               SET visit_count = :visit_count, page_url = :page_url, last_updated = CURRENT_TIMESTAMP
+                               WHERE id = :id";
+                $update_stmt = $this->conn->prepare($update_query);
+                $update_stmt->bindParam(':visit_count', $new_visit_count, PDO::PARAM_INT);
+                $update_stmt->bindParam(':page_url', $page_url);
+                $update_stmt->bindParam(':id', $existing_record['id'], PDO::PARAM_INT);
+                
+                $result = $update_stmt->execute();
+                if ($result) {
+                    error_log("Updated visit_count to $new_visit_count for session_id: $session_id on $current_date at " . date('Y-m-d H:i:s'));
+                } else {
+                    error_log("Failed to update visit_count for session_id: $session_id - " . print_r($update_stmt->errorInfo(), true));
+                }
+                return $result;
             } else {
                 // Nếu chưa tồn tại, thêm bản ghi mới
                 $insert_query = "INSERT INTO " . $this->table_name . " 
-                               (ip_address, user_agent, page_url, referer_url, user_id, session_id, visit_date)
-                               VALUES (:ip_address, :user_agent, :page_url, :referer_url, :user_id, :session_id, :visit_date)";
+                               (ip_address, user_agent, page_url, referer_url, user_id, session_id, visit_date, visit_count)
+                               VALUES (:ip_address, :user_agent, :page_url, :referer_url, :user_id, :session_id, :visit_date, :visit_count)";
                 
                 $stmt = $this->conn->prepare($insert_query);
                 $stmt->bindParam(':ip_address', $ip_address);
@@ -77,11 +100,19 @@ class TrafficLog {
                 $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
                 $stmt->bindParam(':session_id', $session_id);
                 $stmt->bindParam(':visit_date', $current_date);
+                $visit_count = 1;
+                $stmt->bindParam(':visit_count', $visit_count, PDO::PARAM_INT);
                 
-                return $stmt->execute();
+                $result = $stmt->execute();
+                if ($result) {
+                    error_log("Successfully inserted record for session_id: $session_id at " . date('Y-m-d H:i:s'));
+                } else {
+                    error_log("Failed to insert record for session_id: $session_id - " . print_r($stmt->errorInfo(), true));
+                }
+                return $result;
             }
         } catch (PDOException $e) {
-            error_log("Error logging traffic: " . $e->getMessage());
+            error_log("Error logging traffic: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             return false;
         }
     }
@@ -97,30 +128,36 @@ class TrafficLog {
     }
     
     public function getTotalVisits() {
-        $query = "SELECT SUM(visit_count) as total FROM " . $this->table_name;
+        $query = "SELECT COALESCE(SUM(visit_count), 0) as total FROM " . $this->table_name;
         
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return (int) ($row['total'] ?? 0);
+            $total = (int) ($row['total'] ?? 0);
+            error_log("Total visits fetched: $total at " . date('Y-m-d H:i:s'));
+            return $total;
         } catch (PDOException $e) {
-            error_log("Error getting total visits: " . $e->getMessage());
+            error_log("Error getting total visits: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             return 0;
         }
     }
     
     public function getTodayVisits() {
-        $query = "SELECT SUM(visit_count) as total FROM " . $this->table_name . "
-                 WHERE visit_date = CURDATE()";
+        $query = "SELECT COALESCE(SUM(visit_count), 0) as total FROM " . $this->table_name . "
+                 WHERE visit_date = :today";
         
         try {
             $stmt = $this->conn->prepare($query);
+            $today = date('Y-m-d');
+            $stmt->bindParam(':today', $today);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return (int) ($row['total'] ?? 0);
+            $total = (int) ($row['total'] ?? 0);
+            error_log("Today visits fetched for $today: $total at " . date('Y-m-d H:i:s'));
+            return $total;
         } catch (PDOException $e) {
-            error_log("Error getting today's visits: " . $e->getMessage());
+            error_log("Error getting today's visits: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             return 0;
         }
     }
@@ -132,7 +169,7 @@ class TrafficLog {
             $group_by = "visit_date";
         }
         
-        $query = "SELECT " . $group_by . " as period, SUM(visit_count) as count 
+        $query = "SELECT " . $group_by . " as period, COALESCE(SUM(visit_count), 0) as count 
                 FROM " . $this->table_name . "
                 WHERE visit_date BETWEEN :start_date AND :end_date
                 GROUP BY " . $group_by . "
@@ -145,6 +182,7 @@ class TrafficLog {
             $stmt->execute();
             
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("Stats range fetched for $start_date to $end_date: " . json_encode($result) . " at " . date('Y-m-d H:i:s'));
             
             // Fill missing days with 0 count
             $current_date = new DateTime($start_date);
@@ -158,7 +196,7 @@ class TrafficLog {
                 $found = false;
                 foreach ($result as $row) {
                     if ($row['period'] === $date_str) {
-                        $filled_result[] = $row;
+                        $filled_result[] = ['period' => $date_str, 'count' => (int)$row['count']];
                         $found = true;
                         break;
                     }
@@ -168,9 +206,10 @@ class TrafficLog {
                 }
             }
             
+            error_log("Filled stats range: " . json_encode($filled_result) . " at " . date('Y-m-d H:i:s'));
             return $filled_result;
         } catch (PDOException $e) {
-            error_log("Error getting statistics range: " . $e->getMessage());
+            error_log("Error getting statistics range: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             return [];
         }
     }
@@ -186,9 +225,11 @@ class TrafficLog {
             $stmt->bindParam(':end_date', $end_date);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return (int) $row['unique_count'];
+            $unique_count = (int) ($row['unique_count'] ?? 0);
+            error_log("Unique visitors fetched for $start_date to $end_date: $unique_count at " . date('Y-m-d H:i:s'));
+            return $unique_count;
         } catch (PDOException $e) {
-            error_log("Error getting unique visitors: " . $e->getMessage());
+            error_log("Error getting unique visitors: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             return 0;
         }
     }
@@ -204,9 +245,11 @@ class TrafficLog {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("Top pages fetched (limit $limit): " . json_encode($result) . " at " . date('Y-m-d H:i:s'));
+            return $result;
         } catch (PDOException $e) {
-            error_log("Error getting top pages: " . $e->getMessage());
+            error_log("Error getting top pages: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             return [];
         }
     }
@@ -227,9 +270,11 @@ class TrafficLog {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("Referring sources fetched (limit $limit): " . json_encode($result) . " at " . date('Y-m-d H:i:s'));
+            return $result;
         } catch (PDOException $e) {
-            error_log("Error getting referring sources: " . $e->getMessage());
+            error_log("Error getting referring sources: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
             return [];
         }
     }
