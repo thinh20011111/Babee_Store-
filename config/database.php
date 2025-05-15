@@ -6,11 +6,12 @@ function getConnection() {
     
     try {
         // Sử dụng SQLite cho môi trường phát triển
-        $conn = new PDO('sqlite:./database.sqlite');
+        $conn = new PDO('sqlite:' . __DIR__ . '/database.sqlite');
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         createLocalTables($conn);
-    } catch(PDOException $exception) {
-        die("Connection error: " . $exception->getMessage());
+    } catch (PDOException $exception) {
+        error_log("Connection error: " . $exception->getMessage());
+        die("Connection error: Please check the server logs for details.");
     }
     
     return $conn;
@@ -54,7 +55,7 @@ function createLocalTables($conn) {
         ");
     }
     
-    // Create products table (removed stock)
+    // Create products table
     $conn->exec("CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -82,7 +83,7 @@ function createLocalTables($conn) {
         FOREIGN KEY (product_id) REFERENCES products(id)
     )");
     
-    // Create orders table (added shipping_name, payment_status)
+    // Create orders table
     $conn->exec("CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_number TEXT NOT NULL,
@@ -101,7 +102,7 @@ function createLocalTables($conn) {
         FOREIGN KEY (user_id) REFERENCES users(id)
     )");
     
-    // Create order_items table (added variant_id)
+    // Create order_items table
     $conn->exec("CREATE TABLE IF NOT EXISTS order_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_id INTEGER NOT NULL,
@@ -210,6 +211,18 @@ function createLocalTables($conn) {
         ");
     }
     
+    // Create traffic_logs table
+    $conn->exec("CREATE TABLE IF NOT EXISTS traffic_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip_address TEXT,
+        user_agent TEXT,
+        page_url TEXT,
+        referer_url TEXT,
+        user_id INTEGER NULL,
+        session_id TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+    
     return true;
 }
 
@@ -228,7 +241,7 @@ class Database {
         try {
             // For local development, use SQLite instead of remote MySQL
             if ($_SERVER['SERVER_NAME'] == 'localhost' || $_SERVER['SERVER_NAME'] == '0.0.0.0' || $_SERVER['SERVER_NAME'] == '127.0.0.1') {
-                $this->conn = new PDO('sqlite:./database.sqlite');
+                $this->conn = new PDO('sqlite:' . __DIR__ . '/database.sqlite');
                 $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 $this->createLocalTables();
             } else {
@@ -242,7 +255,8 @@ class Database {
                 $this->conn->exec("set names utf8");
             }
         } catch(PDOException $exception) {
-            echo "Connection error: " . $exception->getMessage();
+            error_log("Connection error: " . $exception->getMessage());
+            die("Connection error: Please check the server logs for details.");
         }
         
         return $this->conn;
