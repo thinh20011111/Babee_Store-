@@ -3,30 +3,23 @@
  * Model for tracking and retrieving website traffic statistics
  */
 class TrafficLog {
-    // Database connection and table name
     private $conn;
     private $table_name = "traffic_logs";
     
-    // Constructor with database connection
     public function __construct($db) {
         $this->conn = $db;
-        
-        // Create the table if it doesn't exist
         $this->initializeTable();
     }
     
-    /**
-     * Initialize the traffic_logs table if it doesn't exist
-     */
     private function initializeTable() {
         $query = "CREATE TABLE IF NOT EXISTS " . $this->table_name . " (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip_address TEXT,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ip_address VARCHAR(45),
             user_agent TEXT,
-            page_url TEXT,
-            referer_url TEXT,
-            user_id INTEGER NULL,
-            session_id TEXT,
+            page_url VARCHAR(255),
+            referer_url VARCHAR(255),
+            user_id INT NULL,
+            session_id VARCHAR(100),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )";
         
@@ -38,12 +31,7 @@ class TrafficLog {
         }
     }
     
-    /**
-     * Log a website access
-     * @return boolean success/failure
-     */
     public function logAccess() {
-        // Get visitor information
         $ip_address = $this->getIpAddress();
         $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
         $page_url = $_SERVER['REQUEST_URI'] ?? '/';
@@ -51,33 +39,19 @@ class TrafficLog {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
         $session_id = session_id();
         
-        // SQL query to insert the log
         $query = "INSERT INTO " . $this->table_name . " 
                 (ip_address, user_agent, page_url, referer_url, user_id, session_id) 
                 VALUES (?, ?, ?, ?, ?, ?)";
         
         try {
             $stmt = $this->conn->prepare($query);
-            $result = $stmt->execute([
-                $ip_address,
-                $user_agent,
-                $page_url,
-                $referer_url,
-                $user_id,
-                $session_id
-            ]);
-            
-            return $result;
+            return $stmt->execute([$ip_address, $user_agent, $page_url, $referer_url, $user_id, $session_id]);
         } catch (PDOException $e) {
             error_log("Error logging traffic: " . $e->getMessage());
             return false;
         }
     }
     
-    /**
-     * Get the client's real IP address
-     * @return string IP address
-     */
     private function getIpAddress() {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             return $_SERVER['HTTP_CLIENT_IP'];
@@ -88,10 +62,6 @@ class TrafficLog {
         }
     }
     
-    /**
-     * Get the total number of visits
-     * @return int
-     */
     public function getTotalVisits() {
         $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
         
@@ -99,53 +69,39 @@ class TrafficLog {
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $row['total'];
+            return (int) $row['total'];
         } catch (PDOException $e) {
             error_log("Error getting total visits: " . $e->getMessage());
             return 0;
         }
     }
     
-    /**
-     * Get the number of visits today
-     * @return int
-     */
     public function getTodayVisits() {
         $query = "SELECT COUNT(*) as total FROM " . $this->table_name . "
-                 WHERE date(created_at) = date('now')";
+                 WHERE DATE(created_at) = CURDATE()";
         
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $row['total'];
+            return (int) $row['total'];
         } catch (PDOException $e) {
             error_log("Error getting today's visits: " . $e->getMessage());
             return 0;
         }
     }
     
-    /**
-     * Get statistics for a date range
-     * @param string $start_date Start date in Y-m-d format
-     * @param string $end_date End date in Y-m-d format
-     * @param string $interval 'day' or 'month'
-     * @return array
-     */
     public function getStatsRange($start_date, $end_date, $interval = 'day') {
-        // Format for grouping
         if ($interval == 'month') {
-            $format = "%Y-%m";
-            $label = "substr(created_at, 1, 7)"; // YYYY-MM
+            $group_by = "DATE_FORMAT(created_at, '%Y-%m')";
         } else {
-            $format = "%Y-%m-%d";
-            $label = "date(created_at)"; // YYYY-MM-DD
+            $group_by = "DATE(created_at)";
         }
         
-        $query = "SELECT " . $label . " as period, COUNT(*) as count 
+        $query = "SELECT " . $group_by . " as period, COUNT(*) as count 
                 FROM " . $this->table_name . "
-                WHERE date(created_at) BETWEEN :start_date AND :end_date
-                GROUP BY " . $label . "
+                WHERE DATE(created_at) BETWEEN :start_date AND :end_date
+                GROUP BY " . $group_by . "
                 ORDER BY period ASC";
         
         try {
@@ -154,48 +110,55 @@ class TrafficLog {
             $stmt->bindParam(':end_date', $end_date);
             $stmt->execute();
             
-            $result = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $result[] = $row;
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Fill missing days with 0 count
+            $current_date = new DateTime($start_date);
+            $end = new DateTime($end_date);
+            $interval_obj = new DateInterval('P1D');
+            $date_range = new DatePeriod($current_date, $interval_obj, $end->modify('+1 day'));
+            $filled_result = [];
+            
+            foreach ($date_range as $date) {
+                $date_str = $date->format('Y-m-d');
+                $found = false;
+                foreach ($result as $row) {
+                    if ($row['period'] === $date_str) {
+                        $filled_result[] = $row;
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    $filled_result[] = ['period' => $date_str, 'count' => 0];
+                }
             }
             
-            return $result;
+            return $filled_result;
         } catch (PDOException $e) {
             error_log("Error getting statistics range: " . $e->getMessage());
             return [];
         }
     }
     
-    /**
-     * Get unique visitor count for a date range
-     * @param string $start_date Start date in Y-m-d format
-     * @param string $end_date End date in Y-m-d format
-     * @return int
-     */
     public function getUniqueVisitors($start_date, $end_date) {
         $query = "SELECT COUNT(DISTINCT session_id) as unique_count 
                 FROM " . $this->table_name . "
-                WHERE date(created_at) BETWEEN :start_date AND :end_date";
+                WHERE DATE(created_at) BETWEEN :start_date AND :end_date";
         
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':start_date', $start_date);
             $stmt->bindParam(':end_date', $end_date);
             $stmt->execute();
-            
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $row['unique_count'];
+            return (int) $row['unique_count'];
         } catch (PDOException $e) {
             error_log("Error getting unique visitors: " . $e->getMessage());
             return 0;
         }
     }
     
-    /**
-     * Get most visited pages
-     * @param int $limit Number of results to return
-     * @return array
-     */
     public function getTopPages($limit = 10) {
         $query = "SELECT page_url, COUNT(*) as count 
                 FROM " . $this->table_name . "
@@ -207,24 +170,13 @@ class TrafficLog {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
-            
-            $result = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $result[] = $row;
-            }
-            
-            return $result;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Error getting top pages: " . $e->getMessage());
             return [];
         }
     }
     
-    /**
-     * Get traffic stats by referring sources
-     * @param int $limit Number of results to return
-     * @return array
-     */
     public function getReferringSources($limit = 10) {
         $query = "SELECT 
                     CASE 
@@ -241,13 +193,7 @@ class TrafficLog {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
-            
-            $result = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $result[] = $row;
-            }
-            
-            return $result;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Error getting referring sources: " . $e->getMessage());
             return [];

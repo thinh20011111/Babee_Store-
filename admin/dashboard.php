@@ -183,19 +183,28 @@ try {
     
     if (empty($traffic_stats)) {
         $debug_logs[] = "No traffic data found in DB for range $start_date to $end_date";
-        // Nếu không có dữ liệu thực (mới cài đặt), sử dụng dữ liệu mẫu
+        // Sử dụng dữ liệu mẫu nếu không có dữ liệu thực
         if (file_exists('../models/sample/traffic_data.php')) {
             require_once '../models/sample/traffic_data.php';
-            $traffic_stats = getSampleDailyTraffic();
-            $traffic_stats = array_slice($traffic_stats, -7); // Chỉ lấy 7 ngày gần nhất
+            $sample_data = getSampleDailyTraffic();
+            $traffic_stats = array_slice($sample_data, -7); // Lấy 7 ngày gần nhất
             $debug_logs[] = "Using sample traffic data: " . json_encode($traffic_stats);
         } else {
             $debug_logs[] = "Sample traffic data file not found at ../models/sample/traffic_data.php";
+            // Tạo dữ liệu mặc định nếu không có file mẫu
+            $current_date = new DateTime($start_date);
+            $end = new DateTime($end_date);
+            $interval_obj = new DateInterval('P1D');
+            $date_range = new DatePeriod($current_date, $interval_obj, $end->modify('+1 day'));
+            foreach ($date_range as $date) {
+                $traffic_stats[] = ['period' => $date->format('Y-m-d'), 'count' => 0];
+            }
+            $debug_logs[] = "Generated default traffic data: " . json_encode($traffic_stats);
         }
     }
     
     foreach ($traffic_stats as $stat) {
-        if (isset($stat['period']) && isset($stat['count'])) {
+        if (isset($stat['period']) && isset($stat['count']) && strtotime($stat['period']) !== false) {
             $traffic_labels[] = date('d/m', strtotime($stat['period']));
             $traffic_data[] = (int)$stat['count'];
             $debug_logs[] = "Processed traffic stat: Period={$stat['period']}, Count={$stat['count']}";
@@ -207,13 +216,14 @@ try {
     $debug_logs[] = "Traffic labels: " . json_encode($traffic_labels);
     $debug_logs[] = "Traffic data: " . json_encode($traffic_data);
 } catch (Exception $e) {
-    $error_occurred = true;
     $debug_logs[] = "Error fetching traffic data: " . $e->getMessage();
     error_log("Traffic data error: " . $e->getMessage());
+    $traffic_labels = ['No Data'];
+    $traffic_data = [0];
 }
 
 // Ensure traffic data is valid
-if (empty($traffic_data)) {
+if (empty($traffic_data) || empty($traffic_labels)) {
     $traffic_labels = ['No Data'];
     $traffic_data = [0];
     $debug_logs[] = "No valid traffic data, setting default to 'No Data'";
@@ -221,10 +231,10 @@ if (empty($traffic_data)) {
 
 // Convert to JSON with error handling
 try {
-    $traffic_labels_json = json_encode($traffic_labels);
-    $traffic_data_json = json_encode($traffic_data);
-    $monthly_revenue_labels_json = json_encode($monthly_revenue_labels);
-    $monthly_revenue_data_json = json_encode($monthly_revenue_data);
+    $traffic_labels_json = json_encode($traffic_labels, JSON_INVALID_UTF8_SUBSTITUTE);
+    $traffic_data_json = json_encode($traffic_data, JSON_INVALID_UTF8_SUBSTITUTE);
+    $monthly_revenue_labels_json = json_encode($monthly_revenue_labels, JSON_INVALID_UTF8_SUBSTITUTE);
+    $monthly_revenue_data_json = json_encode($monthly_revenue_data, JSON_INVALID_UTF8_SUBSTITUTE);
     $debug_logs[] = "JSON encoding successful.";
 } catch (Exception $e) {
     $error_occurred = true;
