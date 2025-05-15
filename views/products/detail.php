@@ -238,10 +238,10 @@ endif; ?>
                 <div class="row align-items-end mb-4">
                     <div class="col-5 col-md-3">
                         <label for="quantity" class="form-label fw-bold mb-2">Số lượng:</label>
-                        <div class="input-group quantity-selector">
-                            <button type="button" class="btn btn-outline-secondary" onclick="decreaseQuantity()">-</button>
-                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
-                            <button type="button" class="btn btn-outline-secondary" onclick="increaseQuantity()">+</button>
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="button" onclick="decreaseQuantity()">-</button>
+                            <input type="number" class="form-control text-center" id="quantity" name="quantity" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
+                            <button class="btn btn-outline-secondary" type="button" onclick="increaseQuantity()">+</button>
                         </div>
                     </div>
                     <div class="col-7 col-md-4 mb-3 mb-md-0">
