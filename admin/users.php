@@ -173,7 +173,7 @@ $users = array_slice($users, $offset, $items_per_page);
             <h4 class="text-center mb-4">Admin Panel</h4>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link text-white active" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
+                    <a class="nav-link text-white" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-white" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
@@ -183,6 +183,9 @@ $users = array_slice($users, $offset, $items_per_page);
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-white" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white active" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
                 </li>
             </ul>
         </div>
