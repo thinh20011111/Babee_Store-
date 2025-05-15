@@ -1,6 +1,7 @@
 <?php
 function getSampleDailyTraffic() {
     return [
+        ['period' => '2025-05-08', 'count' => 120],
         ['period' => '2025-05-09', 'count' => 150],
         ['period' => '2025-05-10', 'count' => 200],
         ['period' => '2025-05-11', 'count' => 180],

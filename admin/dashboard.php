@@ -750,10 +750,16 @@ if (!defined('CURRENCY')) {
                 return;
             }
             
-            if (trafficLabels[0] === 'No Data' || trafficData[0] === 0) {
-                console.warn("No valid traffic data available, displaying placeholder.");
-                document.getElementById('trafficChartError').innerText = "No traffic data available.";
+            // Kiểm tra dữ liệu thưa thớt
+            const nonZeroCount = trafficData.filter(value => value > 0).length;
+            if (nonZeroCount === 0) {
+                console.warn("All traffic data is zero, displaying placeholder.");
+                document.getElementById('trafficChartError').innerText = "No traffic data available (all values are 0).";
                 return;
+            }
+            if (nonZeroCount <= 1) {
+                console.warn("Sparse traffic data, only one non-zero value.");
+                document.getElementById('trafficChartError').innerText = "Sparse data: Only one day has traffic data.";
             }
             
             const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 400);
@@ -770,10 +776,10 @@ if (!defined('CURRENCY')) {
                             data: trafficData,
                             backgroundColor: trafficGradient,
                             borderColor: 'rgba(78, 115, 223, 1)',
-                            borderWidth: 2,
+                            borderWidth: 3, // Tăng độ dày đường
                             pointBackgroundColor: 'rgba(78, 115, 223, 1)',
                             pointBorderColor: '#fff',
-                            pointHoverRadius: 5,
+                            pointHoverRadius: 6,
                             pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
                             pointHoverBorderColor: '#fff',
                             pointHitRadius: 10,
@@ -786,9 +792,10 @@ if (!defined('CURRENCY')) {
                         maintainAspectRatio: false,
                         scales: {
                             y: {
-                                beginAtZero: true,
+                                beginAtZero: false, // Tự động điều chỉnh trục Y
                                 ticks: {
-                                    precision: 0
+                                    precision: 0,
+                                    stepSize: 1 // Đảm bảo các bước là số nguyên
                                 },
                                 title: {
                                     display: true,
