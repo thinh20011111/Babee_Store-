@@ -374,7 +374,7 @@ include 'views/layouts/header.php';
         transform: translate(-50%, -50%);
         text-align: center;
         color: white;
-        padding: 30px 40px; /* Tăng padding để thoáng hơn */
+        padding: 30px 40px;
         background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
         max-width: 600px;
@@ -385,18 +385,18 @@ include 'views/layouts/header.php';
         font-family: 'Poppins', sans-serif;
         font-size: 2.5rem;
         font-weight: 700;
-        margin-bottom: 15px;
+        margin: 10px 0 15px; /* Thêm margin-top và bottom */
         line-height: 1.2;
-        color: #f8f9fa; /* Màu trắng nhẹ nhàng */
+        color: #f8f9fa;
     }
 
     .banner-carousel .carousel-caption p {
         font-family: 'Poppins', sans-serif;
         font-size: 1.2rem;
         font-weight: 400;
-        margin-bottom: 20px;
+        margin: 10px 0 20px; /* Thêm margin-top và bottom */
         line-height: 1.5;
-        color: #e9ecef; /* Màu xám nhạt, thân thiện */
+        color: #e9ecef;
     }
 
     .banner-carousel .carousel-caption .btn {
@@ -406,6 +406,7 @@ include 'views/layouts/header.php';
         background-color: #f8f9fa;
         color: #212529;
         border: none;
+        margin: 10px 0; /* Thêm margin-top và bottom */
         transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
@@ -452,20 +453,23 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 80%;
-            padding: 20px 30px; /* Giảm padding trên tablet */
+            padding: 20px 30px;
         }
 
         .banner-carousel .carousel-caption h2 {
             font-size: 1.5rem;
+            margin: 5px 0 10px;
         }
 
         .banner-carousel .carousel-caption p {
             font-size: 1rem;
+            margin: 5px 0 15px;
         }
 
-        .banner-carousel .carousel-caption .btn-lg {
+        .banner-carousel .carousel-caption .btn {
             font-size: 1rem;
             padding: 8px 16px;
+            margin: 5px 0;
         }
     }
 
@@ -478,15 +482,23 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 90%;
-            padding: 15px 20px; /* Giảm padding trên mobile */
+            padding: 15px 20px;
         }
 
         .banner-carousel .carousel-caption h2 {
             font-size: 1.2rem;
+            margin: 5px 0 10px;
         }
 
         .banner-carousel .carousel-caption p {
             font-size: 0.9rem;
+            margin: 5px 0 15px;
+        }
+
+        .banner-carousel .carousel-caption .btn {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            margin: 5px 0;
         }
     }
 </style>
