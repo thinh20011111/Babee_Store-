@@ -14,12 +14,12 @@ include 'views/layouts/header.php';
     <div class="carousel-inner">
         <?php foreach($banners as $index => $banner): ?>
         <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
-            <img src="<?php echo htmlspecialchars($banner['image']); ?>" class="d-block" alt="<?php echo htmlspecialchars($banner['title']); ?>">
-            <div class="carousel-caption">
-                <h2 class="fade-in"><?php echo htmlspecialchars($banner['title']); ?></h2>
-                <p class="fade-in"><?php echo htmlspecialchars($banner['subtitle']); ?></p>
+            <img src="<?php echo htmlspecialchars($banner['image']); ?>" class="d-block w-100" alt="<?php echo htmlspecialchars($banner['title']); ?>">
+            <div class="carousel-caption d-flex flex-column justify-content-center align-items-center h-100">
+                <h2 class="fade-in text-shadow"><?php echo htmlspecialchars($banner['title']); ?></h2>
+                <p class="fade-in text-shadow"><?php echo htmlspecialchars($banner['subtitle']); ?></p>
                 <?php if(!empty($banner['link'])): ?>
-                <a href="<?php echo htmlspecialchars($banner['link']); ?>" class="btn btn-light btn-lg"><?php echo isset($banner['button_text']) ? htmlspecialchars($banner['button_text']) : 'SHOP NOW'; ?></a>
+                <a href="<?php echo htmlspecialchars($banner['link']); ?>" class="btn btn-light btn-lg fade-in"><?php echo isset($banner['button_text']) ? htmlspecialchars($banner['button_text']) : 'SHOP NOW'; ?></a>
                 <?php endif; ?>
             </div>
         </div>
@@ -350,3 +350,105 @@ include 'views/layouts/header.php';
 </section>
 
 <?php include 'views/layouts/footer.php'; ?>
+
+<style>
+    /* Banner Carousel Styling */
+    .banner-carousel {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .banner-carousel .carousel-item img {
+        object-fit: cover;
+        width: 100%;
+        height: 500px; /* Chiều cao cố định để tránh lệch */
+    }
+
+    .banner-carousel .carousel-caption {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: white;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.6); /* Nền mờ để caption dễ đọc */
+        border-radius: 10px;
+        width: 80%;
+        max-width: 800px;
+    }
+
+    .banner-carousel .fade-in {
+        animation: fadeIn 1s ease-in-out;
+    }
+
+    .banner-carousel .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* Fallback Hero Banner Styling */
+    .hero-banner .hero-banner-image {
+        position: relative;
+        height: 500px;
+    }
+
+    .hero-banner .hero-banner-image .position-absolute {
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 10px;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .banner-carousel .carousel-item img,
+        .hero-banner .hero-banner-image {
+            height: 300px; /* Giảm chiều cao trên thiết bị nhỏ */
+        }
+
+        .banner-carousel .carousel-caption,
+        .hero-banner .hero-banner-image .position-absolute {
+            width: 90%;
+            padding: 15px;
+        }
+
+        .banner-carousel .carousel-caption h2 {
+            font-size: 1.5rem;
+        }
+
+        .banner-carousel .carousel-caption p {
+            font-size: 1rem;
+        }
+
+        .banner-carousel .carousel-caption .btn-lg {
+            font-size: 1rem;
+            padding: 8px 16px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .banner-carousel .carousel-item img,
+        .hero-banner .hero-banner-image {
+            height: 250px;
+        }
+
+        .banner-carousel .carousel-caption,
+        .hero-banner .hero-banner-image .position-absolute {
+            width: 95%;
+            padding: 10px;
+        }
+
+        .banner-carousel .carousel-caption h2 {
+            font-size: 1.2rem;
+        }
+
+        .banner-carousel .carousel-caption p {
+            font-size: 0.9rem;
+        }
+    }
+</style>
