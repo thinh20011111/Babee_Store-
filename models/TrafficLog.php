@@ -59,9 +59,13 @@ class TrafficLog {
         
         error_log("Logging access: session_id=$session_id, ip=$ip_address, page=$page_url, user_id=" . ($user_id ?? 'null') . " at " . date('Y-m-d H:i:s'));
         
-        // Khởi tạo last_activity nếu chưa có
-        if (!isset($_SESSION['last_activity'])) {
+        // Khởi tạo browser_session nếu chưa có
+        if (!isset($_SESSION['browser_session'])) {
+            $_SESSION['browser_session'] = uniqid('', true);
             $_SESSION['last_activity'] = $current_time;
+            $is_new_browser_session = true;
+        } else {
+            $is_new_browser_session = false;
         }
 
         // Kiểm tra xem session_id đã tồn tại trong ngày hiện tại chưa
@@ -79,9 +83,11 @@ class TrafficLog {
             $current_datetime = new DateTime($current_time);
             $time_diff = $current_datetime->getTimestamp() - $last_activity->getTimestamp();
 
+            $should_increment = $is_new_browser_session || $time_diff > $this->session_timeout;
+
             if ($existing_record) {
-                if ($time_diff > $this->session_timeout) {
-                    // Tăng visit_count nếu vượt ngưỡng thời gian (phiên mới)
+                if ($should_increment) {
+                    // Tăng visit_count nếu là browser session mới hoặc vượt ngưỡng thời gian
                     $new_visit_count = ($existing_record['visit_count'] ?? 0) + 1;
                     $update_query = "UPDATE " . $this->table_name . "
                                    SET visit_count = :visit_count, last_updated = :current_time
@@ -93,12 +99,12 @@ class TrafficLog {
                     
                     $result = $update_stmt->execute();
                     if ($result) {
-                        error_log("Updated visit_count to $new_visit_count for session_id: $session_id (new session after $time_diff seconds) at " . date('Y-m-d H:i:s'));
+                        error_log("Updated visit_count to $new_visit_count for session_id: $session_id (new browser session: $is_new_browser_session, time diff: $time_diff seconds) at " . date('Y-m-d H:i:s'));
                     } else {
                         error_log("Failed to update visit_count for session_id: $session_id - " . print_r($update_stmt->errorInfo(), true));
                     }
                 } else {
-                    error_log("Skipped visit_count update for session_id: $session_id (within session timeout: $time_diff seconds) at " . date('Y-m-d H:i:s'));
+                    error_log("Skipped visit_count update for session_id: $session_id (within session timeout: $time_diff seconds, new browser session: $is_new_browser_session) at " . date('Y-m-d H:i:s'));
                     $result = true; // Không cập nhật nhưng vẫn thành công
                 }
             } else {
@@ -127,7 +133,7 @@ class TrafficLog {
                 }
             }
 
-            // Cập nhật last_activity trong session
+            // Cập nhật last_activity và browser_session
             $_SESSION['last_activity'] = $current_time;
             return $result;
         } catch (PDOException $e) {
@@ -276,7 +282,7 @@ class TrafficLog {
     public function getReferringSources($limit = 10) {
         $query = "SELECT 
                     CASE 
-                        WHEN referer_url = '' THEN 'Direct' 
+                        WHEN referer_url = '' THEN 'Direct部分: Direct' 
                         ELSE referer_url 
                     END as source, 
                     COUNT(*) as count 
