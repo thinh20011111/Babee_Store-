@@ -735,8 +735,14 @@ if (!defined('CURRENCY')) {
             
             const trafficLabels = <?php echo $traffic_labels_json; ?>;
             const trafficData = <?php echo $traffic_data_json; ?>;
-            console.log("Traffic Labels:", trafficLabels);
-            console.log("Traffic Data:", trafficData);
+            console.log("Traffic Labels (raw):", trafficLabels);
+            console.log("Traffic Data (raw):", trafficData);
+            
+            if (!Array.isArray(trafficLabels) || !Array.isArray(trafficData)) {
+                console.error("Invalid data format - Labels or Data is not an array:", { trafficLabels, trafficData });
+                document.getElementById('trafficChartError').innerText = "Error: Invalid data format for chart.";
+                return;
+            }
             
             if (trafficLabels.length !== trafficData.length) {
                 console.error("Mismatch between labels and data length: Labels=", trafficLabels.length, "Data=", trafficData.length);
@@ -755,8 +761,8 @@ if (!defined('CURRENCY')) {
             trafficGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
             
             try {
-                new Chart(trafficContext, {
-                    type: 'line', // Sử dụng biểu đồ đường
+                const chart = new Chart(trafficContext, {
+                    type: 'line',
                     data: {
                         labels: trafficLabels,
                         datasets: [{
@@ -829,10 +835,10 @@ if (!defined('CURRENCY')) {
                         }
                     }
                 });
-                console.log("Traffic chart initialized successfully.");
+                console.log("Traffic chart initialized successfully:", chart);
             } catch (error) {
-                console.error("Error initializing traffic chart:", error);
-                document.getElementById('trafficChartError').innerText = "Error initializing chart: " + error.message;
+                console.error("Error initializing traffic chart:", error.stack || error.message);
+                document.getElementById('trafficChartError').innerText = "Error initializing chart: " + (error.message || 'Unknown error');
             }
         });
     </script>
