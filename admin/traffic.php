@@ -269,18 +269,6 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
-
-                <!-- Debug Information -->
-                <div class="debug-info">
-                    <h5>Debug Information:</h5>
-                    <ul>
-                        <?php foreach($debug_logs as $log): ?>
-                        <li><?php echo htmlspecialchars($log); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <p><strong>Chart Labels:</strong> <?php echo $chart_labels_json; ?></p>
-                    <p><strong>Chart Data:</strong> <?php echo $chart_data_json; ?></p>
-                </div>
             </div>
         </div>
     </div>
