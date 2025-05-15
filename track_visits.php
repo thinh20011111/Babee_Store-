@@ -1,27 +1,20 @@
 <?php
 /**
  * Track Visits - File để thêm vào index.php để theo dõi lượt truy cập
- * File này nên được include ở đầu index.php
+ * File này nên được include sau khi $conn được định nghĩa
  */
 
 // Đảm bảo session đã bắt đầu
-if (!isset($_SESSION)) {
+if (session_status() == PHP_SESSION_NONE) {
     session_start();
+    session_regenerate_id(true); // Đảm bảo session_id mới cho mỗi truy cập
 }
 
-// Include autoload và database connection nếu chưa được include
-if (!isset($conn)) {
-    include_once 'config/database.php';
-    
-    // Khởi tạo kết nối database
-    try {
-        $db = new Database();
-        $conn = $db->getConnection();
-    } catch (Exception $e) {
-        // Nếu không thể kết nối, ghi log lỗi nhưng không làm crash trang
-        error_log("Database connection error in track_visits.php: " . $e->getMessage());
-        return;
-    }
+// Sử dụng biến $conn đã được định nghĩa trong index.php
+global $conn;
+if (!$conn) {
+    error_log("Database connection not available in track_visits.php at " . date('Y-m-d H:i:s'));
+    return;
 }
 
 // Đảm bảo class TrafficLog được load
@@ -29,7 +22,7 @@ if (!class_exists('TrafficLog')) {
     if (file_exists('models/TrafficLog.php')) {
         include_once 'models/TrafficLog.php';
     } else {
-        error_log("TrafficLog model not found");
+        error_log("TrafficLog model not found at " . date('Y-m-d H:i:s'));
         return;
     }
 }
@@ -47,9 +40,15 @@ if (preg_match('/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|otf)$/i', $re
 
 // Khởi tạo đối tượng TrafficLog và ghi log
 try {
+    error_log("Attempting to log access: URI=$request_uri, session_id=" . session_id());
     $traffic = new TrafficLog($conn);
-    $traffic->logAccess();
+    $result = $traffic->logAccess();
+    if ($result) {
+        error_log("Successfully logged access for session_id: " . session_id() . " at " . date('Y-m-d H:i:s'));
+    } else {
+        error_log("Failed to log access for session_id: " . session_id() . " at " . date('Y-m-d H:i:s'));
+    }
 } catch (Exception $e) {
-    error_log("Error tracking visit: " . $e->getMessage());
+    error_log("Error tracking visit: " . $e->getMessage() . " at " . date('Y-m-d H:i:s'));
 }
 ?>
