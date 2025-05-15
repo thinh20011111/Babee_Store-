@@ -5,7 +5,8 @@
 class TrafficLog {
     private $conn;
     private $table_name = "traffic_logs";
-    
+    private $time_threshold = 300; // Ngưỡng thời gian (giây), mặc định 5 phút
+
     public function __construct($db) {
         $this->conn = $db;
         $this->initializeTable();
@@ -49,7 +50,8 @@ class TrafficLog {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
         $session_id = session_id();
         $current_date = date('Y-m-d');
-        
+        $current_time = date('Y-m-d H:i:s');
+
         if (empty($session_id)) {
             error_log("Session ID is empty at " . date('Y-m-d H:i:s'));
             return false;
@@ -58,7 +60,7 @@ class TrafficLog {
         error_log("Logging access: session_id=$session_id, ip=$ip_address, page=$page_url, user_id=" . ($user_id ?? 'null') . " at " . date('Y-m-d H:i:s'));
         
         // Kiểm tra xem session_id đã tồn tại trong ngày hiện tại chưa
-        $check_query = "SELECT id, COALESCE(visit_count, 1) as visit_count FROM " . $this->table_name . "
+        $check_query = "SELECT id, visit_count, last_updated, page_url FROM " . $this->table_name . "
                        WHERE session_id = :session_id AND visit_date = :current_date";
         
         try {
@@ -69,28 +71,39 @@ class TrafficLog {
             $existing_record = $check_stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($existing_record) {
-                // Tăng visit_count nếu đã tồn tại
-                $new_visit_count = $existing_record['visit_count'] + 1;
-                $update_query = "UPDATE " . $this->table_name . "
-                               SET visit_count = :visit_count, page_url = :page_url, last_updated = CURRENT_TIMESTAMP
-                               WHERE id = :id";
-                $update_stmt = $this->conn->prepare($update_query);
-                $update_stmt->bindParam(':visit_count', $new_visit_count, PDO::PARAM_INT);
-                $update_stmt->bindParam(':page_url', $page_url);
-                $update_stmt->bindParam(':id', $existing_record['id'], PDO::PARAM_INT);
-                
-                $result = $update_stmt->execute();
-                if ($result) {
-                    error_log("Updated visit_count to $new_visit_count for session_id: $session_id on $current_date at " . date('Y-m-d H:i:s'));
+                // Kiểm tra thời gian cuối cùng được cập nhật
+                $last_updated = new DateTime($existing_record['last_updated']);
+                $current_datetime = new DateTime($current_time);
+                $time_diff = $current_datetime->getTimestamp() - $last_updated->getTimestamp();
+
+                if ($time_diff > $this->time_threshold || $existing_record['page_url'] !== $page_url) {
+                    // Chỉ tăng visit_count nếu vượt ngưỡng thời gian hoặc thay đổi page_url
+                    $new_visit_count = ($existing_record['visit_count'] ?? 0) + 1;
+                    $update_query = "UPDATE " . $this->table_name . "
+                                   SET visit_count = :visit_count, page_url = :page_url, last_updated = :current_time
+                                   WHERE id = :id";
+                    $update_stmt = $this->conn->prepare($update_query);
+                    $update_stmt->bindParam(':visit_count', $new_visit_count, PDO::PARAM_INT);
+                    $update_stmt->bindParam(':page_url', $page_url);
+                    $update_stmt->bindParam(':current_time', $current_time);
+                    $update_stmt->bindParam(':id', $existing_record['id'], PDO::PARAM_INT);
+                    
+                    $result = $update_stmt->execute();
+                    if ($result) {
+                        error_log("Updated visit_count to $new_visit_count for session_id: $session_id on $current_date (time diff: $time_diff seconds) at " . date('Y-m-d H:i:s'));
+                    } else {
+                        error_log("Failed to update visit_count for session_id: $session_id - " . print_r($update_stmt->errorInfo(), true));
+                    }
                 } else {
-                    error_log("Failed to update visit_count for session_id: $session_id - " . print_r($update_stmt->errorInfo(), true));
+                    error_log("Skipped visit_count update for session_id: $session_id (within threshold or same page) at " . date('Y-m-d H:i:s'));
+                    $result = true; // Không cập nhật nhưng vẫn thành công
                 }
                 return $result;
             } else {
                 // Thêm bản ghi mới với visit_count = 1
                 $insert_query = "INSERT INTO " . $this->table_name . " 
-                               (ip_address, user_agent, page_url, referer_url, user_id, session_id, visit_date, visit_count)
-                               VALUES (:ip_address, :user_agent, :page_url, :referer_url, :user_id, :session_id, :visit_date, :visit_count)";
+                               (ip_address, user_agent, page_url, referer_url, user_id, session_id, visit_date, visit_count, last_updated)
+                               VALUES (:ip_address, :user_agent, :page_url, :referer_url, :user_id, :session_id, :visit_date, :visit_count, :current_time)";
                 
                 $stmt = $this->conn->prepare($insert_query);
                 $stmt->bindParam(':ip_address', $ip_address);
@@ -100,8 +113,9 @@ class TrafficLog {
                 $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
                 $stmt->bindParam(':session_id', $session_id);
                 $stmt->bindParam(':visit_date', $current_date);
-                $visit_count = 1; // Đảm bảo giá trị mặc định là 1
+                $visit_count = 1;
                 $stmt->bindParam(':visit_count', $visit_count, PDO::PARAM_INT);
+                $stmt->bindParam(':current_time', $current_time);
                 
                 $result = $stmt->execute();
                 if ($result) {
