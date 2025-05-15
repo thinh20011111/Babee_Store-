@@ -680,18 +680,6 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
-
-                <div class="debug-info">
-                    <h6>Debug Logs:</h6>
-                    <ul>
-                        <?php foreach ($debug_logs as $log): ?>
-                            <li><?php echo htmlspecialchars($log); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php if ($error_occurred): ?>
-                        <p class="text-danger">An error occurred. Please check the server logs for more details.</p>
-                    <?php endif; ?>
-                </div>
             </div>
         </div>
     </div>
