@@ -108,7 +108,7 @@ include 'views/layouts/header.php';
 
 <!-- Checkout Steps -->
 <div class="checkout-steps mb-4">
-    <div class="row text-center justify-content-center">
+    <div class="row text-center d-flex justify-content-between">
         <div class="col-4 col-md-3">
             <div class="step active">
                 <div class="step-icon">
