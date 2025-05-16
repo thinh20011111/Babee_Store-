@@ -225,7 +225,7 @@ class Order {
     // Delete order
     public function delete() {
         try {
-            $query = "DELETE FROM order_items WHERE order_id = ?";
+            $query = "DELETE FROM order_details WHERE order_id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(1, $this->id);
             $stmt->execute();
@@ -244,7 +244,7 @@ class Order {
     
     // Add order details
     public function addOrderDetails($product_id, $quantity, $price, $variant_id) {
-        $query = "INSERT INTO order_items
+        $query = "INSERT INTO order_details
                 SET 
                     order_id = :order_id, 
                     product_id = :product_id, 
@@ -275,7 +275,7 @@ class Order {
     // Get order details
     public function getOrderDetails() {
         $query = "SELECT oi.*, p.name as product_name, p.image
-                FROM order_items oi
+                FROM order_details oi
                 LEFT JOIN products p ON oi.product_id = p.id
                 WHERE oi.order_id = ?";
         
