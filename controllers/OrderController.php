@@ -38,15 +38,15 @@ class OrderController {
             $this->order->shipping_city = isset($_POST['shipping_city']) ? trim($_POST['shipping_city']) : '';
             $this->order->shipping_phone = isset($_POST['shipping_phone']) ? trim($_POST['shipping_phone']) : '';
             $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
+            $this->order->shipping_name = isset($_POST['shipping_name']) ? trim($_POST['shipping_name']) : '';
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
             // Debug: Log POST and total
             error_log("DEBUG: OrderController::create - POST: " . print_r($_POST, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}, shipping_name: {$this->order->shipping_name}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
 
             // Validate required fields
-            $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
-            if (empty($full_name)) {
+            if (empty($this->order->shipping_name)) {
                 $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
@@ -59,6 +59,11 @@ class OrderController {
             }
             if (empty($this->order->customer_email) || !filter_var($this->order->customer_email, FILTER_VALIDATE_EMAIL)) {
                 $_SESSION['order_message'] = "Vui lòng nhập email hợp lệ.";
+                header("Location: index.php?controller=cart&action=checkout");
+                exit;
+            }
+            if (empty($this->order->payment_method)) {
+                $_SESSION['order_message'] = "Vui lòng chọn phương thức thanh toán.";
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
@@ -95,7 +100,7 @@ class OrderController {
                     }
 
                     // Gửi email xác nhận
-                    $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email, $full_name);
+                    $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
 
                     $this->conn->commit();
                     unset($_SESSION['cart']);
@@ -188,6 +193,7 @@ class OrderController {
                     $this->order->shipping_city = $row['shipping_city'];
                     $this->order->shipping_phone = $row['shipping_phone'];
                     $this->order->customer_email = $row['customer_email'];
+                    $this->order->shipping_name = $row['shipping_name'];
                     $this->order->notes = $row['notes'];
                     $this->order->created_at = $row['created_at'];
                     $this->order->updated_at = $row['updated_at'];
@@ -325,7 +331,7 @@ class OrderController {
     }
     
     // Gửi email xác nhận đơn hàng
-    private function sendOrderConfirmationEmail($order_id, $customer_email, $full_name) {
+    private function sendOrderConfirmationEmail($order_id, $customer_email) {
         $mail = new PHPMailer(true);
         try {
             // Lấy email admin từ bảng settings
@@ -355,13 +361,14 @@ class OrderController {
 
             // Email cho khách hàng
             $mail->setFrom($admin_email, 'StreetStyle');
-            $mail->addAddress($customer_email, $full_name);
+            $mail->addAddress($customer_email, $this->order->shipping_name);
             $mail->isHTML(true);
             $mail->Subject = "Xác nhận đơn hàng #{$this->order->order_number}";
             $mail->Body = "
                 <h2>Xác nhận đơn hàng</h2>
                 <p>Cảm ơn bạn đã đặt hàng tại StreetStyle!</p>
                 <p><strong>Mã đơn hàng:</strong> {$this->order->order_number}</p>
+                <p><strong>Tên người nhận:</strong> {$this->order->shipping_name}</p>
                 <p><strong>Tổng tiền:</strong> ₫" . number_format($this->order->total_amount, 0, ',', '.') . "</p>
                 <p><strong>Địa chỉ giao hàng:</strong> {$this->order->shipping_address}, {$this->order->shipping_city}</p>
                 <p><strong>Điện thoại:</strong> {$this->order->shipping_phone}</p>
@@ -379,7 +386,7 @@ class OrderController {
             $mail->Body = "
                 <h2>Đơn hàng mới</h2>
                 <p><strong>Mã đơn hàng:</strong> {$this->order->order_number}</p>
-                <p><strong>Khách hàng:</strong> $full_name</p>
+                <p><strong>Tên người nhận:</strong> {$this->order->shipping_name}</p>
                 <p><strong>Email:</strong> {$this->order->customer_email}</p>
                 <p><strong>Tổng tiền:</strong> ₫" . number_format($this->order->total_amount, 0, ',', '.') . "</p>
                 <p><strong>Địa chỉ giao hàng:</strong> {$this->order->shipping_address}, {$this->order->shipping_city}</p>
