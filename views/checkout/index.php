@@ -3,10 +3,6 @@ $page_title = "Thanh toán";
 include 'views/layouts/header.php'; 
 ?>
 
-<!-- Bootstrap 5 CDN (nếu header.php chưa có) -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
 <style>
 .checkout-steps .step {
     width: 120px;
@@ -19,7 +15,7 @@ include 'views/layouts/header.php';
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 0 10px;
+    margin: 0 15px;
 }
 .checkout-steps .step.active {
     background: #0d6efd;
@@ -85,6 +81,10 @@ include 'views/layouts/header.php';
         height: 80px;
         margin: 5px 0;
     }
+    .checkout-steps .row {
+        flex-direction: column;
+        align-items: center;
+    }
     .checkout-steps .step-icon {
         font-size: 1.2rem;
     }
@@ -108,8 +108,8 @@ include 'views/layouts/header.php';
 
 <!-- Checkout Steps -->
 <div class="checkout-steps mb-4">
-    <div class="row text-center d-flex justify-content-between">
-        <div class="col-4 col-md-3">
+    <div class="row text-center d-flex justify-content-around">
+        <div class="col-4">
             <div class="step active">
                 <div class="step-icon">
                     <i class="fas fa-shopping-cart"></i>
@@ -117,7 +117,7 @@ include 'views/layouts/header.php';
                 <div class="step-label">Giỏ hàng</div>
             </div>
         </div>
-        <div class="col-4 col-md-3">
+        <div class="col-4">
             <div class="step active">
                 <div class="step-icon">
                     <i class="fas fa-address-card"></i>
@@ -125,7 +125,7 @@ include 'views/layouts/header.php';
                 <div class="step-label">Thông tin</div>
             </div>
         </div>
-        <div class="col-4 col-md-3">
+        <div class="col-4">
             <div class="step">
                 <div class="step-icon">
                     <i class="fas fa-check-circle"></i>
