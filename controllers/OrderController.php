@@ -502,7 +502,7 @@ home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'babeemoonstore@gmail.com';
-            $mail->Password = 'YOUR_ACTUAL_APP_PASSWORD'; // Thay bằng mật khẩu ứng dụng từ test_smtp.php
+            $mail->Password = 'hlsw gjpq smqt norf'; // Thay bằng mật khẩu ứng dụng từ test_smtp.php
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
             $mail->CharSet = 'UTF-8';
