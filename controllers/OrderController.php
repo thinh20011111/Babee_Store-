@@ -25,6 +25,14 @@ class OrderController {
             echo "DEBUG: Raw POST ($_POST):\n";
             var_dump($_POST);
             echo "DEBUG: Hex of shipping_name: $hex_shipping_name\n";
+
+            // Debug: Phân tích từng ký tự trong shipping_name
+            $chars = isset($_POST['shipping_name']) ? str_split($_POST['shipping_name']) : [];
+            echo "DEBUG: Character-by-character (shipping_name):\n";
+            foreach ($chars as $index => $char) {
+                $hex = bin2hex($char);
+                echo "Char at position $index: '$char' (hex: $hex)\n";
+            }
             echo "</pre>";
 
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
@@ -47,20 +55,21 @@ class OrderController {
             $this->order->shipping_phone = isset($_POST['shipping_phone']) ? trim($_POST['shipping_phone']) : '';
             $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
             $raw_shipping_name = isset($_POST['shipping_name']) ? $_POST['shipping_name'] : '';
-            // Loại bỏ BOM và ký tự ẩn
+            // Loại bỏ BOM
             $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name);
-            $this->order->shipping_name = trim($raw_shipping_name, " \t\n\r\0\x0B\xC2\xA0");
+            // Tạm thời bỏ trim để kiểm tra
+            $this->order->shipping_name = $raw_shipping_name;
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
             // Debug: Hiển thị shipping_name
-            echo "<pre>DEBUG: Raw shipping_name (before trim): '$raw_shipping_name' (length: " . mb_strlen($raw_shipping_name, 'UTF-8') . ")\n";
-            echo "DEBUG: Trimmed shipping_name: '{$this->order->shipping_name}' (length: " . mb_strlen($this->order->shipping_name, 'UTF-8') . ")\n";
+            echo "<pre>DEBUG: Raw shipping_name: '$raw_shipping_name' (length: " . mb_strlen($raw_shipping_name, 'UTF-8') . ")\n";
+            echo "DEBUG: Final shipping_name: '{$this->order->shipping_name}' (length: " . mb_strlen($this->order->shipping_name, 'UTF-8') . ")\n";
             echo "</pre>";
 
             // Validate required fields
             if (empty($this->order->shipping_name) || mb_strlen($this->order->shipping_name, 'UTF-8') === 0) {
                 $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
-                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', trimmed: '{$this->order->shipping_name}')\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', final: '{$this->order->shipping_name}')\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
