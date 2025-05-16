@@ -9,7 +9,7 @@ try {
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
     $mail->Username = 'babeemoonstore@gmail.com';
-    $mail->Password = 'mật_khẩu_ứng_dụng'; // Thay bằng mật khẩu ứng dụng
+    $mail->Password = 'hlsw gjpq smqt norf'; // Thay bằng mật khẩu ứng dụng
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
     $mail->CharSet = 'UTF-8';
