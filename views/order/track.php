@@ -11,7 +11,7 @@ include 'views/layouts/header.php';
                     <h1 class="mb-4 text-center">Theo dõi đơn hàng</h1>
                     
                     <?php if(!empty($error)): ?>
-                        <div class="alert alert-danger"><?php echo $error; ?></div>
+                        <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
                     <?php endif; ?>
                     
                     <?php if(empty($order_data)): ?>
@@ -146,34 +146,38 @@ include 'views/layouts/header.php';
                                 <h5 class="card-title mb-0">Sản phẩm đã đặt</h5>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Sản phẩm</th>
-                                                <th class="text-center">Số lượng</th>
-                                                <th class="text-end">Giá</th>
-                                                <th class="text-end">Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach($order_data['items'] as $item): ?>
+                                <?php if (empty($order_data['items'])): ?>
+                                    <div class="alert alert-warning m-3">Không tìm thấy thông tin sản phẩm trong đơn hàng này.</div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table mb-0">
+                                            <thead class="table-light">
                                                 <tr>
-                                                    <td><?php echo htmlspecialchars($item['name']); ?></td>
-                                                    <td class="text-center"><?php echo $item['quantity']; ?></td>
-                                                    <td class="text-end"><?php echo CURRENCY . number_format($item['price']); ?></td>
-                                                    <td class="text-end"><?php echo CURRENCY . number_format($item['price'] * $item['quantity']); ?></td>
+                                                    <th>Sản phẩm</th>
+                                                    <th class="text-center">Số lượng</th>
+                                                    <th class="text-end">Giá</th>
+                                                    <th class="text-end">Thành tiền</th>
                                                 </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                        <tfoot class="table-light">
-                                            <tr>
-                                                <th colspan="3" class="text-end">Tổng cộng:</th>
-                                                <th class="text-end"><?php echo CURRENCY . number_format($order_data['order']->total_amount); ?></th>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach($order_data['items'] as $item): ?>
+                                                    <tr>
+                                                        <td><?php echo htmlspecialchars($item['name']); ?></td>
+                                                        <td class="text-center"><?php echo $item['quantity']; ?></td>
+                                                        <td class="text-end"><?php echo CURRENCY . number_format($item['price']); ?></td>
+                                                        <td class="text-end"><?php echo CURRENCY . number_format($item['price'] * $item['quantity']); ?></td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                            <tfoot class="table-light">
+                                                <tr>
+                                                    <th colspan="3" class="text-end">Tổng cộng:</th>
+                                                    <th class="text-end"><?php echo CURRENCY . number_format($order_data['order']->total_amount); ?></th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
