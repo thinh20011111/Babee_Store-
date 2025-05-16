@@ -374,7 +374,7 @@ include 'views/layouts/header.php';
         transform: translate(-50%, -50%);
         text-align: center;
         color: white;
-        padding: 60px 40px 10px; /* Tăng padding-top để bao trùm text, giảm padding-bottom để cắt qua nút */
+        padding: 60px 40px 0; /* Tăng padding-top để bao trùm text, giảm padding-bottom để cắt qua nút */
         background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
         max-width: 600px;
@@ -407,14 +407,16 @@ include 'views/layouts/header.php';
         background-color: #f8f9fa;
         color: #212529;
         border: none;
-        margin: 15px 0; /* Giữ margin-top cho nút */
+        margin: 0; /* Xóa margin-top/bottom để nút nằm sát background */
+        transform: translateY(50%); /* Dịch nút xuống để bị cắt bởi background */
+        position: relative; /* Đảm bảo nút nổi lên */
+        z-index: 1; /* Đặt z-index để nút ở trên background */
         transition: background-color 0.3s ease, transform 0.2s ease;
-        position: relative; /* Đảm bảo nút nổi lên trên background */
     }
 
     .banner-carousel .carousel-caption .btn:hover {
         background-color: #dee2e6;
-        transform: translateY(-2px);
+        transform: translateY(48%); /* Hiệu ứng hover nhẹ */
     }
 
     .banner-carousel .fade-in {
@@ -438,8 +440,8 @@ include 'views/layouts/header.php';
 
     .hero-banner .hero-banner-image .position-absolute {
         transform: translate(-50%, -50%);
-        padding: 50px 20px 10px; /* Tăng padding-top để bao trùm text, giảm padding-bottom để cắt qua nút */
-        background: rgba(0, 0, 0,  or 0, 0.4);
+        padding: 50px 20px 0; /* Tăng padding-top để bao trùm text, giảm padding-bottom để cắt qua nút */
+        background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
         max-width: 600px;
         width: 70%;
@@ -455,8 +457,10 @@ include 'views/layouts/header.php';
     }
 
     .hero-banner .hero-banner-image .position-absolute a {
-        margin-top: 15px; /* Giữ margin-top cho nút */
-        position: relative; /* Đảm bảo nút nổi lên trên background */
+        margin: 0; /* Xóa margin-top/bottom để nút nằm sát background */
+        transform: translateY(50%); /* Dịch nút xuống để bị cắt bởi background */
+        position: relative; /* Đảm bảo nút nổi lên */
+        z-index: 1; /* Đặt z-index để nút ở trên background */
     }
 
     /* Responsive Adjustments */
@@ -469,7 +473,7 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 80%;
-            padding: 50px 30px 8px; /* Giảm padding-top và padding-bottom nhẹ cho màn hình nhỏ */
+            padding: 50px 30px 0; /* Giữ padding-top, giảm padding-bottom */
             margin-top: 15px; /* Giảm margin-top */
         }
 
@@ -486,7 +490,8 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption .btn {
             font-size: 1rem;
             padding: 8px 16px;
-            margin: 10px 0; /* Giảm margin-top */
+            margin: 0; /* Giữ margin 0 */
+            transform: translateY(50%); /* Giữ hiệu ứng cắt */
         }
 
         .hero-banner .hero-banner-image .position-absolute h1 {
@@ -498,7 +503,8 @@ include 'views/layouts/header.php';
         }
 
         .hero-banner .hero-banner-image .position-absolute a {
-            margin-top: 10px; /* Giảm margin-top */
+            margin: 0; /* Giữ margin 0 */
+            transform: translateY(50%); /* Giữ hiệu ứng cắt */
         }
     }
 
@@ -511,7 +517,7 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 90%;
-            padding: 40px 20px 6px; /* Giảm padding-top và padding-bottom hơn nữa */
+            padding: 40px 20px 0; /* Giữ padding-top, giảm padding-bottom */
             margin-top: 10px; /* Giảm margin-top */
         }
 
@@ -528,7 +534,8 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption .btn {
             font-size: 0.9rem;
             padding: 6px 12px;
-            margin: 8px 0; /* Giảm margin-top */
+            margin: 0; /* Giữ margin 0 */
+            transform: translateY(50%); /* Giữ hiệu ứng cắt */
         }
 
         .hero-banner .hero-banner-image .position-absolute h1 {
@@ -540,7 +547,8 @@ include 'views/layouts/header.php';
         }
 
         .hero-banner .hero-banner-image .position-absolute a {
-            margin-top: 8px; /* Giảm margin-top */
+            margin: 0; /* Giữ margin 0 */
+            transform: translateY(50%); /* Giữ hiệu ứng cắt */
         }
     }
 </style>
