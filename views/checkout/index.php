@@ -9,10 +9,17 @@ include 'views/layouts/header.php';
 
 <style>
 .checkout-steps .step {
-    padding: 15px;
+    width: 120px;
+    height: 100px;
+    padding: 10px;
     border-radius: 8px;
     background: #f8f9fa;
     transition: background 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0 10px;
 }
 .checkout-steps .step.active {
     background: #0d6efd;
@@ -21,6 +28,10 @@ include 'views/layouts/header.php';
 .checkout-steps .step-icon {
     font-size: 1.5rem;
     margin-bottom: 5px;
+}
+.checkout-steps .step-label {
+    font-size: 0.9rem;
+    text-align: center;
 }
 .card {
     border-radius: 10px;
@@ -70,7 +81,15 @@ include 'views/layouts/header.php';
 }
 @media (max-width: 768px) {
     .checkout-steps .step {
-        margin-bottom: 10px;
+        width: 100px;
+        height: 80px;
+        margin: 5px 0;
+    }
+    .checkout-steps .step-icon {
+        font-size: 1.2rem;
+    }
+    .checkout-steps .step-label {
+        font-size: 0.8rem;
     }
     .card-header h5 {
         font-size: 1.2rem;
@@ -89,8 +108,8 @@ include 'views/layouts/header.php';
 
 <!-- Checkout Steps -->
 <div class="checkout-steps mb-4">
-    <div class="row text-center">
-        <div class="col-4">
+    <div class="row text-center justify-content-center">
+        <div class="col-4 col-md-3">
             <div class="step active">
                 <div class="step-icon">
                     <i class="fas fa-shopping-cart"></i>
@@ -98,7 +117,7 @@ include 'views/layouts/header.php';
                 <div class="step-label">Giỏ hàng</div>
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-4 col-md-3">
             <div class="step active">
                 <div class="step-icon">
                     <i class="fas fa-address-card"></i>
@@ -106,7 +125,7 @@ include 'views/layouts/header.php';
                 <div class="step-label">Thông tin</div>
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-4 col-md-3">
             <div class="step">
                 <div class="step-icon">
                     <i class="fas fa-check-circle"></i>
@@ -303,12 +322,7 @@ if (!empty($_SESSION['order_message'])): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('checkout-form');
-    const messageDiv = document.getElementById('message') || document.createElement('div');
-    if (!document.getElementById('message')) {
-        messageDiv.id = 'message';
-        messageDiv.className = 'alert alert-danger mb-4';
-        form.parentNode.insertBefore(messageDiv, form.nextSibling);
-    }
+    let messageDiv = document.getElementById('message');
 
     if (form) {
         form.addEventListener('submit', function(event) {
@@ -355,9 +369,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!isValid) {
                 event.preventDefault();
+                // Create messageDiv if it doesn't exist
+                if (!messageDiv) {
+                    messageDiv = document.createElement('div');
+                    messageDiv.id = 'message';
+                    messageDiv.className = 'alert alert-danger mb-4';
+                    form.parentNode.insertBefore(messageDiv, form.nextSibling);
+                }
                 messageDiv.textContent = 'Vui lòng kiểm tra và điền đầy đủ thông tin.';
                 messageDiv.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (messageDiv) {
+                // Hide messageDiv if it exists and validation passes
+                messageDiv.style.display = 'none';
             }
         });
     }
