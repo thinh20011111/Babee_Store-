@@ -212,12 +212,15 @@ class OrderController {
             // Lưu đơn hàng
             $this->conn->beginTransaction();
             try {
+                error_log("DEBUG: Starting transaction for order creation\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($order_id = $this->order->create()) {
+                    error_log("DEBUG: Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     foreach ($cart as $item) {
                         $query = "INSERT INTO order_items (order_id, product_id, variant_id, quantity, price) 
                                   VALUES (:order_id, :product_id, :variant_id, :quantity, :price)";
                         $stmt = $this->conn->prepare($query);
                         $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
+                        error_log("DEBUG: Preparing to insert order item - product_id: {$item['product_id']}, variant_id: {$item['variant_id']}, quantity: {$item['quantity']}, price: $price\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         $stmt->execute([
                             ':order_id' => $order_id,
                             ':product_id' => $item['product_id'],
@@ -236,16 +239,16 @@ class OrderController {
                     $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
 
                     $this->conn->commit();
+                    error_log("DEBUG: Transaction committed successfully\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     unset($_SESSION['cart']);
                     $response = [
                         'status' => 'success',
                         'message' => 'Đơn hàng đã được tạo thành công.',
                         'redirect' => "index.php?controller=order&action=success&id=$order_id"
                     ];
-                    error_log("DEBUG: OrderController::create - Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     if ($isAjax) {
                         header('Content-Type: application/json');
-                        error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         echo json_encode($response);
                         exit;
                     } else {
