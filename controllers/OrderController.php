@@ -17,13 +17,14 @@ class OrderController {
             session_start();
         }
 
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || (isset($_POST['ajax']) && $_POST['ajax'] === 'true');
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Debug: Hiển thị thông tin về request và encoding
             $raw_post = file_get_contents('php://input');
-            $hex_shipping_name = isset($_POST['shipping_name']) ? bin2hex($_POST['shipping_name']) : 'not set';
             $debug_output = "DEBUG: Raw POST (php://input): $raw_post\n";
+            $debug_output .= "DEBUG: X-Requested-With header: " . ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? 'not set') . "\n";
+            $hex_shipping_name = isset($_POST['shipping_name']) ? bin2hex($_POST['shipping_name']) : 'not set';
             $debug_output .= "DEBUG: Raw POST (\$_POST):\n" . print_r($_POST, true) . "\n";
             $debug_output .= "DEBUG: Hex of shipping_name: $hex_shipping_name\n";
 
@@ -193,6 +194,13 @@ class OrderController {
                     header("Location: index.php?controller=cart&action=checkout");
                     exit;
                 }
+            }
+
+            // Debug: Ngay trước khi lưu đơn hàng
+            $debug_before_save = "DEBUG: Before saving order - shipping_name: '{$this->order->shipping_name}' (mb_length: " . (extension_loaded('mbstring') ? mb_strlen($this->order->shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
+            error_log($debug_before_save, 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            if (!$isAjax) {
+                echo "<pre>$debug_before_save</pre>";
             }
 
             // Lưu đơn hàng

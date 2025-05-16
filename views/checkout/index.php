@@ -220,7 +220,7 @@ if (!empty($_SESSION['order_message'])): ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getEventById('checkout-form');
+    const form = document.getElementById('checkout-form');
     const messageDiv = document.getElementById('message') || document.createElement('div'); // Tạo div nếu chưa tồn tại
     if (!document.getElementById('message')) {
         messageDiv.id = 'message';
@@ -234,6 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Debug: Log FormData
             const formData = new FormData(form);
+            formData.append('ajax', 'true'); // Thêm trường ajax để server nhận diện
             console.log('DEBUG: Form Data before submit:');
             for (let [key, value] of formData.entries()) {
                 console.log(`${key}: '${value}' (length: ${value.length})`);
