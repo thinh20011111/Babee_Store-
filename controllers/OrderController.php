@@ -12,21 +12,19 @@ class OrderController {
         $this->order = new Order($db);
     }
     
-    // Create new order
     public function create() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Debug: Hiển thị $_POST raw
-            echo "<pre>DEBUG: Raw POST ($_POST):\n";
-            var_dump($_POST);
-            echo "</pre>";
-
-            // Debug: Hiển thị php://input
+            // Debug: Hiển thị $_POST raw và hex
             $raw_post = file_get_contents('php://input');
+            $hex_shipping_name = isset($_POST['shipping_name']) ? bin2hex($_POST['shipping_name']) : 'not set';
             echo "<pre>DEBUG: Raw POST (php://input): $raw_post\n";
+            echo "DEBUG: Raw POST ($_POST):\n";
+            var_dump($_POST);
+            echo "DEBUG: Hex of shipping_name: $hex_shipping_name\n";
             echo "</pre>";
 
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
@@ -49,19 +47,18 @@ class OrderController {
             $this->order->shipping_phone = isset($_POST['shipping_phone']) ? trim($_POST['shipping_phone']) : '';
             $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
             $raw_shipping_name = isset($_POST['shipping_name']) ? $_POST['shipping_name'] : '';
-            $this->order->shipping_name = trim($raw_shipping_name);
+            // Loại bỏ BOM và ký tự ẩn
+            $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name);
+            $this->order->shipping_name = trim($raw_shipping_name, " \t\n\r\0\x0B\xC2\xA0");
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-            // Debug: Hiển thị shipping_name trước và sau trim
+            // Debug: Hiển thị shipping_name
             echo "<pre>DEBUG: Raw shipping_name (before trim): '$raw_shipping_name' (length: " . mb_strlen($raw_shipping_name, 'UTF-8') . ")\n";
             echo "DEBUG: Trimmed shipping_name: '{$this->order->shipping_name}' (length: " . mb_strlen($this->order->shipping_name, 'UTF-8') . ")\n";
             echo "</pre>";
 
-            // Dừng để xem debug
-            die("DEBUG: Stopped for inspection");
-
             // Validate required fields
-            if (!isset($_POST['shipping_name']) || mb_strlen($this->order->shipping_name, 'UTF-8') === 0) {
+            if (empty($this->order->shipping_name) || mb_strlen($this->order->shipping_name, 'UTF-8') === 0) {
                 $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
                 error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', trimmed: '{$this->order->shipping_name}')\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
@@ -141,7 +138,6 @@ class OrderController {
         exit;
     }
     
-    // View order details (giữ nguyên)
     public function view() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -169,7 +165,6 @@ class OrderController {
         include 'views/order/view.php';
     }
     
-    // Track order (giữ nguyên)
     public function track() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -215,7 +210,6 @@ class OrderController {
         include 'views/order/track.php';
     }
     
-    // Cancel order (giữ nguyên)
     public function cancel() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -272,7 +266,6 @@ class OrderController {
         exit;
     }
     
-    // Order success page (giữ nguyên)
     public function success() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -302,7 +295,6 @@ class OrderController {
         include 'views/order/view.php';
     }
     
-    // Gửi email xác nhận đơn hàng (giữ nguyên)
     private function sendOrderConfirmationEmail($order_id, $customer_email) {
         $mail = new PHPMailer(true);
         try {
