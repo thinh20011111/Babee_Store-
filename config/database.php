@@ -69,7 +69,7 @@ function createLocalTables($conn) {
             FOREIGN KEY (product_id) REFERENCES products(id)
         )");
 
-        // Create orders table with customer_email
+        // Create orders table with customer_email and shipping_name
         $conn->exec("CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_number TEXT NOT NULL,
@@ -82,7 +82,7 @@ function createLocalTables($conn) {
             shipping_city TEXT,
             shipping_phone TEXT,
             customer_email TEXT NOT NULL,
-            shipping_name TEXT,
+            shipping_name TEXT NOT NULL,
             notes TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
