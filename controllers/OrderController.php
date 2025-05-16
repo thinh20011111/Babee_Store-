@@ -487,7 +487,7 @@ class OrderController {
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'babeemoonstore@gmail.com';
-            $mail->Password = 'mwfxexjwnlhavghp';
+            $mail->Password = 'hlsw gjpq smqt norf';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
             $mail->CharSet = 'UTF-8';
