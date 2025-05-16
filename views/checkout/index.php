@@ -4,6 +4,12 @@ include 'views/layouts/header.php';
 ?>
 
 <style>
+.checkout-steps {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
 .checkout-steps .step {
     width: 150px;
     height: 100px;
@@ -15,7 +21,7 @@ include 'views/layouts/header.php';
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 0 15px;
+    margin: 0 20px;
 }
 .checkout-steps .step.active {
     background: #0d6efd;
@@ -32,6 +38,7 @@ include 'views/layouts/header.php';
 .checkout-steps .arrow {
     font-size: 1.2rem;
     color: #6c757d;
+    line-height: 100px;
 }
 .card {
     border-radius: 10px;
@@ -80,14 +87,14 @@ include 'views/layouts/header.php';
     border-radius: 5px;
 }
 @media (max-width: 768px) {
+    .checkout-steps {
+        flex-direction: column;
+        align-items: center;
+    }
     .checkout-steps .step {
         width: 100px;
         height: 80px;
-        margin: 5px 0;
-    }
-    .checkout-steps .row {
-        flex-direction: column;
-        align-items: center;
+        margin: 10px 0;
     }
     .checkout-steps .arrow {
         display: none;
@@ -114,38 +121,30 @@ include 'views/layouts/header.php';
 <h1 class="mb-4">Thanh toán</h1>
 
 <!-- Checkout Steps -->
-<div class="checkout-steps mb-4">
-    <div class="row text-center d-flex justify-content-around align-items-center">
-        <div class="col-4">
-            <div class="step active">
-                <div class="step-icon">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="step-label">Giỏ hàng</div>
-            </div>
+<div class="checkout-steps">
+    <div class="step active">
+        <div class="step-icon">
+            <i class="fas fa-shopping-cart"></i>
         </div>
-        <div class="col-auto d-flex align-items-center">
-            <i class="fas fa-arrow-right arrow"></i>
+        <div class="step-label">Giỏ hàng</div>
+    </div>
+    <div class="arrow">
+        <i class="fas fa-arrow-right"></i>
+    </div>
+    <div class="step active">
+        <div class="step-icon">
+            <i class="fas fa-address-card"></i>
         </div>
-        <div class="col-4">
-            <div class="step active">
-                <div class="step-icon">
-                    <i class="fas fa-address-card"></i>
-                </div>
-                <div class="step-label">Thông tin</div>
-            </div>
+        <div class="step-label">Thông tin</div>
+    </div>
+    <div class="arrow">
+        <i class="fas fa-arrow-right"></i>
+    </div>
+    <div class="step">
+        <div class="step-icon">
+            <i class="fas fa-check-circle"></i>
         </div>
-        <div class="col-auto d-flex align-items-center">
-            <i class="fas fa-arrow-right arrow"></i>
-        </div>
-        <div class="col-4">
-            <div class="step">
-                <div class="step-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="step-label">Xác nhận</div>
-            </div>
-        </div>
+        <div class="step-label">Xác nhận</div>
     </div>
 </div>
 
@@ -366,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (emailError) emailError.style.display = 'block';
             } else if (emailField) {
                 emailField.classList.remove('is-invalid');
-                if (emailError) emailError.style.display = 'none';
+                if (emailError) errorDiv.style.display = 'none';
             }
 
             // Validate payment method
@@ -402,4 +401,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php include 'views/layouts/footer.php'; ?>
-<!-- </x vies/layouts/footer.php'; ?> -->
