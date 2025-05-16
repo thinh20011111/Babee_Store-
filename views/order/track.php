@@ -30,6 +30,17 @@ include 'views/layouts/header.php';
                             </div>
                         </div>
                     <?php else: ?>
+                        <!-- Debug Area -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">Khu vực Debug</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>Dữ liệu $order_data['items']:</h6>
+                                <pre><?php print_r($order_data['items']); ?></pre>
+                            </div>
+                        </div>
+
                         <!-- Order Information -->
                         <div class="card mb-4">
                             <div class="card-header bg-light">
@@ -143,8 +154,6 @@ include 'views/layouts/header.php';
                                 <h5 class="card-title mb-0">Sản phẩm đã đặt</h5>
                             </div>
                             <div class="card-body p-0">
-                                <!-- Debug: Kiểm tra $order_data['items'] -->
-                                <?php echo "<!-- DEBUG: order_data[items] = " . print_r($order_data['items'], true) . " -->"; ?>
                                 <?php if (empty($order_data['items'])): ?>
                                     <div class="alert alert-warning m-3">Không tìm thấy thông tin sản phẩm trong đơn hàng này.</div>
                                 <?php else: ?>
@@ -160,8 +169,15 @@ include 'views/layouts/header.php';
                                             </thead>
                                             <tbody>
                                                 <?php foreach($order_data['items'] as $index => $item): ?>
-                                                    <!-- Debug: Kiểm tra từng item -->
-                                                    <?php echo "<!-- DEBUG: Item $index = " . print_r($item, true) . " -->"; ?>
+                                                    <!-- Debug: In trực tiếp từng item -->
+                                                    <div class="card mb-2">
+                                                        <div class="card-header bg-info text-white">
+                                                            <h6 class="card-title mb-0">Debug Item <?php echo $index; ?></h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <pre><?php print_r($item); ?></pre>
+                                                        </div>
+                                                    </div>
                                                     <tr>
                                                         <td><?php echo htmlspecialchars($item['name']); ?></td>
                                                         <td class="text-center"><?php echo $item['quantity']; ?></td>
