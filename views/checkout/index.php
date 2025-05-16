@@ -3,6 +3,10 @@ $page_title = "Thanh toán";
 include 'views/layouts/header.php'; 
 ?>
 
+<!-- Bootstrap 5 CDN (nếu header.php chưa có) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
 <style>
 .checkout-steps .step {
     padding: 15px;
@@ -11,7 +15,7 @@ include 'views/layouts/header.php';
     transition: background 0.3s;
 }
 .checkout-steps .step.active {
-    background: #007bff;
+    background: #0d6efd;
     color: white;
 }
 .checkout-steps .step-icon {
@@ -30,8 +34,8 @@ include 'views/layouts/header.php';
     border-radius: 5px;
 }
 .form-control:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0,123,255,0.3);
+    border-color: #0d6efd;
+    box-shadow: 0 0 5px rgba(13,110,253,0.3);
 }
 .invalid-feedback {
     font-size: 0.9rem;
@@ -39,14 +43,14 @@ include 'views/layouts/header.php';
     margin-top: 5px;
 }
 .btn-primary {
-    background: #007bff;
+    background: #0d6efd;
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
     transition: background 0.3s;
 }
 .btn-primary:hover {
-    background: #0056b3;
+    background: #0a58ca;
 }
 .btn-outline-secondary {
     border-radius: 5px;
