@@ -33,6 +33,16 @@ class OrderController {
                 $hex = bin2hex($char);
                 echo "Char at position $index: '$char' (hex: $hex)\n";
             }
+
+            // Debug: Kiểm tra mbstring
+            $mbstring_enabled = extension_loaded('mbstring') ? 'Yes' : 'No';
+            $mbstring_encoding = mb_internal_encoding();
+            echo "DEBUG: mbstring enabled: $mbstring_enabled\n";
+            echo "DEBUG: mbstring internal encoding: $mbstring_encoding\n";
+
+            // Debug: Kiểm tra encoding của shipping_name
+            $shipping_name_encoding = isset($_POST['shipping_name']) ? mb_detect_encoding($_POST['shipping_name'], 'UTF-8, ISO-8859-1', true) : 'not set';
+            echo "DEBUG: Detected encoding of shipping_name: $shipping_name_encoding\n";
             echo "</pre>";
 
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
@@ -57,7 +67,10 @@ class OrderController {
             $raw_shipping_name = isset($_POST['shipping_name']) ? $_POST['shipping_name'] : '';
             // Loại bỏ BOM
             $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name);
-            // Tạm thời bỏ trim để kiểm tra
+            // Chuẩn hóa encoding
+            if ($shipping_name_encoding !== 'UTF-8' && $shipping_name_encoding !== false) {
+                $raw_shipping_name = iconv($shipping_name_encoding, 'UTF-8//IGNORE', $raw_shipping_name);
+            }
             $this->order->shipping_name = $raw_shipping_name;
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
