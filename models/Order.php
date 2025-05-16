@@ -15,6 +15,7 @@ class Order {
     public $shipping_city;
     public $shipping_phone;
     public $customer_email;
+    public $shipping_name;
     public $notes;
     public $created_at;
     public $updated_at;
@@ -78,6 +79,7 @@ class Order {
             $this->shipping_city = $row['shipping_city'];
             $this->shipping_phone = $row['shipping_phone'];
             $this->customer_email = $row['customer_email'];
+            $this->shipping_name = $row['shipping_name'];
             $this->notes = $row['notes'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
@@ -103,6 +105,7 @@ class Order {
                         shipping_city = :shipping_city, 
                         shipping_phone = :shipping_phone, 
                         customer_email = :customer_email, 
+                        shipping_name = :shipping_name, 
                         notes = :notes, 
                         created_at = :created_at, 
                         updated_at = :updated_at";
@@ -118,6 +121,7 @@ class Order {
             $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
             $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
             $this->customer_email = htmlspecialchars(strip_tags($this->customer_email));
+            $this->shipping_name = htmlspecialchars(strip_tags($this->shipping_name));
             $this->notes = htmlspecialchars(strip_tags($this->notes));
             $this->created_at = date('Y-m-d H:i:s');
             $this->updated_at = date('Y-m-d H:i:s');
@@ -131,6 +135,7 @@ class Order {
             $stmt->bindParam(':shipping_city', $this->shipping_city);
             $stmt->bindParam(':shipping_phone', $this->shipping_phone);
             $stmt->bindParam(':customer_email', $this->customer_email);
+            $stmt->bindParam(':shipping_name', $this->shipping_name);
             $stmt->bindParam(':notes', $this->notes);
             $stmt->bindParam(':created_at', $this->created_at);
             $stmt->bindParam(':updated_at', $this->updated_at);
@@ -141,7 +146,7 @@ class Order {
             
             return $this->id;
         } catch (Exception $e) {
-            error_log("Error creating order: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
+            error_log("Error creating order: " . $e->getMessage(), 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             throw $e;
         }
     }
@@ -156,6 +161,7 @@ class Order {
                     shipping_city = :shipping_city, 
                     shipping_phone = :shipping_phone, 
                     customer_email = :customer_email, 
+                    shipping_name = :shipping_name, 
                     notes = :notes, 
                     updated_at = :updated_at 
                 WHERE 
@@ -169,6 +175,7 @@ class Order {
         $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
         $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
         $this->customer_email = htmlspecialchars(strip_tags($this->customer_email));
+        $this->shipping_name = htmlspecialchars(strip_tags($this->shipping_name));
         $this->notes = htmlspecialchars(strip_tags($this->notes));
         $this->updated_at = date('Y-m-d H:i:s');
         
@@ -178,6 +185,7 @@ class Order {
         $stmt->bindParam(':shipping_city', $this->shipping_city);
         $stmt->bindParam(':shipping_phone', $this->shipping_phone);
         $stmt->bindParam(':customer_email', $this->customer_email);
+        $stmt->bindParam(':shipping_name', $this->shipping_name);
         $stmt->bindParam(':notes', $this->notes);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
@@ -217,7 +225,7 @@ class Order {
     // Delete order
     public function delete() {
         try {
-            $query = "DELETE FROM order_details WHERE order_id = ?";
+            $query = "DELETE FROM order_items WHERE order_id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(1, $this->id);
             $stmt->execute();
@@ -229,14 +237,14 @@ class Order {
             
             return true;
         } catch (Exception $e) {
-            error_log("Error deleting order: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
+            error_log("Error deleting order: " . $e->getMessage(), 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             throw $e;
         }
     }
     
     // Add order details
     public function addOrderDetails($product_id, $quantity, $price, $variant_id) {
-        $query = "INSERT INTO order_details
+        $query = "INSERT INTO order_items
                 SET 
                     order_id = :order_id, 
                     product_id = :product_id, 
@@ -266,10 +274,10 @@ class Order {
     
     // Get order details
     public function getOrderDetails() {
-        $query = "SELECT od.*, p.name as product_name, p.image
-                FROM order_details od
-                LEFT JOIN products p ON od.product_id = p.id
-                WHERE od.order_id = ?";
+        $query = "SELECT oi.*, p.name as product_name, p.image
+                FROM order_items oi
+                LEFT JOIN products p ON oi.product_id = p.id
+                WHERE oi.order_id = ?";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
