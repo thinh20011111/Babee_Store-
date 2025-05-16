@@ -53,15 +53,11 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 if (!empty($_SESSION['order_message'])): ?>
-<div class="alert alert-danger mb-4">
+<div class="alert alert-danger mb-4" id="message">
     <strong>Lỗi:</strong> <?php 
     echo htmlspecialchars($_SESSION['order_message']); 
     unset($_SESSION['order_message']);
     ?>
-</div>
-<?php elseif (!empty($error)): ?>
-<div class="alert alert-danger mb-4">
-    <?php echo htmlspecialchars($error); ?>
 </div>
 <?php endif; ?>
 
@@ -73,7 +69,7 @@ if (!empty($_SESSION['order_message'])): ?>
                 <h5 class="mb-0">Thông tin giao hàng</h5>
             </div>
             <div class="card-body">
-                <form action="index.php?controller=cart&action=checkout" method="POST" id="checkout-form">
+                <form action="index.php?controller=order&action=create" method="POST" id="checkout-form">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="shipping_name" class="form-label">Người nhận <span class="text-danger">*</span></label>
@@ -224,10 +220,18 @@ if (!empty($_SESSION['order_message'])): ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('checkout-form');
-    
+    const form = document.getEventById('checkout-form');
+    const messageDiv = document.getElementById('message') || document.createElement('div'); // Tạo div nếu chưa tồn tại
+    if (!document.getElementById('message')) {
+        messageDiv.id = 'message';
+        messageDiv.className = 'alert mb-4';
+        form.parentNode.insertBefore(messageDiv, form.nextSibling);
+    }
+
     if (form) {
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Ngăn reload trang
+
             // Debug: Log FormData
             const formData = new FormData(form);
             console.log('DEBUG: Form Data before submit:');
@@ -277,7 +281,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!isValid) {
-                event.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    messageDiv.className = 'alert alert-success mb-4';
+                    messageDiv.textContent = result.message;
+                    messageDiv.style.display = 'block';
+                    form.reset(); // Xóa form sau khi thành công
+                    setTimeout(() => {
+                        window.location.href = result.redirect || 'index.php'; // Redirect sau 2 giây
+                    }, 2000);
+                } else {
+                    messageDiv.className = 'alert alert-danger mb-4';
+                    messageDiv.textContent = result.message;
+                    messageDiv.style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } catch (error) {
+                messageDiv.className = 'alert alert-danger mb-4';
+                messageDiv.textContent = 'Đã có lỗi xảy ra: ' + error.message;
+                messageDiv.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
