@@ -19,8 +19,10 @@ class OrderController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Log raw POST data
-            error_log("DEBUG: OrderController::create - Raw POST: " . print_r($_POST, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            // Log raw POST data with encoding info
+            $raw_post = file_get_contents('php://input');
+            error_log("DEBUG: OrderController::create - Raw POST (php://input): $raw_post\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            error_log("DEBUG: OrderController::create - Raw POST ($_POST): " . print_r($_POST, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
 
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
             if (empty($cart)) {
@@ -46,15 +48,15 @@ class OrderController {
             $this->order->shipping_name = trim($raw_shipping_name);
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-            // Log shipping_name before and after trim
-            error_log("DEBUG: OrderController::create - Raw shipping_name: '$raw_shipping_name'\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            error_log("DEBUG: OrderController::create - Trimmed shipping_name: '{$this->order->shipping_name}'\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            // Debug: Log shipping_name with encoding check
+            error_log("DEBUG: OrderController::create - Raw shipping_name (before trim): '$raw_shipping_name' (length: " . mb_strlen($raw_shipping_name, 'UTF-8') . ")\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            error_log("DEBUG: OrderController::create - Trimmed shipping_name: '{$this->order->shipping_name}' (length: " . mb_strlen($this->order->shipping_name, 'UTF-8') . ")\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
 
-            // Validate required fields
-            if (!isset($_POST['shipping_name']) || mb_strlen($this->order->shipping_name, 'UTF-8') === 0) {
+            // Validate required fields with UTF-8 support
+            if (!isset($_POST['shipping_name']) || mb_strlen(trim($raw_shipping_name), 'UTF-8') === 0) {
                 $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
-                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', trimmed: '{$this->order->shipping_name}')\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
@@ -136,43 +138,35 @@ class OrderController {
         exit;
     }
     
-    // View order details
+    // View order details (giữ nguyên)
     public function view() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
 
-        // Check if user is logged in
         if (!isset($_SESSION['user_id'])) {
             $_SESSION['redirect_after_login'] = 'index.php?controller=order&action=view&id=' . intval($_GET['id']);
             header("Location: index.php?controller=user&action=login");
             exit;
         }
         
-        // Get order ID
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        
         if ($order_id <= 0) {
             header("Location: index.php?controller=user&action=orders");
             exit;
         }
         
-        // Get order details
         $this->order->id = $order_id;
-        
         if (!$this->order->readOne() || ($this->order->user_id != $_SESSION['user_id'] && $_SESSION['user_role'] != 'admin')) {
             header("Location: index.php?controller=user&action=orders");
             exit;
         }
         
-        // Get order items with variant details
         $order_items = $this->order->getOrderDetails();
-        
-        // Load order view
         include 'views/order/view.php';
     }
     
-    // Track order
+    // Track order (giữ nguyên)
     public function track() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -182,20 +176,15 @@ class OrderController {
         $order_data = null;
         
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Get order number
             $order_number = isset($_POST['order_number']) ? trim($_POST['order_number']) : '';
-            
             if (empty($order_number)) {
                 $error = "Vui lòng nhập mã đơn hàng.";
             } else {
-                // Search for order by order number
                 $query = "SELECT * FROM orders WHERE order_number = ? LIMIT 0,1";
                 $stmt = $this->conn->prepare($query);
                 $stmt->bindParam(1, $order_number);
                 $stmt->execute();
-                
                 if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    // Create order object
                     $this->order->id = $row['id'];
                     $this->order->user_id = $row['user_id'];
                     $this->order->order_number = $row['order_number'];
@@ -210,16 +199,8 @@ class OrderController {
                     $this->order->notes = $row['notes'];
                     $this->order->created_at = $row['created_at'];
                     $this->order->updated_at = $row['updated_at'];
-                    
-                    // Get order items with variant details
                     $order_items = $this->order->getOrderDetails();
-                    
-                    // Prepare order data for display
-                    $order_data = [
-                        'order' => $this->order,
-                        'items' => []
-                    ];
-                    
+                    $order_data = ['order' => $this->order, 'items' => []];
                     while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
                         $order_data['items'][] = $item;
                     }
@@ -228,57 +209,45 @@ class OrderController {
                 }
             }
         }
-        
-        // Load track order view
         include 'views/order/track.php';
     }
     
-    // Cancel order
+    // Cancel order (giữ nguyên)
     public function cancel() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
 
-        // Check if user is logged in
         if (!isset($_SESSION['user_id'])) {
             $_SESSION['redirect_after_login'] = 'index.php?controller=user&action=orders';
             header("Location: index.php?controller=user&action=login");
             exit;
         }
         
-        // Get order ID
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        
         if ($order_id <= 0) {
             header("Location: index.php?controller=user&action=orders");
             exit;
         }
         
-        // Get order details
         $this->order->id = $order_id;
-        
         if (!$this->order->readOne() || $this->order->user_id != $_SESSION['user_id']) {
             header("Location: index.php?controller=user&action=orders");
             exit;
         }
         
-        // Check if order can be cancelled (only pending orders)
         if ($this->order->status != 'pending') {
             $_SESSION['order_message'] = "Chỉ các đơn hàng đang chờ xử lý mới có thể bị hủy.";
             header("Location: index.php?controller=user&action=orders");
             exit;
         }
         
-        // Begin transaction to cancel order and restore stock
         $this->conn->beginTransaction();
         try {
-            // Update order status to 'cancelled'
             $this->order->status = 'cancelled';
             if (!$this->order->updateStatus()) {
                 throw new Exception("Không thể cập nhật trạng thái đơn hàng.");
             }
-
-            // Restore stock for each order item
             $order_items = $this->order->getOrderDetails();
             while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
                 if ($item['variant_id']) {
@@ -289,7 +258,6 @@ class OrderController {
                     }
                 }
             }
-
             $this->conn->commit();
             $_SESSION['order_message'] = "Đơn hàng đã được hủy thành công.";
         } catch (Exception $e) {
@@ -297,28 +265,23 @@ class OrderController {
             error_log("Lỗi hủy đơn hàng: " . $e->getMessage(), 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             $_SESSION['order_message'] = "Lỗi khi hủy đơn hàng: " . $e->getMessage();
         }
-        
-        // Redirect to orders page
         header("Location: index.php?controller=user&action=orders");
         exit;
     }
     
-    // Order success page
+    // Order success page (giữ nguyên)
     public function success() {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
 
-        // Get order ID
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        
         if ($order_id <= 0) {
             error_log("DEBUG: OrderController::success - Invalid order_id: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             header("Location: index.php?controller=home");
             exit;
         }
         
-        // Get order details
         $this->order->id = $order_id;
         if (!$this->order->readOne()) {
             error_log("DEBUG: OrderController::success - readOne failed for order_id: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
@@ -326,44 +289,34 @@ class OrderController {
             exit;
         }
         
-        // Get order items with variant details
         $order_items = $this->order->getOrderDetails();
-        
-        // Debug: Log order items
         $items_debug = [];
         while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
             $items_debug[] = $item;
         }
         error_log("DEBUG: OrderController::success - order_items for order_id $order_id: " . print_r($items_debug, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-        
-        // Reset order_items cursor
         $order_items = $this->order->getOrderDetails();
-        
-        // Load view
         include 'views/order/view.php';
     }
     
-    // Gửi email xác nhận đơn hàng
+    // Gửi email xác nhận đơn hàng (giữ nguyên)
     private function sendOrderConfirmationEmail($order_id, $customer_email) {
         $mail = new PHPMailer(true);
         try {
-            // Lấy email admin từ bảng settings
             $query = "SELECT setting_value FROM settings WHERE setting_key = 'contact_email'";
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $admin_email = $stmt->fetchColumn() ?: 'babeemoonstore@gmail.com';
 
-            // Cấu hình SMTP
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'babeemoonstore@gmail.com';
-            $mail->Password = 'your-app-password'; // Thay bằng App Password từ Gmail
+            $mail->Password = 'your-app-password';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
             $mail->CharSet = 'UTF-8';
 
-            // Lấy chi tiết đơn hàng
             $this->order->id = $order_id;
             $this->order->readOne();
             $order_items = $this->order->getOrderDetails();
@@ -372,7 +325,6 @@ class OrderController {
                 $items_list .= "- {$item['product_name']} (x{$item['quantity']}): ₫" . number_format($item['price'], 0, ',', '.') . "\n";
             }
 
-            // Email cho khách hàng
             $mail->setFrom($admin_email, 'StreetStyle');
             $mail->addAddress($customer_email, $this->order->shipping_name);
             $mail->isHTML(true);
@@ -392,7 +344,6 @@ class OrderController {
             ";
             $mail->send();
 
-            // Email cho admin
             $mail->clearAddresses();
             $mail->addAddress($admin_email, 'Admin StreetStyle');
             $mail->Subject = "Đơn hàng mới #{$this->order->order_number}";
