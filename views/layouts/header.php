@@ -150,7 +150,7 @@
                         <a href="index.php?controller=user&action=logout" class="text-light me-3">
                             <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
                         </a>
-                        <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
+                        <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
                             <a href="index.php?controller=admin&action=dashboard" class="admin-link">
                                 <i class="fas fa-cog me-1"></i> Admin
                             </a>
@@ -162,7 +162,7 @@
                         <a href="index.php?controller=user&action=register" class="text-light me-3">
                             <i class="fas fa-user-plus me-1"></i> Đăng ký
                         </a>
-                        <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
+                        <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
                             <a href="index.php?controller=admin&action=dashboard" class="admin-link">
                                 <i class="fas fa-cog me-1"></i> Admin
                             </a>
