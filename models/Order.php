@@ -14,6 +14,7 @@ class Order {
     public $shipping_address;
     public $shipping_city;
     public $shipping_phone;
+    public $customer_email;
     public $notes;
     public $created_at;
     public $updated_at;
@@ -76,6 +77,7 @@ class Order {
             $this->shipping_address = $row['shipping_address'];
             $this->shipping_city = $row['shipping_city'];
             $this->shipping_phone = $row['shipping_phone'];
+            $this->customer_email = $row['customer_email'];
             $this->notes = $row['notes'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
@@ -100,6 +102,7 @@ class Order {
                         shipping_address = :shipping_address, 
                         shipping_city = :shipping_city, 
                         shipping_phone = :shipping_phone, 
+                        customer_email = :customer_email, 
                         notes = :notes, 
                         created_at = :created_at, 
                         updated_at = :updated_at";
@@ -107,12 +110,14 @@ class Order {
             $stmt = $this->conn->prepare($query);
             
             $this->user_id = htmlspecialchars(strip_tags($this->user_id));
+            $this->order_number = htmlspecialchars(strip_tags($this->order_number));
             $this->total_amount = htmlspecialchars(strip_tags($this->total_amount));
             $this->status = htmlspecialchars(strip_tags($this->status));
             $this->payment_method = htmlspecialchars(strip_tags($this->payment_method));
             $this->shipping_address = htmlspecialchars(strip_tags($this->shipping_address));
             $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
             $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
+            $this->customer_email = htmlspecialchars(strip_tags($this->customer_email));
             $this->notes = htmlspecialchars(strip_tags($this->notes));
             $this->created_at = date('Y-m-d H:i:s');
             $this->updated_at = date('Y-m-d H:i:s');
@@ -125,6 +130,7 @@ class Order {
             $stmt->bindParam(':shipping_address', $this->shipping_address);
             $stmt->bindParam(':shipping_city', $this->shipping_city);
             $stmt->bindParam(':shipping_phone', $this->shipping_phone);
+            $stmt->bindParam(':customer_email', $this->customer_email);
             $stmt->bindParam(':notes', $this->notes);
             $stmt->bindParam(':created_at', $this->created_at);
             $stmt->bindParam(':updated_at', $this->updated_at);
@@ -149,6 +155,7 @@ class Order {
                     shipping_address = :shipping_address, 
                     shipping_city = :shipping_city, 
                     shipping_phone = :shipping_phone, 
+                    customer_email = :customer_email, 
                     notes = :notes, 
                     updated_at = :updated_at 
                 WHERE 
@@ -161,6 +168,7 @@ class Order {
         $this->shipping_address = htmlspecialchars(strip_tags($this->shipping_address));
         $this->shipping_city = htmlspecialchars(strip_tags($this->shipping_city));
         $this->shipping_phone = htmlspecialchars(strip_tags($this->shipping_phone));
+        $this->customer_email = htmlspecialchars(strip_tags($this->customer_email));
         $this->notes = htmlspecialchars(strip_tags($this->notes));
         $this->updated_at = date('Y-m-d H:i:s');
         
@@ -169,6 +177,7 @@ class Order {
         $stmt->bindParam(':shipping_address', $this->shipping_address);
         $stmt->bindParam(':shipping_city', $this->shipping_city);
         $stmt->bindParam(':shipping_phone', $this->shipping_phone);
+        $stmt->bindParam(':customer_email', $this->customer_email);
         $stmt->bindParam(':notes', $this->notes);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
