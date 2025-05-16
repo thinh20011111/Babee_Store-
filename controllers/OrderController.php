@@ -226,6 +226,7 @@ class OrderController {
                     if ($isAjax) {
                         header('Content-Type: application/json');
                         echo json_encode($response);
+                        echo "<!-- DEBUG: Ajax response sent -->";
                         exit;
                     } else {
                         $_SESSION['order_message'] = $response['message'];
@@ -244,6 +245,7 @@ class OrderController {
                     header('Content-Type: application/json');
                     error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
+                    echo "<!-- DEBUG: Ajax error response sent -->";
                     exit;
                 } else {
                     $_SESSION['order_message'] = $response['message'];
@@ -259,6 +261,7 @@ class OrderController {
                     header('Content-Type: application/json');
                     error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
+                    echo "<!-- DEBUG: Ajax fatal error response sent -->";
                     exit;
                 } else {
                     $_SESSION['order_message'] = $response['message'];
@@ -274,6 +277,7 @@ class OrderController {
             header('Content-Type: application/json');
             error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             echo json_encode($response);
+            echo "<!-- DEBUG: Ajax invalid request response sent -->";
             exit;
         } else {
             header("Location: index.php?controller=cart");
@@ -341,22 +345,25 @@ class OrderController {
                     $this->order->created_at = $row['created_at'];
                     $this->order->updated_at = $row['updated_at'];
 
-                    // Lấy chi tiết sản phẩm
+                    // Debug: Kiểm tra kết quả từ getOrderDetails
+                    echo "<!-- DEBUG: Starting getOrderDetails for order_id: {$this->order->id} -->\n";
                     $order_items = $this->order->getOrderDetails();
+                    echo "<!-- DEBUG: getOrderDetails returned: " . (is_object($order_items) ? 'PDOStatement' : var_export($order_items, true)) . " -->\n";
+
                     $order_data = ['order' => $this->order, 'items' => []];
                     if ($order_items) {
+                        echo "<!-- DEBUG: Entering fetch loop -->\n";
                         while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
-                            // Đảm bảo ánh xạ đúng cột từ order_details
+                            echo "<!-- DEBUG: Fetched item: " . print_r($item, true) . " -->\n";
                             $order_data['items'][] = [
                                 'name' => $item['product_name'] ?? $item['name'] ?? 'Không xác định',
                                 'quantity' => $item['quantity'],
                                 'price' => $item['price']
                             ];
                         }
-                        // Debug để kiểm tra dữ liệu
-                        error_log("DEBUG: Order items retrieved for order_id {$this->order->id}: " . print_r($order_data['items'], true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                        echo "<!-- DEBUG: Final items array: " . print_r($order_data['items'], true) . " -->\n";
                     } else {
-                        error_log("ERROR: No order items retrieved for order_id {$this->order->id}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                        echo "<!-- DEBUG: No items retrieved for order_id {$this->order->id} -->\n";
                     }
                 } else {
                     $error = "Không tìm thấy đơn hàng.";
