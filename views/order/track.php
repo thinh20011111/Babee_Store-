@@ -2,15 +2,10 @@
 $page_title = "Theo dõi đơn hàng";
 include 'views/layouts/header.php'; 
 
-// Bật hiển thị lỗi cục bộ để debug
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Debug ban đầu
-echo "<div class='card mb-4'><div class='card-header bg-info text-white'><h5 class='card-title mb-0'>Debug Ban đầu</h5></div><div class='card-body'><pre>";
-var_dump($order_data);
-echo "</pre></div></div>";
+// Bật hiển thị lỗi cục bộ nếu cần
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 ?>
 
 <div class="container py-5">
@@ -40,16 +35,7 @@ echo "</pre></div></div>";
                             </div>
                         </div>
                     <?php else: ?>
-                        <!-- Debug Area -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-info text-white">
-                                <h5 class="card-title mb-0">Khu vực Debug</h5>
-                            </div>
-                            <div class="card-body">
-                                <h6>Dữ liệu $order_data['items']:</h6>
-                                <pre><?php print_r($order_data['items']); ?></pre>
-                            </div>
-                        </div>
+                        <!-- Order information -->
 
                         <!-- Order Information -->
                         <div class="card mb-4">
@@ -179,14 +165,7 @@ echo "</pre></div></div>";
                                             </thead>
                                             <tbody>
                                                 <?php foreach($order_data['items'] as $index => $item): ?>
-                                                    <div class="card mb-2">
-                                                        <div class="card-header bg-info text-white">
-                                                            <h6 class="card-title mb-0">Debug Item <?php echo $index; ?></h6>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <pre><?php print_r($item); ?></pre>
-                                                        </div>
-                                                    </div>
+
                                                     <tr>
                                                         <td><?php echo htmlspecialchars($item['name']); ?></td>
                                                         <td class="text-center"><?php echo $item['quantity']; ?></td>

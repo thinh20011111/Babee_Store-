@@ -344,27 +344,21 @@ class OrderController {
                     $this->order->notes = $row['notes'];
                     $this->order->created_at = $row['created_at'];
                     $this->order->updated_at = $row['updated_at'];
-
-                    // Debug: Kiểm tra kết quả từ getOrderDetails
-                    echo "<!-- DEBUG: Starting getOrderDetails for order_id: {$this->order->id} -->\n";
+                    // Lấy chi tiết đơn hàng
                     $order_items = $this->order->getOrderDetails();
-                    echo "<!-- DEBUG: getOrderDetails returned: " . (is_object($order_items) ? 'PDOStatement' : var_export($order_items, true)) . " -->\n";
-
-                    $order_data = ['order' => $this->order, 'items' => []];
+                    $order_data = ["order" => $this->order, "items" => []];
+                    
                     if ($order_items) {
-                        echo "<!-- DEBUG: Entering fetch loop -->\n";
                         while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
-                            echo "<!-- DEBUG: Fetched item: " . print_r($item, true) . " -->\n";
-                            $order_data['items'][] = [
-                                'name' => $item['product_name'] ?? $item['name'] ?? 'Không xác định',
-                                'quantity' => $item['quantity'],
-                                'price' => $item['price']
+                            $order_data["items"][] = [
+                                "name" => $item["product_name"] ?? $item["name"] ?? "Không xác định",
+                                "quantity" => $item["quantity"],
+                                "price" => $item["price"],
+                                "image" => $item["image"] ?? ""
                             ];
                         }
-                        echo "<!-- DEBUG: Final items array: " . print_r($order_data['items'], true) . " -->\n";
-                    } else {
-                        echo "<!-- DEBUG: No items retrieved for order_id {$this->order->id} -->\n";
                     }
+
                 } else {
                     $error = "Không tìm thấy đơn hàng.";
                 }

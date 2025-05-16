@@ -258,10 +258,13 @@ if (!defined('CURRENCY')) {
                                 <h6 class="mb-3 fw-bold">Customer Information</h6>
                                 <table class="table table-bordered">
                                     <tr>
-                                        <th style="width: 40%;">Customer</th>
-                                        <td><?php echo $view_order->user_id ? 'Registered User (ID: ' . $view_order->user_id . ')' : 'Guest'; ?></td>
+                                        <th style="width: 40%;">Recipient Name</th>
+                                        <td><?php echo htmlspecialchars($view_order->shipping_name); ?></td>
                                     </tr>
                                     <tr>
+                                        <th style="width: 40%;">Customer</th>
+                                        <td><?php echo $view_order->user_id ? "Registered User (ID: " . $view_order->user_id . ")" : "Guest"; ?></td>
+                                    </tr>
                                         <th>Shipping Address</th>
                                         <td><?php echo htmlspecialchars($view_order->shipping_address); ?></td>
                                     </tr>
