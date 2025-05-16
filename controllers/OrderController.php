@@ -19,9 +19,13 @@ class OrderController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // Log raw POST data
+            error_log("DEBUG: OrderController::create - Raw POST: " . print_r($_POST, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
             if (empty($cart)) {
                 $_SESSION['order_message'] = "Giỏ hàng trống.";
+                error_log("DEBUG: OrderController::create - Empty cart\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart");
                 exit;
             }
@@ -38,37 +42,44 @@ class OrderController {
             $this->order->shipping_city = isset($_POST['shipping_city']) ? trim($_POST['shipping_city']) : '';
             $this->order->shipping_phone = isset($_POST['shipping_phone']) ? trim($_POST['shipping_phone']) : '';
             $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
-            $this->order->shipping_name = isset($_POST['shipping_name']) ? trim($_POST['shipping_name']) : '';
+            $raw_shipping_name = isset($_POST['shipping_name']) ? $_POST['shipping_name'] : '';
+            $this->order->shipping_name = trim($raw_shipping_name);
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-            // Debug: Log POST and total
-            error_log("DEBUG: OrderController::create - POST: " . print_r($_POST, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}, shipping_name: {$this->order->shipping_name}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            // Log shipping_name before and after trim
+            error_log("DEBUG: OrderController::create - Raw shipping_name: '$raw_shipping_name'\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            error_log("DEBUG: OrderController::create - Trimmed shipping_name: '{$this->order->shipping_name}'\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
 
             // Validate required fields
-            if (empty($this->order->shipping_name)) {
+            if (!isset($_POST['shipping_name']) || mb_strlen($this->order->shipping_name, 'UTF-8') === 0) {
                 $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
+                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
             if (empty($this->order->shipping_address) || empty($this->order->shipping_city) || 
                 empty($this->order->shipping_phone)) {
                 $_SESSION['order_message'] = "Vui lòng điền đầy đủ thông tin giao hàng.";
+                error_log("ERROR: OrderController::create - Validation failed: Missing shipping details\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
             if (empty($this->order->customer_email) || !filter_var($this->order->customer_email, FILTER_VALIDATE_EMAIL)) {
                 $_SESSION['order_message'] = "Vui lòng nhập email hợp lệ.";
+                error_log("ERROR: OrderController::create - Validation failed: Invalid email\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
             if (empty($this->order->payment_method)) {
                 $_SESSION['order_message'] = "Vui lòng chọn phương thức thanh toán.";
+                error_log("ERROR: OrderController::create - Validation failed: Missing payment method\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
             if ($this->order->total_amount <= 0) {
                 $_SESSION['order_message'] = "Tổng giá đơn hàng không hợp lệ.";
+                error_log("ERROR: OrderController::create - Validation failed: Invalid total amount\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
@@ -105,13 +116,14 @@ class OrderController {
                     $this->conn->commit();
                     unset($_SESSION['cart']);
                     $_SESSION['order_message'] = "Đơn hàng đã được tạo thành công.";
+                    error_log("DEBUG: OrderController::create - Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     header("Location: index.php?controller=order&action=success&id=$order_id");
                 } else {
                     throw new Exception("Không thể tạo đơn hàng.");
                 }
             } catch (Exception $e) {
                 $this->conn->rollBack();
-                error_log("Lỗi tạo đơn hàng: " . $e->getMessage(), 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                error_log("ERROR: OrderController::create - Failed: " . $e->getMessage() . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 $_SESSION['order_message'] = "Lỗi khi tạo đơn hàng: " . $e->getMessage();
                 header("Location: index.php?controller=cart&action=checkout");
             }
@@ -119,6 +131,7 @@ class OrderController {
         }
 
         // Nếu không phải POST, chuyển hướng về giỏ hàng
+        error_log("DEBUG: OrderController::create - Not a POST request\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
         header("Location: index.php?controller=cart");
         exit;
     }
