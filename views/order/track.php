@@ -1,6 +1,16 @@
 <?php 
 $page_title = "Theo dõi đơn hàng";
 include 'views/layouts/header.php'; 
+
+// Bật hiển thị lỗi cục bộ để debug
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Debug ban đầu
+echo "<div class='card mb-4'><div class='card-header bg-info text-white'><h5 class='card-title mb-0'>Debug Ban đầu</h5></div><div class='card-body'><pre>";
+var_dump($order_data);
+echo "</pre></div></div>";
 ?>
 
 <div class="container py-5">
@@ -169,7 +179,6 @@ include 'views/layouts/header.php';
                                             </thead>
                                             <tbody>
                                                 <?php foreach($order_data['items'] as $index => $item): ?>
-                                                    <!-- Debug: In trực tiếp từng item -->
                                                     <div class="card mb-2">
                                                         <div class="card-header bg-info text-white">
                                                             <h6 class="card-title mb-0">Debug Item <?php echo $index; ?></h6>
