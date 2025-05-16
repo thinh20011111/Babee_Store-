@@ -5,7 +5,7 @@ include 'views/layouts/header.php';
 
 <style>
 .checkout-steps .step {
-    width: 120px;
+    width: 150px;
     height: 100px;
     padding: 10px;
     border-radius: 8px;
@@ -28,6 +28,10 @@ include 'views/layouts/header.php';
 .checkout-steps .step-label {
     font-size: 0.9rem;
     text-align: center;
+}
+.checkout-steps .arrow {
+    font-size: 1.2rem;
+    color: #6c757d;
 }
 .card {
     border-radius: 10px;
@@ -85,6 +89,9 @@ include 'views/layouts/header.php';
         flex-direction: column;
         align-items: center;
     }
+    .checkout-steps .arrow {
+        display: none;
+    }
     .checkout-steps .step-icon {
         font-size: 1.2rem;
     }
@@ -108,7 +115,7 @@ include 'views/layouts/header.php';
 
 <!-- Checkout Steps -->
 <div class="checkout-steps mb-4">
-    <div class="row text-center d-flex justify-content-around">
+    <div class="row text-center d-flex justify-content-around align-items-center">
         <div class="col-4">
             <div class="step active">
                 <div class="step-icon">
@@ -117,6 +124,9 @@ include 'views/layouts/header.php';
                 <div class="step-label">Giỏ hàng</div>
             </div>
         </div>
+        <div class="col-auto d-flex align-items-center">
+            <i class="fas fa-arrow-right arrow"></i>
+        </div>
         <div class="col-4">
             <div class="step active">
                 <div class="step-icon">
@@ -124,6 +134,9 @@ include 'views/layouts/header.php';
                 </div>
                 <div class="step-label">Thông tin</div>
             </div>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <i class="fas fa-arrow-right arrow"></i>
         </div>
         <div class="col-4">
             <div class="step">
@@ -389,3 +402,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php include 'views/layouts/footer.php'; ?>
+<!-- </x vies/layouts/footer.php'; ?> -->
