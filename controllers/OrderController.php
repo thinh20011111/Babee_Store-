@@ -18,33 +18,56 @@ class OrderController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Debug: Hiển thị $_POST raw và hex
+            // Debug: Hiển thị toàn bộ thông tin về request và encoding
             $raw_post = file_get_contents('php://input');
             $hex_shipping_name = isset($_POST['shipping_name']) ? bin2hex($_POST['shipping_name']) : 'not set';
-            echo "<pre>DEBUG: Raw POST (php://input): $raw_post\n";
-            echo "DEBUG: Raw POST ($_POST):\n";
-            var_dump($_POST);
-            echo "DEBUG: Hex of shipping_name: $hex_shipping_name\n";
+            $debug_output = "<pre>";
+            $debug_output .= "DEBUG: Raw POST (php://input): $raw_post\n";
+            $debug_output .= "DEBUG: Raw POST (\$_POST):\n";
+            $debug_output .= print_r($_POST, true) . "\n";
+            $debug_output .= "DEBUG: Hex of shipping_name: $hex_shipping_name\n";
 
             // Debug: Phân tích từng ký tự trong shipping_name
             $chars = isset($_POST['shipping_name']) ? str_split($_POST['shipping_name']) : [];
-            echo "DEBUG: Character-by-character (shipping_name):\n";
+            $debug_output .= "DEBUG: Character-by-character (shipping_name):\n";
             foreach ($chars as $index => $char) {
                 $hex = bin2hex($char);
-                echo "Char at position $index: '$char' (hex: $hex)\n";
+                $debug_output .= "Char at position $index: '$char' (hex: $hex)\n";
             }
 
-            // Debug: Kiểm tra mbstring
+            // Debug: Kiểm tra mbstring và encoding
             $mbstring_enabled = extension_loaded('mbstring') ? 'Yes' : 'No';
             $mbstring_encoding = mb_internal_encoding();
-            echo "DEBUG: mbstring enabled: $mbstring_enabled\n";
-            echo "DEBUG: mbstring internal encoding: $mbstring_encoding\n";
-
-            // Debug: Kiểm tra encoding của shipping_name
             $shipping_name_encoding = isset($_POST['shipping_name']) ? mb_detect_encoding($_POST['shipping_name'], 'UTF-8, ISO-8859-1', true) : 'not set';
-            echo "DEBUG: Detected encoding of shipping_name: $shipping_name_encoding\n";
-            echo "</pre>";
+            $debug_output .= "DEBUG: mbstring enabled: $mbstring_enabled\n";
+            $debug_output .= "DEBUG: mbstring internal encoding: $mbstring_encoding\n";
+            $debug_output .= "DEBUG: Detected encoding of shipping_name: $shipping_name_encoding\n";
 
+            // Xử lý shipping_name
+            $raw_shipping_name = isset($_POST['shipping_name']) ? $_POST['shipping_name'] : '';
+            $debug_output .= "DEBUG: Step 1 - Raw shipping_name (before any processing): '$raw_shipping_name' (length: " . strlen($raw_shipping_name) . ")\n";
+
+            // Bước 1: Loại bỏ BOM và các ký tự không mong muốn
+            $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name); // Loại bỏ BOM
+            $raw_shipping_name = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw_shipping_name); // Loại bỏ control characters
+            $debug_output .= "DEBUG: Step 2 - After removing BOM/control chars: '$raw_shipping_name' (length: " . strlen($raw_shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($raw_shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
+
+            // Bước 2: Chuẩn hóa encoding
+            if ($shipping_name_encoding !== 'UTF-8' && $shipping_name_encoding !== false) {
+                $converted_shipping_name = iconv($shipping_name_encoding, 'UTF-8//IGNORE', $raw_shipping_name);
+                $debug_output .= "DEBUG: Step 3 - After iconv conversion (from $shipping_name_encoding to UTF-8): '$converted_shipping_name' (length: " . strlen($converted_shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($converted_shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
+                $raw_shipping_name = $converted_shipping_name;
+            } else {
+                $debug_output .= "DEBUG: Step 3 - No iconv conversion needed (already UTF-8 or undetected)\n";
+            }
+
+            // Gán giá trị cuối cùng
+            $this->order->shipping_name = $raw_shipping_name;
+            $debug_output .= "DEBUG: Step 4 - Final shipping_name: '{$this->order->shipping_name}' (length: " . strlen($this->order->shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($this->order->shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
+            $debug_output .= "</pre>";
+            echo $debug_output;
+
+            // Kiểm tra giỏ hàng
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
             if (empty($cart)) {
                 $_SESSION['order_message'] = "Giỏ hàng trống.";
@@ -64,25 +87,14 @@ class OrderController {
             $this->order->shipping_city = isset($_POST['shipping_city']) ? trim($_POST['shipping_city']) : '';
             $this->order->shipping_phone = isset($_POST['shipping_phone']) ? trim($_POST['shipping_phone']) : '';
             $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
-            $raw_shipping_name = isset($_POST['shipping_name']) ? $_POST['shipping_name'] : '';
-            // Loại bỏ BOM
-            $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name);
-            // Chuẩn hóa encoding
-            if ($shipping_name_encoding !== 'UTF-8' && $shipping_name_encoding !== false) {
-                $raw_shipping_name = iconv($shipping_name_encoding, 'UTF-8//IGNORE', $raw_shipping_name);
-            }
-            $this->order->shipping_name = $raw_shipping_name;
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-            // Debug: Hiển thị shipping_name
-            echo "<pre>DEBUG: Raw shipping_name: '$raw_shipping_name' (length: " . mb_strlen($raw_shipping_name, 'UTF-8') . ")\n";
-            echo "DEBUG: Final shipping_name: '{$this->order->shipping_name}' (length: " . mb_strlen($this->order->shipping_name, 'UTF-8') . ")\n";
-            echo "</pre>";
-
             // Validate required fields
-            if (empty($this->order->shipping_name) || mb_strlen($this->order->shipping_name, 'UTF-8') === 0) {
+            $is_mbstring_enabled = extension_loaded('mbstring');
+            $shipping_name_length = $is_mbstring_enabled ? mb_strlen($this->order->shipping_name, 'UTF-8') : strlen($this->order->shipping_name);
+            if (empty($this->order->shipping_name) || $shipping_name_length === 0) {
                 $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
-                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', final: '{$this->order->shipping_name}')\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', final: '{$this->order->shipping_name}', mb_length: $shipping_name_length, mbstring_enabled: $is_mbstring_enabled)\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
