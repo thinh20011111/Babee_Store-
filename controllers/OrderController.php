@@ -74,6 +74,7 @@ class OrderController {
 
             // Kiểm tra giỏ hàng
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
+            error_log("DEBUG: Cart content before order creation: " . print_r($cart, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             if (empty($cart)) {
                 $response = [
                     'status' => 'error',
@@ -216,6 +217,7 @@ class OrderController {
                 if ($order_id = $this->order->create()) {
                     error_log("DEBUG: Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     foreach ($cart as $item) {
+                        error_log("DEBUG: Processing cart item - product_id: {$item['product_id']}, variant_id: {$item['variant_id']}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         $query = "INSERT INTO order_items (order_id, product_id, variant_id, quantity, price) 
                                   VALUES (:order_id, :product_id, :variant_id, :quantity, :price)";
                         $stmt = $this->conn->prepare($query);
@@ -231,11 +233,13 @@ class OrderController {
 
                         $product = new Product($this->conn);
                         $product->id = $item['product_id'];
+                        error_log("DEBUG: Updating stock for product_id: {$item['product_id']}, variant_id: {$item['variant_id']}, quantity: {$item['quantity']}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         if (!$product->updateVariantStock($item['variant_id'], $item['quantity'])) {
                             throw new Exception("Không thể cập nhật tồn kho cho biến thể ID {$item['variant_id']}.");
                         }
                     }
 
+                    error_log("DEBUG: Sending order confirmation email to: {$this->order->customer_email}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
 
                     $this->conn->commit();
@@ -263,6 +267,24 @@ class OrderController {
                 $this->conn->rollBack();
                 $error_message = "Lỗi khi tạo đơn hàng: " . $e->getMessage();
                 error_log("ERROR: OrderController::create - Failed: $error_message\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                $response = [
+                    'status' => 'error',
+                    'message' => $error_message
+                ];
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart&action=checkout");
+                    exit;
+                }
+            } catch (Throwable $t) {
+                $this->conn->rollBack();
+                $error_message = "Lỗi nghiêm trọng khi tạo đơn hàng: " . $t->getMessage();
+                error_log("FATAL: OrderController::create - Uncaught error: $error_message\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 $response = [
                     'status' => 'error',
                     'message' => $error_message
@@ -467,7 +489,9 @@ class OrderController {
             $mail->Username = 'babeemoonstore@gmail.com';
             $mail->Password = 'your-app-password';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            // $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 465;
+            // $mail->Port = 587;
             $mail->CharSet = 'UTF-8';
 
             $this->order->id = $order_id;
