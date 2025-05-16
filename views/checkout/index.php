@@ -221,7 +221,7 @@ if (!empty($_SESSION['order_message'])): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('checkout-form');
-    const messageDiv = document.getElementById('message') || document.createElement('div'); // Tạo div nếu chưa tồn tại
+    const messageDiv = document.getElementById('message') || document.createElement('div');
     if (!document.getElementById('message')) {
         messageDiv.id = 'message';
         messageDiv.className = 'alert mb-4';
@@ -230,11 +230,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (form) {
         form.addEventListener('submit', async function(event) {
-            event.preventDefault(); // Ngăn reload trang
+            event.preventDefault();
 
             // Debug: Log FormData
             const formData = new FormData(form);
-            formData.append('ajax', 'true'); // Thêm trường ajax để server nhận diện
+            formData.append('ajax', 'true');
             console.log('DEBUG: Form Data before submit:');
             for (let [key, value] of formData.entries()) {
                 console.log(`${key}: '${value}' (length: ${value.length})`);
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (emailField && !emailRegex.test(emailField.value.trim())) {
                 isValid = false;
                 emailField.classList.add('is-invalid');
-                if (emailError) errorError.style.display = 'block';
+                if (emailError) emailError.style.display = 'block';
             } else if (emailField) {
                 emailField.classList.remove('is-invalid');
                 if (emailError) emailError.style.display = 'none';
@@ -295,21 +295,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
-                // Log response để kiểm tra
-                const text = await response.text(); // Lấy nội dung thô
+                // Log response
+                const text = await response.text();
                 console.log('DEBUG: Raw response text:', text);
                 console.log('DEBUG: Response status:', response.status);
                 console.log('DEBUG: Response headers:', Object.fromEntries(response.headers));
 
-                const result = await response.json(); // Parse JSON
+                const result = JSON.parse(text);
 
                 if (result.status === 'success') {
                     messageDiv.className = 'alert alert-success mb-4';
-                    messageDiv.textContent = result.message;
+                    messageDiv.innerHTML = `${result.message}<br><small>Email xác nhận có thể chưa được gửi. Vui lòng kiểm tra đơn hàng của bạn.</small>`;
                     messageDiv.style.display = 'block';
-                    form.reset(); // Xóa form sau khi thành công
+                    form.reset();
                     setTimeout(() => {
-                        window.location.href = result.redirect || 'index.php'; // Redirect sau 2 giây
+                        window.location.href = result.redirect || 'index.php';
                     }, 2000);
                 } else {
                     messageDiv.className = 'alert alert-danger mb-4';

@@ -244,7 +244,9 @@ class OrderController {
                         $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
                         error_log("DEBUG: Email xác nhận đã được gửi thành công cho {$this->order->customer_email}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     } catch (Exception $e) {
-                        error_log("CẢNH BÁO: Không gửi được email xác nhận, nhưng đơn hàng vẫn được tạo: {$e->getMessage()}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                        error_log("CẢNH BÁO: Không gửi được email xác nhận, nhưng đơn hàng vẫn được tạo: {$e->getMessage()}\n", 3, '/
+
+home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     }
 
                     $this->conn->commit();
@@ -500,7 +502,7 @@ class OrderController {
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'babeemoonstore@gmail.com';
-            $mail->Password = 'YOUR_APP_PASSWORD'; // Thay bằng mật khẩu ứng dụng từ test_smtp.php
+            $mail->Password = 'YOUR_ACTUAL_APP_PASSWORD'; // Thay bằng mật khẩu ứng dụng từ test_smtp.php
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
             $mail->CharSet = 'UTF-8';
