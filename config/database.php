@@ -90,7 +90,7 @@ function createLocalTables($conn) {
         )");
 
         // Create order_items table
-        $conn->exec("CREATE TABLE IF NOT EXISTS order_items (
+        $conn->exec("CREATE TABLE IF NOT EXISTS order_details (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,

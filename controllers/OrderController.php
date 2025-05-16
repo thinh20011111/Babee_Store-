@@ -218,11 +218,11 @@ class OrderController {
                     error_log("DEBUG: Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     foreach ($cart as $item) {
                         error_log("DEBUG: Processing cart item - product_id: {$item['product_id']}, variant_id: {$item['variant_id']}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                        $query = "INSERT INTO order_items (order_id, product_id, variant_id, quantity, price) 
+                        $query = "INSERT INTO order_details (order_id, product_id, variant_id, quantity, price) 
                                   VALUES (:order_id, :product_id, :variant_id, :quantity, :price)";
                         $stmt = $this->conn->prepare($query);
                         $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
-                        error_log("DEBUG: Preparing to insert order item - product_id: {$item['product_id']}, variant_id: {$item['variant_id']}, quantity: {$item['quantity']}, price: $price\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                        error_log("DEBUG: Preparing to insert order detail - product_id: {$item['product_id']}, variant_id: {$item['variant_id']}, quantity: {$item['quantity']}, price: $price\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         $stmt->execute([
                             ':order_id' => $order_id,
                             ':product_id' => $item['product_id'],
@@ -425,8 +425,8 @@ class OrderController {
             if (!$this->order->updateStatus()) {
                 throw new Exception("Không thể cập nhật trạng thái đơn hàng.");
             }
-            $order_items = $this->order->getOrderDetails();
-            while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
+            $order_details = $this->order->getOrderDetails();
+            while ($item = $order_details->fetch(PDO::FETCH_ASSOC)) {
                 if ($item['variant_id']) {
                     $product = new Product($this->conn);
                     $product->id = $item['product_id'];
@@ -465,13 +465,13 @@ class OrderController {
             exit;
         }
         
-        $order_items = $this->order->getOrderDetails();
+        $order_details = $this->order->getOrderDetails();
         $items_debug = [];
-        while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
+        while ($item = $order_details->fetch(PDO::FETCH_ASSOC)) {
             $items_debug[] = $item;
         }
-        error_log("DEBUG: OrderController::success - order_items for order_id $order_id: " . print_r($items_debug, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-        $order_items = $this->order->getOrderDetails();
+        error_log("DEBUG: OrderController::success - order_details for order_id $order_id: " . print_r($items_debug, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+        $order_details = $this->order->getOrderDetails();
         include 'views/order/view.php';
     }
     
@@ -489,16 +489,14 @@ class OrderController {
             $mail->Username = 'babeemoonstore@gmail.com';
             $mail->Password = 'your-app-password';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            // $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 465;
-            // $mail->Port = 587;
             $mail->CharSet = 'UTF-8';
 
             $this->order->id = $order_id;
             $this->order->readOne();
-            $order_items = $this->order->getOrderDetails();
+            $order_details = $this->order->getOrderDetails();
             $items_list = '';
-            while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
+            while ($item = $order_details->fetch(PDO::FETCH_ASSOC)) {
                 $items_list .= "- {$item['product_name']} (x{$item['quantity']}): ₫" . number_format($item['price'], 0, ',', '.') . "\n";
             }
 
