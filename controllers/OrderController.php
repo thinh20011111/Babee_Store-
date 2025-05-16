@@ -81,6 +81,7 @@ class OrderController {
                 ];
                 if ($isAjax) {
                     header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -122,6 +123,7 @@ class OrderController {
                 error_log("ERROR: OrderController::create - Validation failed: shipping_name length is 0 (raw: '$raw_shipping_name', final: '{$this->order->shipping_name}', mb_length: $shipping_name_length, mbstring_enabled: $is_mbstring_enabled)\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -139,6 +141,7 @@ class OrderController {
                 error_log("ERROR: OrderController::create - Validation failed: Missing shipping details\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -155,6 +158,7 @@ class OrderController {
                 error_log("ERROR: OrderController::create - Validation failed: Invalid email\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -171,6 +175,7 @@ class OrderController {
                 error_log("ERROR: OrderController::create - Validation failed: Missing payment method\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -187,6 +192,7 @@ class OrderController {
                 error_log("ERROR: OrderController::create - Validation failed: Invalid total amount\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -239,6 +245,7 @@ class OrderController {
                     error_log("DEBUG: OrderController::create - Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     if ($isAjax) {
                         header('Content-Type: application/json');
+                        error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         echo json_encode($response);
                         exit;
                     } else {
@@ -259,6 +266,7 @@ class OrderController {
                 ];
                 if ($isAjax) {
                     header('Content-Type: application/json');
+                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -276,6 +284,7 @@ class OrderController {
         error_log("DEBUG: OrderController::create - Not a POST request\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
         if ($isAjax) {
             header('Content-Type: application/json');
+            error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             echo json_encode($response);
             exit;
         } else {

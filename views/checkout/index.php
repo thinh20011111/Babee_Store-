@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (emailField && !emailRegex.test(emailField.value.trim())) {
                 isValid = false;
                 emailField.classList.add('is-invalid');
-                if (emailError) emailError.style.display = 'block';
+                if (emailError) errorError.style.display = 'block';
             } else if (emailField) {
                 emailField.classList.remove('is-invalid');
                 if (emailError) emailError.style.display = 'none';
@@ -295,7 +295,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
-                const result = await response.json();
+                // Log response để kiểm tra
+                const text = await response.text(); // Lấy nội dung thô
+                console.log('DEBUG: Raw response text:', text);
+                console.log('DEBUG: Response status:', response.status);
+                console.log('DEBUG: Response headers:', Object.fromEntries(response.headers));
+
+                const result = await response.json(); // Parse JSON
 
                 if (result.status === 'success') {
                     messageDiv.className = 'alert alert-success mb-4';
@@ -316,6 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 messageDiv.textContent = 'Đã có lỗi xảy ra: ' + error.message;
                 messageDiv.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                console.error('DEBUG: Fetch error:', error);
             }
         });
     }
