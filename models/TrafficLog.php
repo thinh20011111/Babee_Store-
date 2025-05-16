@@ -24,8 +24,8 @@ class TrafficLog {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             visit_count INT DEFAULT 1,
             visit_date DATE,
-            last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            UNIQUE KEY unique_session_date (session_id, visit_date)
+            last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (session_id, visit_date)
         )";
         
         try {

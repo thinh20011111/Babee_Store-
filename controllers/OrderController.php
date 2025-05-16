@@ -239,8 +239,8 @@ class OrderController {
                         }
                     }
 
-                    error_log("DEBUG: Sending order confirmation email to: {$this->order->customer_email}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                    $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
+                    error_log("DEBUG: Temporarily bypassing email confirmation for order processing\n", 3, "/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log");
+                    // $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
 
                     $this->conn->commit();
                     error_log("DEBUG: Transaction committed successfully\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
