@@ -81,11 +81,9 @@ include 'views/layouts/header.php';
                             <div class="card-body py-4">
                                 <div class="timeline">
                                     <?php 
-                                    // Define all possible statuses
                                     $statuses = ['pending', 'processing', 'shipped', 'delivered'];
                                     $currentStatusIndex = array_search($order_data['order']->status, $statuses);
                                     
-                                    // If order is cancelled, show different timeline
                                     if($order_data['order']->status === 'cancelled'): 
                                     ?>
                                         <div class="timeline-item">
@@ -123,8 +121,7 @@ include 'views/layouts/header.php';
                                                             } elseif($index === $currentStatusIndex) {
                                                                 echo date('d/m/Y', strtotime($order_data['order']->updated_at));
                                                             } else {
-                                                                // For intermediate steps, add some estimated dates
-                                                                $daysToAdd = $index * 2; // 2 days per step
+                                                                $daysToAdd = $index * 2;
                                                                 $date = strtotime($order_data['order']->created_at . " +{$daysToAdd} days");
                                                                 echo date('d/m/Y', $date);
                                                             }
@@ -146,6 +143,8 @@ include 'views/layouts/header.php';
                                 <h5 class="card-title mb-0">Sản phẩm đã đặt</h5>
                             </div>
                             <div class="card-body p-0">
+                                <!-- Debug: Kiểm tra $order_data['items'] -->
+                                <?php echo "<!-- DEBUG: order_data[items] = " . print_r($order_data['items'], true) . " -->"; ?>
                                 <?php if (empty($order_data['items'])): ?>
                                     <div class="alert alert-warning m-3">Không tìm thấy thông tin sản phẩm trong đơn hàng này.</div>
                                 <?php else: ?>
@@ -160,7 +159,9 @@ include 'views/layouts/header.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach($order_data['items'] as $item): ?>
+                                                <?php foreach($order_data['items'] as $index => $item): ?>
+                                                    <!-- Debug: Kiểm tra từng item -->
+                                                    <?php echo "<!-- DEBUG: Item $index = " . print_r($item, true) . " -->"; ?>
                                                     <tr>
                                                         <td><?php echo htmlspecialchars($item['name']); ?></td>
                                                         <td class="text-center"><?php echo $item['quantity']; ?></td>
