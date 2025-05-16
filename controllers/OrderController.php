@@ -1,4 +1,8 @@
 <?php
+require_once 'vendor/autoload.php'; // Đảm bảo PHPMailer được tải
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 class OrderController {
     private $conn;
     private $order;
@@ -23,7 +27,6 @@ class OrderController {
             }
 
             // Tạo đơn hàng
-            $this->order->order_number = uniqid('ORD_');
             $this->order->user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
             $this->order->total_amount = array_sum(array_map(function($item) {
                 $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
@@ -34,11 +37,12 @@ class OrderController {
             $this->order->shipping_address = isset($_POST['shipping_address']) ? trim($_POST['shipping_address']) : '';
             $this->order->shipping_city = isset($_POST['shipping_city']) ? trim($_POST['shipping_city']) : '';
             $this->order->shipping_phone = isset($_POST['shipping_phone']) ? trim($_POST['shipping_phone']) : '';
+            $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-            // Debug: Log cart and total
-            error_log("DEBUG: OrderController::create - cart: " . print_r($cart, true) . "\n", 3, '/tmp/cart_debug.log');
-            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}\n", 3, '/tmp/cart_debug.log');
+            // Debug: Log POST and total
+            error_log("DEBUG: OrderController::create - POST: " . print_r($_POST, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
 
             // Validate required fields
             $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
@@ -50,6 +54,11 @@ class OrderController {
             if (empty($this->order->shipping_address) || empty($this->order->shipping_city) || 
                 empty($this->order->shipping_phone)) {
                 $_SESSION['order_message'] = "Vui lòng điền đầy đủ thông tin giao hàng.";
+                header("Location: index.php?controller=cart&action=checkout");
+                exit;
+            }
+            if (empty($this->order->customer_email) || !filter_var($this->order->customer_email, FILTER_VALIDATE_EMAIL)) {
+                $_SESSION['order_message'] = "Vui lòng nhập email hợp lệ.";
                 header("Location: index.php?controller=cart&action=checkout");
                 exit;
             }
@@ -65,7 +74,7 @@ class OrderController {
                 if ($order_id = $this->order->create()) {
                     // Tạo các mục đơn hàng
                     foreach ($cart as $item) {
-                        $query = "INSERT INTO order_details (order_id, product_id, variant_id, quantity, price) 
+                        $query = "INSERT INTO order_items (order_id, product_id, variant_id, quantity, price) 
                                   VALUES (:order_id, :product_id, :variant_id, :quantity, :price)";
                         $stmt = $this->conn->prepare($query);
                         $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
@@ -85,6 +94,9 @@ class OrderController {
                         }
                     }
 
+                    // Gửi email xác nhận
+                    $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email, $full_name);
+
                     $this->conn->commit();
                     unset($_SESSION['cart']);
                     $_SESSION['order_message'] = "Đơn hàng đã được tạo thành công.";
@@ -94,7 +106,7 @@ class OrderController {
                 }
             } catch (Exception $e) {
                 $this->conn->rollBack();
-                error_log("Lỗi tạo đơn hàng: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
+                error_log("Lỗi tạo đơn hàng: " . $e->getMessage(), 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 $_SESSION['order_message'] = "Lỗi khi tạo đơn hàng: " . $e->getMessage();
                 header("Location: index.php?controller=cart&action=checkout");
             }
@@ -175,6 +187,7 @@ class OrderController {
                     $this->order->shipping_address = $row['shipping_address'];
                     $this->order->shipping_city = $row['shipping_city'];
                     $this->order->shipping_phone = $row['shipping_phone'];
+                    $this->order->customer_email = $row['customer_email'];
                     $this->order->notes = $row['notes'];
                     $this->order->created_at = $row['created_at'];
                     $this->order->updated_at = $row['updated_at'];
@@ -262,7 +275,7 @@ class OrderController {
             $_SESSION['order_message'] = "Đơn hàng đã được hủy thành công.";
         } catch (Exception $e) {
             $this->conn->rollBack();
-            error_log("Lỗi hủy đơn hàng: " . $e->getMessage(), 3, '/tmp/cart_debug.log');
+            error_log("Lỗi hủy đơn hàng: " . $e->getMessage(), 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             $_SESSION['order_message'] = "Lỗi khi hủy đơn hàng: " . $e->getMessage();
         }
         
@@ -281,7 +294,7 @@ class OrderController {
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
         if ($order_id <= 0) {
-            error_log("DEBUG: OrderController::success - Invalid order_id: $order_id\n", 3, '/tmp/cart_debug.log');
+            error_log("DEBUG: OrderController::success - Invalid order_id: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             header("Location: index.php?controller=home");
             exit;
         }
@@ -289,7 +302,7 @@ class OrderController {
         // Get order details
         $this->order->id = $order_id;
         if (!$this->order->readOne()) {
-            error_log("DEBUG: OrderController::success - readOne failed for order_id: $order_id\n", 3, '/tmp/cart_debug.log');
+            error_log("DEBUG: OrderController::success - readOne failed for order_id: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             header("Location: index.php?controller=home");
             exit;
         }
@@ -302,13 +315,85 @@ class OrderController {
         while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
             $items_debug[] = $item;
         }
-        error_log("DEBUG: OrderController::success - order_items for order_id $order_id: " . print_r($items_debug, true) . "\n", 3, '/tmp/cart_debug.log');
+        error_log("DEBUG: OrderController::success - order_items for order_id $order_id: " . print_r($items_debug, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
         
         // Reset order_items cursor
         $order_items = $this->order->getOrderDetails();
         
         // Load view
         include 'views/order/view.php';
+    }
+    
+    // Gửi email xác nhận đơn hàng
+    private function sendOrderConfirmationEmail($order_id, $customer_email, $full_name) {
+        $mail = new PHPMailer(true);
+        try {
+            // Lấy email admin từ bảng settings
+            $query = "SELECT setting_value FROM settings WHERE setting_key = 'contact_email'";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            $admin_email = $stmt->fetchColumn() ?: 'babeemoonstore@gmail.com';
+
+            // Cấu hình SMTP
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'babeemoonstore@gmail.com';
+            $mail->Password = 'your-app-password'; // Thay bằng App Password từ Gmail
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port = 465;
+            $mail->CharSet = 'UTF-8';
+
+            // Lấy chi tiết đơn hàng
+            $this->order->id = $order_id;
+            $this->order->readOne();
+            $order_items = $this->order->getOrderDetails();
+            $items_list = '';
+            while ($item = $order_items->fetch(PDO::FETCH_ASSOC)) {
+                $items_list .= "- {$item['product_name']} (x{$item['quantity']}): ₫" . number_format($item['price'], 0, ',', '.') . "\n";
+            }
+
+            // Email cho khách hàng
+            $mail->setFrom($admin_email, 'StreetStyle');
+            $mail->addAddress($customer_email, $full_name);
+            $mail->isHTML(true);
+            $mail->Subject = "Xác nhận đơn hàng #{$this->order->order_number}";
+            $mail->Body = "
+                <h2>Xác nhận đơn hàng</h2>
+                <p>Cảm ơn bạn đã đặt hàng tại StreetStyle!</p>
+                <p><strong>Mã đơn hàng:</strong> {$this->order->order_number}</p>
+                <p><strong>Tổng tiền:</strong> ₫" . number_format($this->order->total_amount, 0, ',', '.') . "</p>
+                <p><strong>Địa chỉ giao hàng:</strong> {$this->order->shipping_address}, {$this->order->shipping_city}</p>
+                <p><strong>Điện thoại:</strong> {$this->order->shipping_phone}</p>
+                <p><strong>Email:</strong> {$this->order->customer_email}</p>
+                <h3>Chi tiết đơn hàng:</h3>
+                <pre>$items_list</pre>
+                <p>Chúng tôi sẽ xử lý đơn hàng của bạn sớm nhất có thể.</p>
+            ";
+            $mail->send();
+
+            // Email cho admin
+            $mail->clearAddresses();
+            $mail->addAddress($admin_email, 'Admin StreetStyle');
+            $mail->Subject = "Đơn hàng mới #{$this->order->order_number}";
+            $mail->Body = "
+                <h2>Đơn hàng mới</h2>
+                <p><strong>Mã đơn hàng:</strong> {$this->order->order_number}</p>
+                <p><strong>Khách hàng:</strong> $full_name</p>
+                <p><strong>Email:</strong> {$this->order->customer_email}</p>
+                <p><strong>Tổng tiền:</strong> ₫" . number_format($this->order->total_amount, 0, ',', '.') . "</p>
+                <p><strong>Địa chỉ giao hàng:</strong> {$this->order->shipping_address}, {$this->order->shipping_city}</p>
+                <p><strong>Điện thoại:</strong> {$this->order->shipping_phone}</p>
+                <h3>Chi tiết đơn hàng:</h3>
+                <pre>$items_list</pre>
+            ";
+            $mail->send();
+
+            error_log("DEBUG: OrderController::sendOrderConfirmationEmail - Email sent to $customer_email and $admin_email\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+        } catch (Exception $e) {
+            error_log("Lỗi gửi email: {$mail->ErrorInfo}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            throw new Exception("Không thể gửi email xác nhận: {$mail->ErrorInfo}");
+        }
     }
 }
 ?>
