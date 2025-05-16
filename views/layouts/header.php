@@ -118,6 +118,11 @@
 </head>
 <body>
     <?php
+    // Đảm bảo session được khởi tạo
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
     // Khởi tạo kết nối cơ sở dữ liệu nếu chưa có
     if (!isset($conn)) {
         require_once 'config/database.php';
@@ -127,6 +132,13 @@
             echo "<div class='alert alert-danger'>Lỗi: Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình.</div>";
         }
     }
+
+    // Debug session (bỏ bình luận nếu cần kiểm tra)
+    /*
+    echo "<pre>Session Data: ";
+    print_r($_SESSION);
+    echo "</pre>";
+    */
     ?>
 
     <!-- Top Bar - Simple with high contrast -->
@@ -150,8 +162,8 @@
                         <a href="index.php?controller=user&action=logout" class="text-light me-3">
                             <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
                         </a>
-                        <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
-                            <a href="index.php?controller=admin&action=dashboard" class="admin-link">
+                        <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin'): ?>
+                            <a href="admin/dashboard.php" class="admin-link">
                                 <i class="fas fa-cog me-1"></i> Admin
                             </a>
                         <?php endif; ?>
@@ -162,11 +174,6 @@
                         <a href="index.php?controller=user&action=register" class="text-light me-3">
                             <i class="fas fa-user-plus me-1"></i> Đăng ký
                         </a>
-                        <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
-                            <a href="index.php?controller=admin&action=dashboard" class="admin-link">
-                                <i class="fas fa-cog me-1"></i> Admin
-                            </a>
-                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
