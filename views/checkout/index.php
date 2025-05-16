@@ -3,6 +3,84 @@ $page_title = "Thanh toán";
 include 'views/layouts/header.php'; 
 ?>
 
+<style>
+.checkout-steps .step {
+    padding: 15px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: background 0.3s;
+}
+.checkout-steps .step.active {
+    background: #007bff;
+    color: white;
+}
+.checkout-steps .step-icon {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.card-header {
+    padding: 15px;
+    border-radius: 10px 10px 0 0;
+}
+.form-control, .form-check-input {
+    border-radius: 5px;
+}
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0,123,255,0.3);
+}
+.invalid-feedback {
+    font-size: 0.9rem;
+    color: #dc3545;
+    margin-top: 5px;
+}
+.btn-primary {
+    background: #007bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+.btn-primary:hover {
+    background: #0056b3;
+}
+.btn-outline-secondary {
+    border-radius: 5px;
+}
+.alert {
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.order-item img, .order-item .bg-light {
+    border-radius: 5px;
+}
+.secure-checkout {
+    background: #e9ecef;
+    padding: 15px;
+    border-radius: 5px;
+}
+@media (max-width: 768px) {
+    .checkout-steps .step {
+        margin-bottom: 10px;
+    }
+    .card-header h5 {
+        font-size: 1.2rem;
+    }
+    .form-control, .btn {
+        font-size: 0.95rem;
+    }
+    .order-item img, .order-item .bg-light {
+        width: 30px;
+        height: 30px;
+    }
+}
+</style>
+
 <h1 class="mb-4">Thanh toán</h1>
 
 <!-- Checkout Steps -->
@@ -224,24 +302,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageDiv = document.getElementById('message') || document.createElement('div');
     if (!document.getElementById('message')) {
         messageDiv.id = 'message';
-        messageDiv.className = 'alert mb-4';
+        messageDiv.className = 'alert alert-danger mb-4';
         form.parentNode.insertBefore(messageDiv, form.nextSibling);
     }
 
     if (form) {
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            // Debug: Log FormData
-            const formData = new FormData(form);
-            formData.append('ajax', 'true');
-            console.log('DEBUG: Form Data before submit:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`${key}: '${value}' (length: ${value.length})`);
-            }
-
+        form.addEventListener('submit', function(event) {
             let isValid = true;
-            
+
             // Validate required text fields
             const requiredFields = form.querySelectorAll('input[required]:not([type="radio"]), textarea[required]');
             requiredFields.forEach(field => {
@@ -256,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (errorDiv) errorDiv.style.display = 'none';
                 }
             });
-            
+
             // Validate email format
             const emailField = document.getElementById('customer_email');
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -269,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 emailField.classList.remove('is-invalid');
                 if (emailError) emailError.style.display = 'none';
             }
-            
+
             // Validate payment method
             const paymentMethods = form.querySelectorAll('input[name="payment_method"]');
             const paymentError = document.getElementById('payment_method-error');
@@ -280,49 +348,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 paymentError.style.display = 'none';
             }
-            
+
             if (!isValid) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
-            }
-
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                // Log response
-                const text = await response.text();
-                console.log('DEBUG: Raw response text:', text);
-                console.log('DEBUG: Response status:', response.status);
-                console.log('DEBUG: Response headers:', Object.fromEntries(response.headers));
-
-                const result = JSON.parse(text);
-
-                if (result.status === 'success') {
-                    messageDiv.className = 'alert alert-success mb-4';
-                    messageDiv.innerHTML = `${result.message}<br><small>Email xác nhận có thể chưa được gửi. Vui lòng kiểm tra đơn hàng của bạn.</small>`;
-                    messageDiv.style.display = 'block';
-                    form.reset();
-                    setTimeout(() => {
-                        window.location.href = result.redirect || 'index.php';
-                    }, 2000);
-                } else {
-                    messageDiv.className = 'alert alert-danger mb-4';
-                    messageDiv.textContent = result.message;
-                    messageDiv.style.display = 'block';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            } catch (error) {
-                messageDiv.className = 'alert alert-danger mb-4';
-                messageDiv.textContent = 'Đã có lỗi xảy ra: ' + error.message;
+                event.preventDefault();
+                messageDiv.textContent = 'Vui lòng kiểm tra và điền đầy đủ thông tin.';
                 messageDiv.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                console.error('DEBUG: Fetch error:', error);
             }
         });
     }
