@@ -1,5 +1,5 @@
 <?php
-require_once 'vendor/autoload.php'; // Đảm bảo PHPMailer được tải
+require_once 'vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -17,18 +17,18 @@ class OrderController {
             session_start();
         }
 
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Debug: Hiển thị toàn bộ thông tin về request và encoding
+            // Debug: Hiển thị thông tin về request và encoding
             $raw_post = file_get_contents('php://input');
             $hex_shipping_name = isset($_POST['shipping_name']) ? bin2hex($_POST['shipping_name']) : 'not set';
-            $debug_output = "<pre>";
-            $debug_output .= "DEBUG: Raw POST (php://input): $raw_post\n";
-            $debug_output .= "DEBUG: Raw POST (\$_POST):\n";
-            $debug_output .= print_r($_POST, true) . "\n";
+            $debug_output = "DEBUG: Raw POST (php://input): $raw_post\n";
+            $debug_output .= "DEBUG: Raw POST (\$_POST):\n" . print_r($_POST, true) . "\n";
             $debug_output .= "DEBUG: Hex of shipping_name: $hex_shipping_name\n";
 
             // Debug: Phân tích từng ký tự trong shipping_name
-            $chars = isset($_POST['shipping_name']) ? str_split($_POST['shipping_name']) : [];
+            $chars = isset($_POST['shipping_name']) && extension_loaded('mbstring') ? mb_str_split($_POST['shipping_name'], 1, 'UTF-8') : (isset($_POST['shipping_name']) ? str_split($_POST['shipping_name']) : []);
             $debug_output .= "DEBUG: Character-by-character (shipping_name):\n";
             foreach ($chars as $index => $char) {
                 $hex = bin2hex($char);
@@ -48,8 +48,8 @@ class OrderController {
             $debug_output .= "DEBUG: Step 1 - Raw shipping_name (before any processing): '$raw_shipping_name' (length: " . strlen($raw_shipping_name) . ")\n";
 
             // Bước 1: Loại bỏ BOM và các ký tự không mong muốn
-            $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name); // Loại bỏ BOM
-            $raw_shipping_name = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw_shipping_name); // Loại bỏ control characters
+            $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name);
+            $raw_shipping_name = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw_shipping_name);
             $debug_output .= "DEBUG: Step 2 - After removing BOM/control chars: '$raw_shipping_name' (length: " . strlen($raw_shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($raw_shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
 
             // Bước 2: Chuẩn hóa encoding
@@ -64,15 +64,29 @@ class OrderController {
             // Gán giá trị cuối cùng
             $this->order->shipping_name = $raw_shipping_name;
             $debug_output .= "DEBUG: Step 4 - Final shipping_name: '{$this->order->shipping_name}' (length: " . strlen($this->order->shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($this->order->shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
-            $debug_output .= "</pre>";
-            echo $debug_output;
+
+            // Ghi log debug
+            error_log($debug_output, 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            if (!$isAjax) {
+                echo "<pre>$debug_output</pre>";
+            }
 
             // Kiểm tra giỏ hàng
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
             if (empty($cart)) {
-                $_SESSION['order_message'] = "Giỏ hàng trống.";
-                header("Location: index.php?controller=cart");
-                exit;
+                $response = [
+                    'status' => 'error',
+                    'message' => 'Giỏ hàng trống.'
+                ];
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart");
+                    exit;
+                }
             }
 
             // Tạo đơn hàng
@@ -89,39 +103,96 @@ class OrderController {
             $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
+            // Debug: Ngay trước validation
+            $debug_validation = "DEBUG: Before validation - shipping_name: '{$this->order->shipping_name}' (mb_length: " . (extension_loaded('mbstring') ? mb_strlen($this->order->shipping_name, 'UTF-8') : 'mbstring not loaded') . ", empty() result: " . (empty($this->order->shipping_name) ? 'true' : 'false') . ")\n";
+            error_log($debug_validation, 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            if (!$isAjax) {
+                echo "<pre>$debug_validation</pre>";
+            }
+
             // Validate required fields
             $is_mbstring_enabled = extension_loaded('mbstring');
             $shipping_name_length = $is_mbstring_enabled ? mb_strlen($this->order->shipping_name, 'UTF-8') : strlen($this->order->shipping_name);
-            if (empty($this->order->shipping_name) || $shipping_name_length === 0) {
-                $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
-                error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', final: '{$this->order->shipping_name}', mb_length: $shipping_name_length, mbstring_enabled: $is_mbstring_enabled)\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                header("Location: index.php?controller=cart&action=checkout");
-                exit;
+            if ($shipping_name_length === 0) {
+                $response = [
+                    'status' => 'error',
+                    'message' => 'Vui lòng nhập tên người nhận.'
+                ];
+                error_log("ERROR: OrderController::create - Validation failed: shipping_name length is 0 (raw: '$raw_shipping_name', final: '{$this->order->shipping_name}', mb_length: $shipping_name_length, mbstring_enabled: $is_mbstring_enabled)\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart&action=checkout");
+                    exit;
+                }
             }
-            if (empty($this->order->shipping_address) || empty($this->order->shipping_city) || 
-                empty($this->order->shipping_phone)) {
-                $_SESSION['order_message'] = "Vui lòng điền đầy đủ thông tin giao hàng.";
+            if (trim($this->order->shipping_address) === '' || trim($this->order->shipping_city) === '' || 
+                trim($this->order->shipping_phone) === '') {
+                $response = [
+                    'status' => 'error',
+                    'message' => 'Vui lòng điền đầy đủ thông tin giao hàng.'
+                ];
                 error_log("ERROR: OrderController::create - Validation failed: Missing shipping details\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                header("Location: index.php?controller=cart&action=checkout");
-                exit;
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart&action=checkout");
+                    exit;
+                }
             }
-            if (empty($this->order->customer_email) || !filter_var($this->order->customer_email, FILTER_VALIDATE_EMAIL)) {
-                $_SESSION['order_message'] = "Vui lòng nhập email hợp lệ.";
+            if (trim($this->order->customer_email) === '' || !filter_var($this->order->customer_email, FILTER_VALIDATE_EMAIL)) {
+                $response = [
+                    'status' => 'error',
+                    'message' => 'Vui lòng nhập email hợp lệ.'
+                ];
                 error_log("ERROR: OrderController::create - Validation failed: Invalid email\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                header("Location: index.php?controller=cart&action=checkout");
-                exit;
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart&action=checkout");
+                    exit;
+                }
             }
-            if (empty($this->order->payment_method)) {
-                $_SESSION['order_message'] = "Vui lòng chọn phương thức thanh toán.";
+            if (trim($this->order->payment_method) === '') {
+                $response = [
+                    'status' => 'error',
+                    'message' => 'Vui lòng chọn phương thức thanh toán.'
+                ];
                 error_log("ERROR: OrderController::create - Validation failed: Missing payment method\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                header("Location: index.php?controller=cart&action=checkout");
-                exit;
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart&action=checkout");
+                    exit;
+                }
             }
             if ($this->order->total_amount <= 0) {
-                $_SESSION['order_message'] = "Tổng giá đơn hàng không hợp lệ.";
+                $response = [
+                    'status' => 'error',
+                    'message' => 'Tổng giá đơn hàng không hợp lệ.'
+                ];
                 error_log("ERROR: OrderController::create - Validation failed: Invalid total amount\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                header("Location: index.php?controller=cart&action=checkout");
-                exit;
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart&action=checkout");
+                    exit;
+                }
             }
 
             // Lưu đơn hàng
@@ -152,24 +223,57 @@ class OrderController {
 
                     $this->conn->commit();
                     unset($_SESSION['cart']);
-                    $_SESSION['order_message'] = "Đơn hàng đã được tạo thành công.";
+                    $response = [
+                        'status' => 'success',
+                        'message' => 'Đơn hàng đã được tạo thành công.',
+                        'redirect' => "index.php?controller=order&action=success&id=$order_id"
+                    ];
                     error_log("DEBUG: OrderController::create - Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                    header("Location: index.php?controller=order&action=success&id=$order_id");
+                    if ($isAjax) {
+                        header('Content-Type: application/json');
+                        echo json_encode($response);
+                        exit;
+                    } else {
+                        $_SESSION['order_message'] = $response['message'];
+                        header("Location: index.php?controller=order&action=success&id=$order_id");
+                        exit;
+                    }
                 } else {
                     throw new Exception("Không thể tạo đơn hàng.");
                 }
             } catch (Exception $e) {
                 $this->conn->rollBack();
-                error_log("ERROR: OrderController::create - Failed: " . $e->getMessage() . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                $_SESSION['order_message'] = "Lỗi khi tạo đơn hàng: " . $e->getMessage();
-                header("Location: index.php?controller=cart&action=checkout");
+                $error_message = "Lỗi khi tạo đơn hàng: " . $e->getMessage();
+                error_log("ERROR: OrderController::create - Failed: $error_message\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                $response = [
+                    'status' => 'error',
+                    'message' => $error_message
+                ];
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    $_SESSION['order_message'] = $response['message'];
+                    header("Location: index.php?controller=cart&action=checkout");
+                    exit;
+                }
             }
-            exit;
         }
 
+        $response = [
+            'status' => 'error',
+            'message' => 'Yêu cầu không hợp lệ.'
+        ];
         error_log("DEBUG: OrderController::create - Not a POST request\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-        header("Location: index.php?controller=cart");
-        exit;
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode($response);
+            exit;
+        } else {
+            header("Location: index.php?controller=cart");
+            exit;
+        }
     }
     
     public function view() {
