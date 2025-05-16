@@ -57,6 +57,21 @@
             padding: 8px 15px;
         }
 
+        /* Tùy chỉnh top bar */
+        .top-bar .small {
+            font-size: 0.75rem;
+        }
+
+        .top-bar .admin-link {
+            color: var(--accent-color); /* Màu nổi bật cho liên kết admin */
+            transition: color 0.3s ease;
+        }
+
+        .top-bar .admin-link:hover {
+            color: #FFD700; /* Màu hover sáng hơn */
+            text-decoration: none;
+        }
+
         /* Tùy chỉnh cho mobile */
         @media (max-width: 767.98px) {
             .site-logo {
@@ -90,11 +105,14 @@
                 font-size: 0.65rem;
                 padding: 3px 6px;
             }
-        }
 
-        /* Tùy chỉnh top bar */
-        .top-bar .small {
-            font-size: 0.75rem;
+            .top-bar .small {
+                font-size: 0.7rem;
+            }
+
+            .top-bar .admin-link {
+                margin-left: 1rem;
+            }
         }
     </style>
 </head>
@@ -129,16 +147,26 @@
                         <a href="index.php?controller=user&action=orders" class="text-light me-3">
                             <i class="fas fa-box me-1"></i> Đơn hàng
                         </a>
-                        <a href="index.php?controller=user&action=logout" class="text-light">
+                        <a href="index.php?controller=user&action=logout" class="text-light me-3">
                             <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
                         </a>
+                        <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
+                            <a href="index.php?controller=admin&action=dashboard" class="admin-link">
+                                <i class="fas fa-cog me-1"></i> Admin
+                            </a>
+                        <?php endif; ?>
                     <?php else: ?>
                         <a href="index.php?controller=user&action=login" class="text-light me-3">
                             <i class="fas fa-sign-in-alt me-1"></i> Đăng nhập
                         </a>
-                        <a href="index.php?controller=user&action=register" class="text-light">
+                        <a href="index.php?controller=user&action=register" class="text-light me-3">
                             <i class="fas fa-user-plus me-1"></i> Đăng ký
                         </a>
+                        <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
+                            <a href="index.php?controller=admin&action=dashboard" class="admin-link">
+                                <i class="fas fa-cog me-1"></i> Admin
+                            </a>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
