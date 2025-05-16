@@ -65,29 +65,29 @@ include 'views/layouts/header.php';
                 <form action="index.php?controller=cart&action=checkout" method="POST" id="checkout-form">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="full_name" class="form-label">Người nhận <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" required value="<?php echo isset($user_data['full_name']) ? htmlspecialchars($user_data['full_name']) : ''; ?>">
+                            <label for="shipping_name" class="form-label">Người nhận <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shipping_name" name="shipping_name" required value="<?php echo isset($user_data['full_name']) ? htmlspecialchars($user_data['full_name']) : ''; ?>">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" required value="<?php echo isset($user_data['email']) ? htmlspecialchars($user_data['email']) : ''; ?>">
+                            <label for="customer_email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="customer_email" name="customer_email" required value="<?php echo isset($user_data['email']) ? htmlspecialchars($user_data['email']) : ''; ?>">
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
-                            <input type="tel" class="form-control" id="phone" name="phone" required value="<?php echo isset($user_data['phone']) ? htmlspecialchars($user_data['phone']) : ''; ?>">
+                            <label for="shipping_phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="shipping_phone" name="shipping_phone" required value="<?php echo isset($user_data['phone']) ? htmlspecialchars($user_data['phone']) : ''; ?>">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="city" class="form-label">Thành phố <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="city" name="city" required value="<?php echo isset($user_data['city']) ? htmlspecialchars($user_data['city']) : ''; ?>">
+                            <label for="shipping_city" class="form-label">Thành phố <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shipping_city" name="shipping_city" required value="<?php echo isset($user_data['city']) ? htmlspecialchars($user_data['city']) : ''; ?>">
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="address" class="form-label">Địa chỉ <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="address" name="address" rows="3" required><?php echo isset($user_data['address']) ? htmlspecialchars($user_data['address']) : ''; ?></textarea>
+                        <label for="shipping_address" class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="shipping_address" name="shipping_address" rows="3" required><?php echo isset($user_data['address']) ? htmlspecialchars($user_data['address']) : ''; ?></textarea>
                     </div>
                     
                     <div class="mb-4">
@@ -229,9 +229,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
+            // Validate email format
+            const emailField = document.getElementById('customer_email');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailField && !emailRegex.test(emailField.value.trim())) {
+                isValid = false;
+                emailField.classList.add('is-invalid');
+                if (!document.getElementById('email-error')) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.id = 'email-error';
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.textContent = 'Vui lòng nhập email hợp lệ.';
+                    emailField.parentNode.appendChild(errorDiv);
+                }
+            } else if (emailField) {
+                emailField.classList.remove('is-invalid');
+                const errorDiv = document.getElementById('email-error');
+                if (errorDiv) errorDiv.remove();
+            }
+            
             if (!isValid) {
                 event.preventDefault();
-                alert('Vui lòng điền đầy đủ các trường bắt buộc.');
+                alert('Vui lòng điền đầy đủ và đúng các trường bắt buộc.');
             }
         });
     }
