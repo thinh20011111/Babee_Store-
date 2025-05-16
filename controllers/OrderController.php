@@ -239,8 +239,13 @@ class OrderController {
                         }
                     }
 
-                    error_log("DEBUG: Temporarily bypassing email confirmation for order processing\n", 3, "/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log");
-                    // $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
+                    // Gửi email xác nhận
+                    try {
+                        $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
+                        error_log("DEBUG: Email xác nhận đã được gửi thành công cho {$this->order->customer_email}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                    } catch (Exception $e) {
+                        error_log("CẢNH BÁO: Không gửi được email xác nhận, nhưng đơn hàng vẫn được tạo: {$e->getMessage()}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                    }
 
                     $this->conn->commit();
                     error_log("DEBUG: Transaction committed successfully\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
@@ -478,20 +483,29 @@ class OrderController {
     private function sendOrderConfirmationEmail($order_id, $customer_email) {
         $mail = new PHPMailer(true);
         try {
+            // Bật debug SMTP
+            $mail->SMTPDebug = 2;
+            $mail->Debugoutput = function($str, $level) {
+                error_log("SMTP DEBUG [$level]: $str\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            };
+
+            // Lấy email admin từ cơ sở dữ liệu
             $query = "SELECT setting_value FROM settings WHERE setting_key = 'contact_email'";
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $admin_email = $stmt->fetchColumn() ?: 'babeemoonstore@gmail.com';
-    
+
+            // Cấu hình SMTP
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'babeemoonstore@gmail.com';
-            $mail->Password = 'hlsw gjpq smqt norf'; // Thay bằng mật khẩu ứng dụng thực tế
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Sử dụng TLS
-            $mail->Port = 587; // Cổng 587
+            $mail->Password = 'YOUR_APP_PASSWORD'; // Thay bằng mật khẩu ứng dụng từ test_smtp.php
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
             $mail->CharSet = 'UTF-8';
 
+            // Lấy thông tin đơn hàng
             $this->order->id = $order_id;
             $this->order->readOne();
             $order_details = $this->order->getOrderDetails();
@@ -500,6 +514,7 @@ class OrderController {
                 $items_list .= "- {$item['product_name']} (x{$item['quantity']}): ₫" . number_format($item['price'], 0, ',', '.') . "\n";
             }
 
+            // Gửi email cho khách hàng
             $mail->setFrom($admin_email, 'StreetStyle');
             $mail->addAddress($customer_email, $this->order->shipping_name);
             $mail->isHTML(true);
@@ -519,6 +534,7 @@ class OrderController {
             ";
             $mail->send();
 
+            // Gửi email cho admin
             $mail->clearAddresses();
             $mail->addAddress($admin_email, 'Admin StreetStyle');
             $mail->Subject = "Đơn hàng mới #{$this->order->order_number}";
@@ -537,7 +553,7 @@ class OrderController {
 
             error_log("DEBUG: OrderController::sendOrderConfirmationEmail - Email sent to $customer_email and $admin_email\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
         } catch (Exception $e) {
-            error_log("Lỗi gửi email: {$mail->ErrorInfo}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            error_log("LỖI: OrderController::sendOrderConfirmationEmail - Failed: {$mail->ErrorInfo}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             throw new Exception("Không thể gửi email xác nhận: {$mail->ErrorInfo}");
         }
     }
