@@ -19,15 +19,19 @@ class OrderController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Log raw POST data with encoding info
+            // Debug: Hiển thị $_POST raw
+            echo "<pre>DEBUG: Raw POST ($_POST):\n";
+            var_dump($_POST);
+            echo "</pre>";
+
+            // Debug: Hiển thị php://input
             $raw_post = file_get_contents('php://input');
-            error_log("DEBUG: OrderController::create - Raw POST (php://input): $raw_post\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            error_log("DEBUG: OrderController::create - Raw POST ($_POST): " . print_r($_POST, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            echo "<pre>DEBUG: Raw POST (php://input): $raw_post\n";
+            echo "</pre>";
 
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
             if (empty($cart)) {
                 $_SESSION['order_message'] = "Giỏ hàng trống.";
-                error_log("DEBUG: OrderController::create - Empty cart\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart");
                 exit;
             }
@@ -48,13 +52,16 @@ class OrderController {
             $this->order->shipping_name = trim($raw_shipping_name);
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-            // Debug: Log shipping_name with encoding check
-            error_log("DEBUG: OrderController::create - Raw shipping_name (before trim): '$raw_shipping_name' (length: " . mb_strlen($raw_shipping_name, 'UTF-8') . ")\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            error_log("DEBUG: OrderController::create - Trimmed shipping_name: '{$this->order->shipping_name}' (length: " . mb_strlen($this->order->shipping_name, 'UTF-8') . ")\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            error_log("DEBUG: OrderController::create - total_amount: {$this->order->total_amount}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            // Debug: Hiển thị shipping_name trước và sau trim
+            echo "<pre>DEBUG: Raw shipping_name (before trim): '$raw_shipping_name' (length: " . mb_strlen($raw_shipping_name, 'UTF-8') . ")\n";
+            echo "DEBUG: Trimmed shipping_name: '{$this->order->shipping_name}' (length: " . mb_strlen($this->order->shipping_name, 'UTF-8') . ")\n";
+            echo "</pre>";
 
-            // Validate required fields with UTF-8 support
-            if (!isset($_POST['shipping_name']) || mb_strlen(trim($raw_shipping_name), 'UTF-8') === 0) {
+            // Dừng để xem debug
+            die("DEBUG: Stopped for inspection");
+
+            // Validate required fields
+            if (!isset($_POST['shipping_name']) || mb_strlen($this->order->shipping_name, 'UTF-8') === 0) {
                 $_SESSION['order_message'] = "Vui lòng nhập tên người nhận.";
                 error_log("ERROR: OrderController::create - Validation failed: shipping_name is empty or not set (raw: '$raw_shipping_name', trimmed: '{$this->order->shipping_name}')\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 header("Location: index.php?controller=cart&action=checkout");
@@ -90,7 +97,6 @@ class OrderController {
             $this->conn->beginTransaction();
             try {
                 if ($order_id = $this->order->create()) {
-                    // Tạo các mục đơn hàng
                     foreach ($cart as $item) {
                         $query = "INSERT INTO order_items (order_id, product_id, variant_id, quantity, price) 
                                   VALUES (:order_id, :product_id, :variant_id, :quantity, :price)";
@@ -104,7 +110,6 @@ class OrderController {
                             ':price' => $price
                         ]);
 
-                        // Cập nhật tồn kho
                         $product = new Product($this->conn);
                         $product->id = $item['product_id'];
                         if (!$product->updateVariantStock($item['variant_id'], $item['quantity'])) {
@@ -112,7 +117,6 @@ class OrderController {
                         }
                     }
 
-                    // Gửi email xác nhận
                     $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
 
                     $this->conn->commit();
@@ -132,7 +136,6 @@ class OrderController {
             exit;
         }
 
-        // Nếu không phải POST, chuyển hướng về giỏ hàng
         error_log("DEBUG: OrderController::create - Not a POST request\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
         header("Location: index.php?controller=cart");
         exit;
