@@ -482,14 +482,14 @@ class OrderController {
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             $admin_email = $stmt->fetchColumn() ?: 'babeemoonstore@gmail.com';
-
+    
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'babeemoonstore@gmail.com';
-            $mail->Password = 'hlsw gjpq smqt norf';
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            $mail->Port = 465;
+            $mail->Password = 'hlsw gjpq smqt norf'; // Thay bằng mật khẩu ứng dụng thực tế
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Sử dụng TLS
+            $mail->Port = 587; // Cổng 587
             $mail->CharSet = 'UTF-8';
 
             $this->order->id = $order_id;
