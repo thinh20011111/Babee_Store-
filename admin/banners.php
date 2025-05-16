@@ -117,6 +117,9 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 <li class="nav-item">
                     <a class="nav-link text-white active" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white active" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
+                </li>
             </ul>
         </div>
 
