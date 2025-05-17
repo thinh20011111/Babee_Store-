@@ -108,7 +108,7 @@ $current_settings = $settings->loadSettings();
                     <a class="nav-link text-white active" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white active" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
+                    <a class="nav-link text-white" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
                 </li>
             </ul>
         </div>

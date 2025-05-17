@@ -360,7 +360,7 @@ if (!defined('CURRENCY')) {
             <h4 class="text-center mb-4">Admin Panel</h4>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
+                    <a class="nav-link text-white active" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-white" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
@@ -375,13 +375,13 @@ if (!defined('CURRENCY')) {
                     <a class="nav-link text-white" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white active" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
+                    <a class="nav-link text-white" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white active" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
+                    <a class="nav-link text-white" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white active" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
+                    <a class="nav-link text-white" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
                 </li>
             </ul>
         </div>
