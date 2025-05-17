@@ -430,14 +430,14 @@ class OrderController {
 
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($order_id <= 0) {
-            error_log("DEBUG: OrderController::success - Invalid order_id: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            echo "<pre>DEBUG: OrderController::success - Invalid order_id: $order_id</pre>";
             header("Location: index.php?controller=home");
             exit;
         }
         
         $this->order->id = $order_id;
         if (!$this->order->readOne()) {
-            error_log("DEBUG: OrderController::success - readOne failed for order_id: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+            echo "<pre>DEBUG: OrderController::success - readOne failed for order_id: $order_id</pre>";
             header("Location: index.php?controller=home");
             exit;
         }
@@ -447,8 +447,16 @@ class OrderController {
         while ($item = $order_details->fetch(PDO::FETCH_ASSOC)) {
             $items_debug[] = $item;
         }
-        error_log("DEBUG: OrderController::success - order_details for order_id $order_id: " . print_r($items_debug, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+        echo "<pre>DEBUG: OrderController::success - order_details for order_id $order_id:\n";
+        echo print_r($items_debug, true);
+        echo "</pre>";
+
+        // Reset con trỏ bằng cách gọi lại getOrderDetails
         $order_details = $this->order->getOrderDetails();
+        echo "<pre>DEBUG: OrderController::success - order_details rowCount: " . $order_details->rowCount() . "</pre>";
+
+        // Gán cho view
+        $order_items = $order_details;
         include 'views/order/view.php';
     }
     
