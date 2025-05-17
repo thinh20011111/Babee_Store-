@@ -102,7 +102,7 @@ include 'views/layouts/header.php';
                             <?php endif; ?>
                         </a>
                         <?php if($product['is_sale'] == 1 && !empty($product['sale_price']) && $product['sale_price'] < $product['price']): ?>
-                        <div class="product-badge bg-danger text-white position-absolute top-0 end-0 m-2 px-2 py-1 rounded">Sale</div>
+                        <div class="product-badge bg-danger text-white position-absolute top-0 m-2 px-2 py-1 rounded">Sale</div>
                         <?php endif; ?>
                     </div>
                     <div class="card-body d-flex flex-column">
