@@ -83,7 +83,7 @@ class ProductController {
         }
         
         // Khởi tạo file log
-        $log_file = 'logs/debug.log'; // Chuyển sang thư mục logs/ trong dự án để tránh vấn đề quyền
+        $log_file = 'logs/debug.log';
         if (!file_exists(dirname($log_file))) {
             mkdir(dirname($log_file), 0755, true);
         }
@@ -117,7 +117,8 @@ class ProductController {
                 'price' => $this->product->price,
                 'sale_price' => $this->product->sale_price,
                 'category_id' => $this->product->category_id,
-                'image' => $this->product->image
+                'image' => $this->product->image,
+                'images' => $this->product->images
             ], JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
@@ -128,7 +129,7 @@ class ProductController {
         
         // Get variants
         try {
-            $variants = $this->product->variants; // Đã được gán trong readOne
+            $variants = $this->product->variants;
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variants for product ID $product_id: " . json_encode($variants, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc variants: " . $e->getMessage() . "\n", FILE_APPEND);
@@ -176,7 +177,7 @@ class ProductController {
         // Load product detail view
         try {
             extract($data);
-            $view_path = __DIR__ . '/../views/products/detail.php'; // Sửa thành detail.php
+            $view_path = __DIR__ . '/../views/products/detail.php';
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đường dẫn view được thử: $view_path\n", FILE_APPEND);
             if (!file_exists($view_path)) {
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $view_path không tồn tại\n", FILE_APPEND);
@@ -193,6 +194,235 @@ class ProductController {
         }
     }
     
+    // Create new product (Admin)
+    public function create() {
+        // Khởi tạo session
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Khởi tạo file log
+        $log_file = 'logs/debug.log';
+        if (!file_exists(dirname($log_file))) {
+            mkdir(dirname($log_file), 0755, true);
+        }
+        
+        // Ghi log bắt đầu
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::create\n", FILE_APPEND);
+        
+        // Kiểm tra quyền admin
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không có quyền admin\n", FILE_APPEND);
+            $_SESSION['error_message'] = "Bạn không có quyền thêm sản phẩm.";
+            header("Location: index.php?controller=product&action=list");
+            exit;
+        }
+        
+        // Xử lý form
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $this->product->name = trim($_POST['name'] ?? '');
+                $this->product->description = trim($_POST['description'] ?? '');
+                $this->product->price = floatval($_POST['price'] ?? 0);
+                $this->product->sale_price = floatval($_POST['sale_price'] ?? 0);
+                $this->product->category_id = intval($_POST['category_id'] ?? 0);
+                $this->product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
+                $this->product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
+                
+                // Kiểm tra dữ liệu đầu vào
+                if (empty($this->product->name) || $this->product->price <= 0 || $this->product->category_id <= 0) {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
+                    $_SESSION['error_message'] = "Vui lòng điền đầy đủ thông tin sản phẩm.";
+                    header("Location: index.php?controller=product&action=create");
+                    exit;
+                }
+                
+                // Xử lý upload ảnh
+                $upload_dir = 'uploads/images/';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0755, true);
+                }
+                
+                // Ảnh chính
+                if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
+                    $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
+                    if (!move_uploaded_file($_FILES['main_image']['tmp_name'], $main_image_path)) {
+                        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh chính\n", FILE_APPEND);
+                        $_SESSION['error_message'] = "Lỗi khi upload ảnh chính.";
+                        header("Location: index.php?controller=product&action=create");
+                        exit;
+                    }
+                    $this->product->image = $main_image_path;
+                } else {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Thiếu ảnh chính\n", FILE_APPEND);
+                    $_SESSION['error_message'] = "Vui lòng chọn ảnh chính.";
+                    header("Location: index.php?controller=product&action=create");
+                    exit;
+                }
+                
+                // Ảnh bổ sung
+                $this->product->images = [];
+                if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+                    foreach ($_FILES['additional_images']['name'] as $key => $name) {
+                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
+                            $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
+                            $image_path = $upload_dir . time() . '_' . basename($name);
+                            if (move_uploaded_file($tmp_name, $image_path)) {
+                                $this->product->images[] = $image_path;
+                            } else {
+                                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh bổ sung: $name\n", FILE_APPEND);
+                            }
+                        }
+                    }
+                }
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Additional images: " . json_encode($this->product->images) . "\n", FILE_APPEND);
+                
+                // Tạo sản phẩm
+                if ($product_id = $this->product->create()) {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Tạo sản phẩm thành công, ID: $product_id\n", FILE_APPEND);
+                    $_SESSION['success_message'] = "Tạo sản phẩm thành công.";
+                    header("Location: index.php?controller=product&action=list");
+                    exit;
+                } else {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi tạo sản phẩm\n", FILE_APPEND);
+                    $_SESSION['error_message'] = "Lỗi khi tạo sản phẩm.";
+                    header("Location: index.php?controller=product&action=create");
+                    exit;
+                }
+            } catch (Exception $e) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi tạo sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
+                $_SESSION['error_message'] = "Lỗi khi tạo sản phẩm: " . htmlspecialchars($e->getMessage());
+                header("Location: index.php?controller=product&action=create");
+                exit;
+            }
+        }
+        
+        // Load form tạo sản phẩm
+        $categories = $this->category->read()->fetchAll(PDO::FETCH_ASSOC);
+        include 'views/admin/products/create.php';
+    }
+    
+    // Update existing product (Admin)
+    public function update() {
+        // Khởi tạo session
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Khởi tạo file log
+        $log_file = 'logs/debug.log';
+        if (!file_exists(dirname($log_file))) {
+            mkdir(dirname($log_file), 0755, true);
+        }
+        
+        // Ghi log bắt đầu
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::update\n", FILE_APPEND);
+        
+        // Kiểm tra quyền admin
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không có quyền admin\n", FILE_APPEND);
+            $_SESSION['error_message'] = "Bạn không có quyền chỉnh sửa sản phẩm.";
+            header("Location: index.php?controller=product&action=list");
+            exit;
+        }
+        
+        // Get product ID
+        $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if ($product_id <= 0) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID không hợp lệ\n", FILE_APPEND);
+            $_SESSION['error_message'] = "ID sản phẩm không hợp lệ.";
+            header("Location: index.php?controller=product&action=list");
+            exit;
+        }
+        
+        // Load product data
+        $this->product->id = $product_id;
+        if (!$this->product->readOne()) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy sản phẩm với ID $product_id\n", FILE_APPEND);
+            $_SESSION['error_message'] = "Không tìm thấy sản phẩm.";
+            header("Location: index.php?controller=product&action=list");
+            exit;
+        }
+        
+        // Xử lý form
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $this->product->name = trim($_POST['name'] ?? '');
+                $this->product->description = trim($_POST['description'] ?? '');
+                $this->product->price = floatval($_POST['price'] ?? 0);
+                $this->product->sale_price = floatval($_POST['sale_price'] ?? 0);
+                $this->product->category_id = intval($_POST['category_id'] ?? 0);
+                $this->product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
+                $this->product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
+                
+                // Kiểm tra dữ liệu đầu vào
+                if (empty($this->product->name) || $this->product->price <= 0 || $this->product->category_id <= 0) {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
+                    $_SESSION['error_message'] = "Vui lòng điền đầy đủ thông tin sản phẩm.";
+                    header("Location: index.php?controller=product&action=update&id=$product_id");
+                    exit;
+                }
+                
+                // Xử lý upload ảnh
+                $upload_dir = 'uploads/images/';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0755, true);
+                }
+                
+                // Ảnh chính
+                if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
+                    $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
+                    if (!move_uploaded_file($_FILES['main_image']['tmp_name'], $main_image_path)) {
+                        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh chính\n", FILE_APPEND);
+                        $_SESSION['error_message'] = "Lỗi khi upload ảnh chính.";
+                        header("Location: index.php?controller=product&action=update&id=$product_id");
+                        exit;
+                    }
+                    $this->product->image = $main_image_path;
+                }
+                
+                // Ảnh bổ sung
+                $this->product->images = [];
+                if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+                    foreach ($_FILES['additional_images']['name'] as $key => $name) {
+                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
+                            $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
+                            $image_path = $upload_dir . time() . '_' . basename($name);
+                            if (move_uploaded_file($tmp_name, $image_path)) {
+                                $this->product->images[] = $image_path;
+                            } else {
+                                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh bổ sung: $name\n", FILE_APPEND);
+                            }
+                        }
+                    }
+                }
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Additional images: " . json_encode($this->product->images) . "\n", FILE_APPEND);
+                
+                // Cập nhật sản phẩm
+                if ($this->product->update()) {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cập nhật sản phẩm thành công, ID: $product_id\n", FILE_APPEND);
+                    $_SESSION['success_message'] = "Cập nhật sản phẩm thành công.";
+                    header("Location: index.php?controller=product&action=list");
+                    exit;
+                } else {
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm\n", FILE_APPEND);
+                    $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm.";
+                    header("Location: index.php?controller=product&action=update&id=$product_id");
+                    exit;
+                }
+            } catch (Exception $e) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
+                $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm: " . htmlspecialchars($e->getMessage());
+                header("Location: index.php?controller=product&action=update&id=$product_id");
+                exit;
+            }
+        }
+        
+        // Load form cập nhật sản phẩm
+        $categories = $this->category->read()->fetchAll(PDO::FETCH_ASSOC);
+        include 'views/admin/products/update.php';
+    }
+    
     // Add product to cart (AJAX)
     public function addToCart() {
         // Đảm bảo session đã được khởi tạo
@@ -201,7 +431,7 @@ class ProductController {
         }
 
         // Khởi tạo file log
-        $log_file = '/tmp/debug.log';
+        $log_file = 'logs/debug.log';
         if (!file_exists(dirname($log_file))) {
             mkdir(dirname($log_file), 0755, true);
         }
