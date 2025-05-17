@@ -163,7 +163,7 @@
                             <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
                         </a>
                         <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin'): ?>
-                            <a href="admin/dashboard.php" class="admin-link">
+                            <a href="/admin/index.php?page=dashboard" class="admin-link">
                                 <i class="fas fa-cog me-1"></i> Admin
                             </a>
                         <?php endif; ?>
