@@ -41,26 +41,23 @@ $page = filter_input(INPUT_GET, 'page', FILTER_SANITIZE_STRING) ?: 'dashboard';
 
 // Define allowed pages for all roles
 $allowed_pages = [
-    'dashboard', 'products', 'product-edit', 'orders', 'users', 'traffic'
+    'dashboard', 'orders', 'products', 'product-edit', 'users', 'traffic',
+    'banners', 'settings', 'promotions', 'reports'
 ];
 
-// Add admin-only pages
-if ($_SESSION['user_role'] == 'admin') {
-    $allowed_pages = array_merge($allowed_pages, [
-        'promotions', 'banners', 'settings', 'reports'
-    ]);
+// Restrict staff access
+if ($_SESSION['user_role'] === 'staff') {
+    $allowed_pages = array_intersect($allowed_pages, ['dashboard', 'orders', 'products', 'product-edit', 'traffic']);
 }
 
 // Validate the requested page
 if (!in_array($page, $allowed_pages)) {
-    $debug_logs[] = "Invalid page requested: $page";
+    $debug_logs[] = "Invalid page requested: $page, redirecting to dashboard";
     $page = 'dashboard';
 }
 
-// Traffic page debug
-if ($page === 'traffic') {
-    $debug_logs[] = "Traffic page accessed by user_role: {$_SESSION['user_role']}";
-}
+// Log page access
+$debug_logs[] = "Page accessed: $page by user_role: {$_SESSION['user_role']}";
 
 // Khởi tạo biến cho product-edit
 $product = null;
@@ -149,7 +146,7 @@ if ($page === 'dashboard') {
         $start_date = date('Y-m-d', strtotime('-7 days'));
         $traffic_stats = $traffic->getStatsRange($start_date, $end_date);
         if (empty($traffic_stats) && file_exists('../models/sample/traffic_data.php')) {
-            require_once '../models/sample/traffic_dataga.php';
+            require_once '../models/sample/traffic_data.php';
             $traffic_stats = array_slice(getSampleDailyTraffic(), -7);
         }
         foreach ($traffic_stats as $stat) {
@@ -224,9 +221,22 @@ if (!defined('CURRENCY')) {
                 }
             } else {
                 $debug_logs[] = "Page not found: $page_file";
-                echo "<div class='alert alert-danger'>Page not found: " . htmlspecialchars($page) . "</div>";
+                echo "<div class='alert alert-warning'>Trang <strong>" . htmlspecialchars($page) . "</strong> đang được phát triển.</div>";
             }
             ?>
+
+            <!-- Debug Info -->
+            <?php if (DEBUG_MODE && !empty($debug_logs)): ?>
+            <div class="debug-info p-3 bg-light rounded shadow-sm mt-4">
+                <h6 class="fw-bold text-muted"><i class="fas fa-bug me-2"></i>Debug Information</h6>
+                <ul class="mb-0">
+                    <?php foreach ($debug_logs as $log): ?>
+                    <li><?php echo htmlspecialchars($log); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
+
             <?php include_once 'includes/footer.php'; ?>
         </div>
     </div>

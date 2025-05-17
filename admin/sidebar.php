@@ -22,7 +22,7 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
 
 // Define accessible pages for roles
 $accessible_pages = [
-    'admin' => ['dashboard', 'orders', 'products', 'users', 'traffic', 'banners', 'settings', 'promotions'],
+    'admin' => ['dashboard', 'orders', 'products', 'users', 'traffic', 'banners', 'settings', 'promotions', 'reports'],
     'staff' => ['dashboard', 'orders', 'products', 'traffic']
 ];
 
@@ -96,6 +96,14 @@ $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashbo
         <li class="nav-item">
             <a class="nav-link text-white <?php echo ($current_page === 'promotions') ? 'active bg-primary rounded' : ''; ?>" href="index.php?page=promotions">
                 <i class="fas fa-tags me-2"></i> Khuyến mãi
+            </a>
+        </li>
+        <?php endif; ?>
+        
+        <?php if (in_array('reports', $accessible_pages[$user_role])): ?>
+        <li class="nav-item">
+            <a class="nav-link text-white <?php echo ($current_page === 'reports') ? 'active bg-primary rounded' : ''; ?>" href="index.php?page=reports">
+                <i class="fas fa-chart-bar me-2"></i> Báo cáo
             </a>
         </li>
         <?php endif; ?>
