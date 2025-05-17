@@ -703,18 +703,6 @@ if (!defined('CURRENCY')) {
                     </div>
                 </div>
             </div>
-
-            <!-- Debug Info -->
-            <?php if (defined('DEBUG_MODE') && DEBUG_MODE && !empty($debug_logs)): ?>
-            <div class="debug-info">
-                <h6 class="fw-bold text-muted"><i class="fas fa-bug me-2"></i>Thông tin Debug</h6>
-                <ul class="mb-0">
-                    <?php foreach ($debug_logs as $log): ?>
-                    <li><?php echo htmlspecialchars($log); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
         </div>
     </div>
 
