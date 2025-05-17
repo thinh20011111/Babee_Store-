@@ -17,7 +17,7 @@ class Product {
     public $created_at;
     public $updated_at;
     public $variants; // Store product variants
-    public $images;  // Store product images
+    public $images;  // Store additional product images for admin/user detail views
     
     // Constructor with DB connection
     public function __construct($db) {
@@ -44,14 +44,7 @@ class Product {
         
         $stmt->execute();
         
-        // Fetch products and their images
-        $products = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $row['images'] = $this->getImages($row['id']);
-            $products[] = $row;
-        }
-        
-        return $products;
+        return $stmt;
     }
     
     // Read featured products
@@ -72,14 +65,7 @@ class Product {
             $stmt->bindParam(1, $limit, PDO::PARAM_INT);
             $stmt->execute();
             
-            // Fetch products and their images
-            $products = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $row['images'] = $this->getImages($row['id']);
-                $products[] = $row;
-            }
-            
-            return $products;
+            return $stmt;
         } catch(PDOException $e) {
             error_log("Database error in Product::readFeatured: " . $e->getMessage());
             return false;
@@ -104,14 +90,7 @@ class Product {
             $stmt->bindParam(1, $limit, PDO::PARAM_INT);
             $stmt->execute();
             
-            // Fetch products and their images
-            $products = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $row['images'] = $this->getImages($row['id']);
-                $products[] = $row;
-            }
-            
-            return $products;
+            return $stmt;
         } catch(PDOException $e) {
             error_log("Database error in Product::readAllSale: " . $e->getMessage());
             return false;
@@ -136,14 +115,7 @@ class Product {
         $stmt->bindParam(3, $items_per_page, PDO::PARAM_INT);
         $stmt->execute();
         
-        // Fetch products and their images
-        $products = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $row['images'] = $this->getImages($row['id']);
-            $products[] = $row;
-        }
-        
-        return $products;
+        return $stmt;
     }
     
     // Read related products (same category, exclude current product)
@@ -166,14 +138,7 @@ class Product {
             $stmt->bindParam(3, $limit, PDO::PARAM_INT);
             $stmt->execute();
             
-            // Fetch products and their images
-            $products = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $row['images'] = $this->getImages($row['id']);
-                $products[] = $row;
-            }
-            
-            return $products;
+            return $stmt;
         } catch(PDOException $e) {
             error_log("Database error in Product::readRelatedProducts: " . $e->getMessage());
             return false;
@@ -199,14 +164,7 @@ class Product {
             $stmt->bindParam(2, $limit, PDO::PARAM_INT);
             $stmt->execute();
             
-            // Fetch products and their images
-            $products = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $row['images'] = $this->getImages($row['id']);
-                $products[] = $row;
-            }
-            
-            return $products;
+            return $stmt;
         } catch(PDOException $e) {
             error_log("Database error in Product::readSale with pagination: " . $e->getMessage());
             return false;
@@ -259,7 +217,7 @@ class Product {
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
             $this->variants = $this->getVariants();
-            $this->images = $this->getImages($this->id);
+            $this->images = $this->getImages($this->id); // Load additional images
             return true;
         }
         
@@ -312,46 +270,21 @@ class Product {
         }
     }
     
-    // Update product image
-    public function updateImage($image_id, $image_path) {
+    // Delete all images for a product
+    public function deleteImages($product_id) {
         try {
-            $query = "UPDATE product_images 
-                      SET image = ?, created_at = NOW() 
-                      WHERE id = ?";
+            $query = "DELETE FROM product_images WHERE product_id = ?";
             $stmt = $this->conn->prepare($query);
-            
-            $image_path = htmlspecialchars(strip_tags($image_path));
-            
-            $stmt->bindParam(1, $image_path);
-            $stmt->bindParam(2, $image_id, PDO::PARAM_INT);
+            $stmt->bindParam(1, $product_id, PDO::PARAM_INT);
             
             if ($stmt->execute()) {
-                error_log("Updated image ID: {$image_id}, new path: {$image_path}");
+                error_log("Deleted all images for product ID: {$product_id}");
                 return true;
             }
             
             return false;
         } catch (PDOException $e) {
-            error_log("Error updating image ID: {$image_id} - " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    // Delete product image
-    public function deleteImage($image_id) {
-        try {
-            $query = "DELETE FROM product_images WHERE id = ?";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(1, $image_id, PDO::PARAM_INT);
-            
-            if ($stmt->execute()) {
-                error_log("Deleted image ID: {$image_id}");
-                return true;
-            }
-            
-            return false;
-        } catch (PDOException $e) {
-            error_log("Error deleting image ID: {$image_id} - " . $e->getMessage());
+            error_log("Error deleting images for product ID: {$product_id} - " . $e->getMessage());
             return false;
         }
     }
@@ -412,7 +345,7 @@ class Product {
         if ($stmt->execute()) {
             $this->id = $this->conn->lastInsertId();
             // Add additional images if provided
-            if (!empty($this->images)) {
+            if (!empty($this->images) && is_array($this->images)) {
                 foreach ($this->images as $image_path) {
                     $this->addImage($this->id, $image_path);
                 }
@@ -467,13 +400,9 @@ class Product {
         // Execute the query
         if ($stmt->execute()) {
             // Update additional images if provided
-            if (isset($this->images)) {
-                // Optionally, delete existing images
-                $query = "DELETE FROM product_images WHERE product_id = ?";
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(1, $this->id, PDO::PARAM_INT);
-                $stmt->execute();
-                
+            if (isset($this->images) && is_array($this->images)) {
+                // Delete existing images
+                $this->deleteImages($this->id);
                 // Add new images
                 foreach ($this->images as $image_path) {
                     $this->addImage($this->id, $image_path);
@@ -530,14 +459,7 @@ class Product {
         // Execute query
         $stmt->execute();
         
-        // Fetch products and their images
-        $products = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $row['images'] = $this->getImages($row['id']);
-            $products[] = $row;
-        }
-        
-        return $products;
+        return $stmt;
     }
     
     // Count search results
@@ -574,7 +496,7 @@ class Product {
                     SUM(oi.quantity) as total_sold
                 FROM " . $this->table_name . " p
                 LEFT JOIN categories c ON p.category_id = c.id
-                LEFT JOIN order_details oi ON p.id = oi.product_id
+                LEFT JOIN order_items oi ON p.id = oi.product_id
                 GROUP BY p.id
                 ORDER BY total_sold DESC
                 LIMIT ?";
@@ -583,14 +505,7 @@ class Product {
         $stmt->bindParam(1, $limit, PDO::PARAM_INT);
         $stmt->execute();
         
-        // Fetch products and their images
-        $products = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $row['images'] = $this->getImages($row['id']);
-            $products[] = $row;
-        }
-        
-        return $products;
+        return $stmt;
     }
     
     // Update stock for a specific variant
