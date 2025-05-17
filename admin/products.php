@@ -44,7 +44,7 @@ if (!empty($search)) {
     $stmt = $product->readByCategory($category_id, $page, $items_per_page);
     $total_rows = $product->countByCategory($category_id);
 } else {
-    $stmt = $product->read($items_per_page);
+    $stmt = $product->read($items_per_page, $page);
     $total_rows = $product->countAll();
 }
 
@@ -80,6 +80,15 @@ while ($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
 if (!defined('CURRENCY')) {
     define('CURRENCY', 'đ');
 }
+
+// Debug output (for development)
+$debug_info = [
+    'total_rows' => $total_rows,
+    'total_pages' => $total_pages,
+    'current_page' => $page,
+    'items_per_page' => $items_per_page,
+    'products_count' => count($products)
+];
 ?>
 
 <!DOCTYPE html>
@@ -132,6 +141,18 @@ if (!defined('CURRENCY')) {
             font-size: 0.9rem;
             color: #6c757d;
             margin-bottom: 1rem;
+        }
+        .debug-info {
+            display: none; /* Enable in development */
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            max-width: 300px;
         }
     </style>
 </head>
@@ -304,7 +325,7 @@ if (!defined('CURRENCY')) {
                         </div>
                         
                         <!-- Pagination -->
-                        <?php if ($total_pages > 0): ?>
+                        <?php if ($total_rows > 0): ?>
                         <div class="pagination-info text-center">
                             Showing <?php echo $start_item; ?> to <?php echo $end_item; ?> of <?php echo $total_rows; ?> products
                         </div>
@@ -374,6 +395,16 @@ if (!defined('CURRENCY')) {
                         </nav>
                         <?php endif; ?>
                     </div>
+                </div>
+
+                <!-- Debug Info (Development Only) -->
+                <div class="debug-info">
+                    <strong>Debug Info:</strong><br>
+                    Total Rows: <?php echo $debug_info['total_rows']; ?><br>
+                    Total Pages: <?php echo $debug_info['total_pages']; ?><br>
+                    Current Page: <?php echo $debug_info['current_page']; ?><br>
+                    Items per Page: <?php echo $debug_info['items_per_page']; ?><br>
+                    Products Loaded: <?php echo $debug_info['products_count']; ?>
                 </div>
             </div>
         </div>
