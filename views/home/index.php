@@ -157,7 +157,7 @@ include 'views/layouts/header.php';
                             </div>
                             <?php endif; ?>
                         </a>
-                        <span class="badge bg-danger text-white text-uppercase position-absolute top-0 end-0 m-1 p-0" style="font-size: 0.65rem; line-height: 1; display: inline-block; z-index: 10;">Sale</span>
+                        <span class="badge bg-danger text-white text-uppercase position-absolute top-0 m-1 p-0" style="font-size: 0.65rem; line-height: 1; display: inline-block; z-index: 10;">Sale</span>
                     </div>
                     <div class="card-body d-flex flex-column">
                         <div class="product-category text-muted small mb-1"><?php echo htmlspecialchars($product['category_name'] ?? ''); ?></div>
