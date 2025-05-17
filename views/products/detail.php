@@ -81,7 +81,7 @@ endif; ?>
 
 <!-- Page Header with Breadcrumb -->
 <div class="category-header position-relative mb-5">
-    <div class="category-header-bg" style="background-color: var(--light-bg-color); height: 120px; position: relative; overflow: hidden;">
+    <div class="category-header-bg" style="background-color: #f8f9fa; height: 120px; position: relative; overflow: hidden;">
         <div class="container h-100">
             <div class="row h-100 align-items-center">
                 <div class="col-12">
@@ -96,7 +96,7 @@ endif; ?>
                 </div>
             </div>
         </div>
-        <div class="position-absolute" style="top:0; right:0; bottom:0; left:0; background: linear-gradient(135deg, rgba(255,45,85,0.1) 0%, rgba(74,0,224,0.05) 100%);"></div>
+        <div class="position-absolute" style="top:0; right:0; bottom:0; left:0; background: linear-gradient(135deg, rgba(0,123,255,0.1) 0%, rgba(255,45,85,0.05) 100%);"></div>
     </div>
 </div>
 
@@ -104,11 +104,11 @@ endif; ?>
     <div class="row">
         <!-- Product Images -->
         <div class="col-lg-6 mb-4 mb-lg-0">
-            <div class="product-image-container position-relative">
+            <div class="product-image-container position-relative shadow-sm rounded">
                 <?php if(!empty($product->image)): ?>
-                <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded shadow-sm border main-image" alt="<?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
+                <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded main-image" alt="<?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
                 <?php else: ?>
-                <div class="product-placeholder d-flex align-items-center justify-content-center bg-light rounded border" style="height: 500px;">
+                <div class="product-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 500px;">
                     <i class="fas fa-tshirt fa-6x text-secondary"></i>
                 </div>
                 <?php endif; ?>
@@ -152,7 +152,7 @@ endif; ?>
         
         <!-- Product Details -->
         <div class="col-lg-6">
-            <div class="product-category text-uppercase mb-2"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></div>
+            <div class="product-category text-uppercase mb-2 text-primary"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></div>
             <h1 class="product-title mb-3"><?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?></h1>
             
             <!-- Price -->
@@ -174,14 +174,14 @@ endif; ?>
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Total stock: $total_stock\n", FILE_APPEND);
                     ?>
                     <?php if($total_stock > 0): ?>
-                    <span class="badge bg-success rounded-0 py-2 px-3">CÒN HÀNG</span>
+                    <span class="badge bg-success rounded-pill py-2 px-3">CÒN HÀNG</span>
                     <?php else: ?>
-                    <span class="badge bg-danger rounded-0 py-2 px-3">HẾT HÀNG</span>
+                    <span class="badge bg-danger rounded-pill py-2 px-3">HẾT HÀNG</span>
                     <?php endif; ?>
                 </div>
                 <div class="mb-2">
                     <span class="fw-bold">Danh mục:</span> 
-                    <a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($product->category_id ?? 0); ?>" class="ms-2 badge bg-light text-dark text-decoration-none py-2 px-3 rounded-0"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a>
+                    <a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($product->category_id ?? 0); ?>" class="ms-2 badge bg-light text-dark text-decoration-none py-2 px-3 rounded-pill"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a>
                 </div>
             </div>
             
@@ -199,11 +199,11 @@ endif; ?>
                 <?php if(!empty($variants) && is_array($variants)): ?>
                 <div class="product-variants mb-4">
                     <label class="fw-bold d-block mb-2">Biến thể:</label>
-                    <div class="row">
+                    <div class="row g-3">
                         <!-- Size Selector -->
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label class="fw-bold d-block mb-2">Kích cỡ:</label>
-                            <select class="form-select" name="size" id="variant-size" required>
+                            <select class="form-select rounded-pill" name="size" id="variant-size" required>
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
                                 $sizes = !empty($variants) ? array_unique(array_filter(array_column($variants, 'size'), function($size) use ($variants) {
@@ -223,9 +223,9 @@ endif; ?>
                         </div>
                         <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
                         <?php if($has_multiple_colors): ?>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label class="fw-bold d-block mb-2">Màu sắc:</label>
-                            <select class="form-select" name="color" id="variant-color" required disabled>
+                            <select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
                                 <option value="" disabled selected>Chọn màu sắc</option>
                             </select>
                         </div>
@@ -235,34 +235,34 @@ endif; ?>
                 </div>
                 <?php endif; ?>
                 
-                <div class="row align-items-end mb-4">
-                    <div class="col-12 col-md-6">
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-12 col-md-4">
                         <label for="quantity" class="form-label fw-bold mb-2">Số lượng:</label>
-                        <div class="input-group input-group-sm">
-                            <button class="btn btn-outline-primary rounded-start" type="button" onclick="decreaseQuantity()">-</button>
-                            <input type="number" class="form-control text-center" id="quantity" name="quantity" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
-                            <button class="btn btn-outline-primary rounded-end" type="button" onclick="increaseQuantity()">+</button>
+                        <div class="input-group shadow-sm">
+                            <button class="btn btn-outline-primary rounded-start-pill" type="button" onclick="decreaseQuantity()">-</button>
+                            <input type="number" class="form-control text-center border-primary" id="quantity" name="quantity" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
+                            <button class="btn btn-outline-primary rounded-end-pill" type="button" onclick="increaseQuantity()">+</button>
                         </div>
                     </div>
-                    <div class="col-12 col-md-6 mt-3 mt-md-0">
-                        <button type="button" class="btn btn-outline-dark w-100 py-3 fw-bold">
-                            <i class="far fa-heart"></i> WISHLIST
+                    <div class="col-12 col-md-4">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill w-100 py-2 shadow-sm">
+                            <i class="far fa-heart me-1"></i> WISHLIST
                         </button>
                     </div>
-                    <div class="col-12 mt-3">
-                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">
-                            THÊM VÀO GIỎ HÀNG
+                    <div class="col-12 col-md-4">
+                        <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 shadow-sm">
+                            <i class="fas fa-cart-plus me-1"></i> THÊM VÀO GIỎ
                         </button>
                     </div>
                 </div>
             </form>
             <?php else: ?>
-            <div class="product-out-of-stock mb-4 p-3 bg-light text-center">
+            <div class="product-out-of-stock mb-4 p-3 bg-light text-center rounded shadow-sm">
                 <p class="mb-2 fw-bold text-danger">SẢN PHẨM TẠM HẾT HÀNG</p>
                 <p class="mb-0 small">Vui lòng để lại email để nhận thông báo khi sản phẩm có hàng trở lại</p>
                 <form class="mt-3 d-flex gap-2" id="notify-form">
-                    <input type="email" class="form-control" name="email" placeholder="Email của bạn" required>
-                    <button type="submit" class="btn btn-primary">Thông báo cho tôi</button>
+                    <input type="email" class="form-control rounded-pill" name="email" placeholder="Email của bạn" required>
+                    <button type="submit" class="btn btn-primary rounded-pill">Thông báo cho tôi</button>
                 </form>
             </div>
             <?php endif; ?>
@@ -271,25 +271,25 @@ endif; ?>
             <div class="product-features mb-4">
                 <div class="row g-3">
                     <div class="col-6 col-md-3">
-                        <div class="feature-item text-center p-3">
+                        <div class="feature-item text-center p-3 rounded shadow-sm">
                             <i class="fas fa-truck-fast fs-3 mb-2 text-primary"></i>
                             <p class="mb-0 small">FREESHIP ĐƠN > 500K</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="feature-item text-center p-3">
+                        <div class="feature-item text-center p-3 rounded shadow-sm">
                             <i class="fas fa-shield-alt fs-3 mb-2 text-primary"></i>
                             <p class="mb-0 small">BẢO HÀNH CHÍNH HÃNG</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="feature-item text-center p-3">
+                        <div class="feature-item text-center p-3 rounded shadow-sm">
                             <i class="fas fa-undo fs-3 mb-2 text-primary"></i>
                             <p class="mb-0 small">ĐỔI TRẢ 30 NGÀY</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="feature-item text-center p-3">
+                        <div class="feature-item text-center p-3 rounded shadow-sm">
                             <i class="fas fa-credit-card fs-3 mb-2 text-primary"></i>
                             <p class="mb-0 small">THANH TOÁN AN TOÀN</p>
                         </div>
@@ -310,7 +310,7 @@ endif; ?>
                         <button class="nav-link" id="sizing-tab" data-bs-toggle="tab" data-bs-target="#sizing" type="button">Bảng size</button>
                     </li>
                 </ul>
-                <div class="tab-content p-4 border border-top-0" id="productTabContent">
+                <div class="tab-content p-4 border border-top-0 rounded-bottom shadow-sm" id="productTabContent">
                     <div class="tab-pane fade show active" id="description" role="tabpanel">
                         <h5 class="fw-bold mb-3">Thông tin chi tiết sản phẩm</h5>
                         <p><?php echo nl2br(htmlspecialchars($product->description ?? 'Không có mô tả')); ?></p>
@@ -382,10 +382,10 @@ endif; ?>
                 <div class="d-flex align-items-center">
                     <span class="fw-bold me-3">CHIA SẺ:</span>
                     <div class="social-icons d-flex gap-2">
-                        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-pinterest"></i></a>
+                        <a href="#" class="social-icon text-primary"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-icon text-primary"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-icon text-primary"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-icon text-primary"><i class="fab fa-pinterest"></i></a>
                     </div>
                 </div>
             </div>
@@ -401,7 +401,7 @@ endif; ?>
         <?php foreach($related_products as $related_product): ?>
         <div class="col-6 col-md-3 mb-4">
             <div class="product-card h-100">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 rounded">
                     <div class="position-relative">
                         <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
                             <?php if(!empty($related_product['image'])): ?>
@@ -429,7 +429,7 @@ endif; ?>
                             <?php endif; ?>
                         </div>
                         <div class="mt-auto">
-                            <button class="btn btn-primary btn-sm w-100 add-to-cart-btn" data-product-id="<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
+                            <button class="btn btn-primary btn-sm w-100 add-to-cart-btn rounded-pill" data-product-id="<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
                                 <i class="fas fa-shopping-cart me-1"></i> Thêm vào giỏ hàng
                             </button>
                         </div>
@@ -447,7 +447,7 @@ endif; ?>
 <!-- Customer Reviews Section -->
 <section class="customer-reviews mt-5">
     <h3 class="mb-4">Đánh giá của khách hàng</h3>
-    <div class="alert alert-info">
+    <div class="alert alert-info rounded shadow-sm">
         <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
     </div>
 </section>
@@ -475,9 +475,24 @@ endif; ?>
     background-color: #fff;
     border-color: #007bff;
     color: #007bff;
+    transition: all 0.2s ease;
 }
 .input-group .btn:hover {
     background-color: #007bff;
+    color: #fff;
+}
+.input-group .form-control {
+    border-color: #007bff;
+}
+.btn-primary, .btn-outline-secondary {
+    transition: all 0.2s ease;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
     color: #fff;
 }
 </style>
