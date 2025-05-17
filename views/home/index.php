@@ -191,29 +191,29 @@ include 'views/layouts/header.php';
         <div class="col-md-3 mb-4 mb-md-0">
             <div class="feature-box p-3">
                 <i class="fas fa-truck fa-3x text-primary mb-3"></i>
-                <h5>Free Shipping</h5>
-                <p class="text-muted small">On orders over <?php echo CURRENCY; ?>500,000</p>
+                <h5>Miễn phí vận chuyển</h5>
+                <p class="text-muted small">Áp dụng cho đơn hàng trên <?php echo CURRENCY; ?>500,000</p>
             </div>
         </div>
         <div class="col-md-3 mb-4 mb-md-0">
             <div class="feature-box p-3">
                 <i class="fas fa-undo fa-3x text-primary mb-3"></i>
-                <h5>Easy Returns</h5>
-                <p class="text-muted small">30 days return policy</p>
+                <h5>Đổi trả dễ dàng</h5>
+                <p class="text-muted small">Chính sách đổi trả trong 7 ngày</p>
             </div>
         </div>
         <div class="col-md-3 mb-4 mb-md-0">
             <div class="feature-box p-3">
                 <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
-                <h5>Secure Shopping</h5>
-                <p class="text-muted small">Your data is protected</p>
+                <h5>Mua sắm an toàn</h5>
+                <p class="text-muted small">Dữ liệu của bạn sẽ được bảo mật</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="feature-box p-3">
                 <i class="fas fa-headset fa-3x text-primary mb-3"></i>
-                <h5>24/7 Support</h5>
-                <p class="text-muted small">Dedicated customer service</p>
+                <h5>Hỗ trợ 24/7</h5>
+                <p class="text-muted small">Dịch vụ chăm sóc khách hàng tận tâm</p>
             </div>
         </div>
     </div>
