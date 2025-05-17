@@ -61,7 +61,7 @@ if ($action == 'delete' && isset($_GET['id'])) {
 // Get search and filter parameters
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $status = isset($_GET['status']) ? trim($_GET['status']) : '';
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$page = isset($_GET['pg']) ? intval($_GET['pg']) : 1; // Changed from 'page' to 'pg'
 if ($page < 1) $page = 1;
 $items_per_page = 10;
 
@@ -502,7 +502,7 @@ $debug_info = [
                                     <a class="page-link" href="index.php?page=orders&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo (!empty($status)) ? 'status=' . urlencode($status) . '&' : '';
-                                        echo 'page=1';
+                                        echo 'pg=1';
                                     ?>" aria-label="First">
                                         <i class="fas fa-angle-double-left"></i>
                                     </a>
@@ -512,7 +512,7 @@ $debug_info = [
                                     <a class="page-link" href="index.php?page=orders&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo (!empty($status)) ? 'status=' . urlencode($status) . '&' : '';
-                                        echo 'page=' . ($page - 1);
+                                        echo 'pg=' . ($page - 1);
                                     ?>" aria-label="Previous">
                                         <i class="fas fa-angle-left"></i>
                                     </a>
@@ -528,7 +528,7 @@ $debug_info = [
                                     <a class="page-link" href="index.php?page=orders&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo (!empty($status)) ? 'status=' . urlencode($status) . '&' : '';
-                                        echo 'page=' . $i;
+                                        echo 'pg=' . $i;
                                     ?>"><?php echo $i; ?></a>
                                 </li>
                                 <?php endfor; ?>
@@ -542,7 +542,7 @@ $debug_info = [
                                     <a class="page-link" href="index.php?page=orders&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo (!empty($status)) ? 'status=' . urlencode($status) . '&' : '';
-                                        echo 'page=' . ($page + 1);
+                                        echo 'pg=' . ($page + 1);
                                     ?>" aria-label="Next">
                                         <i class="fas fa-angle-right"></i>
                                     </a>
@@ -552,7 +552,7 @@ $debug_info = [
                                     <a class="page-link" href="index.php?page=orders&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo (!empty($status)) ? 'status=' . urlencode($status) . '&' : '';
-                                        echo 'page=' . $total_pages;
+                                        echo 'pg=' . $total_pages;
                                     ?>" aria-label="Last">
                                         <i class="fas fa-angle-double-right"></i>
                                     </a>
