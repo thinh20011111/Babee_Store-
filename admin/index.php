@@ -59,6 +59,14 @@ if (!in_array($page, $allowed_pages)) {
 // Log page access
 $debug_logs[] = "Page accessed: $page by user_role: {$_SESSION['user_role']}";
 
+// Users page debug
+if ($page === 'users' && $_SESSION['user_role'] !== 'admin') {
+    $debug_logs[] = "Access denied to users page for non-admin user_role: {$_SESSION['user_role']}";
+    $_SESSION['error_message'] = "Bạn không có quyền truy cập trang này.";
+    header("Location: index.php?page=dashboard");
+    exit;
+}
+
 // Khởi tạo biến cho product-edit
 $product = null;
 if ($page == 'product-edit') {
