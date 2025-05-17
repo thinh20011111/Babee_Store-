@@ -1,624 +1,167 @@
 <?php
-// Traffic statistics page for admin
+// Prevent direct access
 if (!defined('ADMIN_INCLUDED')) {
-    define('ADMIN_INCLUDED', true);
-}
-
-// Define debug mode
-define('DEBUG_MODE', true); // Set to false in production
-
-// Include database connection
-require_once '../config/database.php';
-try {
-    $db = new Database();
-    $conn = $db->getConnection();
-    // Set UTF-8 encoding
-    $conn->exec("SET NAMES utf8mb4");
-} catch (PDOException $e) {
-    error_log("Database connection or charset error: " . $e->getMessage());
-    die("Internal Server Error - Check logs for details.");
-}
-
-// Restrict access to admin only
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] != 'admin') {
-    echo "<div class='alert alert-danger alert-dismissible fade show' role='alert'>You don't have permission to access this page.<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button></div>";
+    header("Location: ../index.php");
     exit;
 }
 
-// Load required models
-require_once '../models/TrafficLog.php';
+// Restrict to admins
+if ($_SESSION['user_role'] !== 'admin') {
+    $_SESSION['error_message'] = "Bạn không có quyền truy cập trang này.";
+    header("Location: index.php?page=dashboard");
+    exit;
+}
 
-// Initialize debug log
-$debug_logs = [];
-
-// Initialize traffic log
+require_once '../models/User.php';
 try {
-    $traffic = new TrafficLog($conn);
+    $user_model = new User($conn);
+    
+    // Pagination
+    $items_per_page = 10;
+    $page = isset($_GET['page_num']) ? max(1, (int)$_GET['page_num']) : 1;
+    
+    // Search
+    $keywords = isset($_GET['search']) ? trim($_GET['search']) : '';
+    
+    if ($keywords !== '') {
+        $users_stmt = $user_model->search($keywords, $items_per_page, $page);
+        $total_users = $user_model->countSearch($keywords);
+    } else {
+        $users_stmt = $user_model->read($items_per_page, $page);
+        $total_users = $user_model->countAll();
+    }
+    
+    $users = $users_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $total_pages = ceil($total_users / $items_per_page);
+    
+    $GLOBALS['debug_logs'][] = "Users fetched successfully: " . count($users) . " users on page $page.";
 } catch (Exception $e) {
-    error_log("TrafficLog initialization error: " . $e->getMessage());
-    die("Internal Server Error - Check logs for details.");
-}
-
-// Get statistics
-try {
-    // Get total visits
-    $total_visits = $traffic->getTotalVisits() ?? 0;
-    
-    // Get today's visits
-    $today_visits = $traffic->getTodayVisits() ?? 0;
-    
-    // Get traffic data for range (30 days by default)
-    $view_mode = isset($_GET['view']) ? $_GET['view'] : 'daily';
-    $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d', strtotime('-30 days'));
-    $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
-    
-    if ($view_mode == 'monthly') {
-        $traffic_stats = $traffic->getStatsRange($start_date, $end_date, 'month');
-        $debug_logs[] = "Fetched monthly traffic stats from $start_date to $end_date: " . count($traffic_stats) . " data points";
-    } else {
-        $traffic_stats = $traffic->getStatsRange($start_date, $end_date, 'day');
-        $debug_logs[] = "Fetched daily traffic stats from $start_date to $end_date: " . count($traffic_stats) . " data points";
-    }
-    
-    $debug_logs[] = "Traffic statistics fetched: Total=$total_visits, Today=$today_visits";
-} catch (Exception $e) {
-    $debug_logs[] = "Error fetching traffic statistics: " . $e->getMessage();
-    error_log("Traffic statistics error: " . $e->getMessage());
-    $traffic_stats = [];
-}
-
-// Use sample data if no real data
-if (empty($traffic_stats)) {
-    require_once '../models/sample/traffic_data.php';
-    
-    if ($view_mode == 'monthly') {
-        $traffic_stats = getSampleMonthlyTraffic();
-        $debug_logs[] = "Using sample monthly data: " . count($traffic_stats) . " data points";
-    } else {
-        $traffic_stats = getSampleDailyTraffic();
-        $debug_logs[] = "Using sample daily data: " . count($traffic_stats) . " data points";
-    }
-    
-    $total_visits = array_sum(array_column($traffic_stats, 'count'));
-    $today_visits = end($traffic_stats)['count'] ?? 0;
-}
-
-// Prepare chart data
-$chart_labels = [];
-$chart_data = [];
-
-foreach ($traffic_stats as $stat) {
-    if ($view_mode == 'monthly') {
-        $chart_labels[] = date('M Y', strtotime($stat['period'] . '-01'));
-    } else {
-        $chart_labels[] = date('d/m', strtotime($stat['period']));
-    }
-    $chart_data[] = $stat['count'];
-}
-
-// Convert to JSON for JavaScript
-$chart_labels_json = json_encode($chart_labels);
-$chart_data_json = json_encode($chart_data);
-
-// Define currency constant
-if (!defined('CURRENCY')) {
-    define('CURRENCY', 'đ');
+    $GLOBALS['debug_logs'][] = "Error fetching users: " . $e->getMessage();
+    error_log("Error fetching users: " . $e->getMessage());
+    $error_message = "Lỗi khi tải danh sách người dùng.";
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Traffic Statistics - Admin Dashboard</title>
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous">
-</head>
-<body>
-    <div class="d-flex">
-        <!-- Sidebar -->
-        <?php include 'sidebar.php'; ?>
-
-        <!-- Main Content -->
-        <div class="flex-grow-1 p-4 bg-light">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="h3 mb-0 fw-bold text-primary">Thống kê lượt truy cập</h1>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary" id="downloadPDFBtn" title="Export to PDF">
-                            <i class="fas fa-file-pdf me-2"></i> Xuất PDF
-                        </button>
-                        <button class="btn btn-primary" id="refreshBtn" title="Refresh data">
-                            <i class="fas fa-sync-alt me-2"></i> Làm mới
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Filter Controls -->
-                <div class="chart-controls mb-4 p-4 bg-white shadow-sm rounded">
-                    <form id="trafficFilterForm" class="row g-3 align-items-end" method="GET" action="">
-                        <div class="col-md-3">
-                            <label for="start_date" class="form-label fw-medium">Từ ngày</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-                                <input type="date" class="form-control rounded" id="start_date" name="start_date" 
-                                    value="<?php echo htmlspecialchars($start_date); ?>" max="<?php echo date('Y-m-d'); ?>">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="end_date" class="form-label fw-medium">Đến ngày</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-                                <input type="date" class="form-control rounded" id="end_date" name="end_date" 
-                                    value="<?php echo htmlspecialchars($end_date); ?>" max="<?php echo date('Y-m-d'); ?>">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium">Chế độ xem</label>
-                            <div class="btn-group view-toggle w-100" role="group">
-                                <button type="button" class="btn btn-outline-primary <?php echo $view_mode == 'daily' ? 'active' : ''; ?>" 
-                                    onclick="this.form.view.value='daily'; this.form.submit();">
-                                    Theo ngày
-                                </button>
-                                <button type="button" class="btn btn-outline-primary <?php echo $view_mode == 'monthly' ? 'active' : ''; ?>"
-                                    onclick="this.form.view.value='monthly'; this.form.submit();">
-                                    Theo tháng
-                                </button>
-                            </div>
-                            <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary w-100 rounded">
-                                <i class="fas fa-filter me-2"></i> Lọc dữ liệu
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Statistics Cards -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6">
-                        <div class="card shadow-sm border-0 rounded visit-card">
-                            <div class="card-body d-flex align-items-center bg-gradient-primary text-white">
-                                <i class="fas fa-chart-line fa-3x me-3"></i>
-                                <div>
-                                    <h6 class="text-uppercase mb-1">Tổng lượt truy cập</h6>
-                                    <h4 class="mb-0"><?php echo number_format($total_visits); ?></h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card shadow-sm border-0 rounded visit-card">
-                            <div class="card-body d-flex align-items-center bg-gradient-success text-white">
-                                <i class="fas fa-calendar-day fa-3x me-3"></i>
-                                <div>
-                                    <h6 class="text-uppercase mb-1">Lượt truy cập hôm nay</h6>
-                                    <h4 class="mb-0"><?php echo number_format($today_visits); ?></h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Traffic Chart -->
-                <div class="card shadow-sm rounded mb-4 border-0">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-bar me-2"></i> 
-                            <?php echo $view_mode == 'monthly' ? 'Lượt truy cập theo tháng' : 'Lượt truy cập theo ngày'; ?>
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container bg-white rounded shadow-sm">
-                            <canvas id="trafficChart"></canvas>
-                            <?php if (empty($chart_data)): ?>
-                            <div class="chart-placeholder">
-                                <div class="text-center">
-                                    <i class="fas fa-chart-bar fa-3x mb-3 text-muted"></i>
-                                    <p>Không có dữ liệu lượt truy cập trong khoảng thời gian đã chọn.</p>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Debug Info -->
-                <?php if (DEBUG_MODE && !empty($debug_logs)): ?>
-                <div class="debug-info p-3 bg-light rounded shadow-sm">
-                    <h6 class="fw-bold text-muted"><i class="fas fa-bug me-2"></i>Debug Information</h6>
-                    <ul class="mb-0">
-                        <?php foreach ($debug_logs as $log): ?>
-                        <li><?php echo htmlspecialchars($log); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
-            </div>
+<div class="container-fluid">
+    <div class="card p-4 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h3 mb-0 fw-bold text-primary">Quản lý Người dùng</h2>
+            <a href="index.php?page=user-add" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Thêm Người dùng
+            </a>
         </div>
+        
+        <!-- Search Form -->
+        <form class="mb-4" method="GET" action="">
+            <input type="hidden" name="page" value="users">
+            <div class="input-group">
+                <input type="text" class="form-control" name="search" placeholder="Tìm kiếm theo tên, email, hoặc tên đầy đủ" 
+                       value="<?php echo htmlspecialchars($keywords); ?>">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i> Tìm kiếm
+                </button>
+            </div>
+        </form>
+        
+        <?php if (isset($error_message)): ?>
+            <div class="alert alert-danger"><?php echo htmlspecialchars($error_message); ?></div>
+        <?php elseif (empty($users)): ?>
+            <div class="alert alert-info">Không tìm thấy người dùng nào.</div>
+        <?php else: ?>
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Tên đầy đủ</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Ngày tạo</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($users as $user): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($user['id']); ?></td>
+                            <td><?php echo htmlspecialchars($user['username']); ?></td>
+                            <td><?php echo htmlspecialchars($user['full_name']); ?></td>
+                            <td><?php echo htmlspecialchars($user['email']); ?></td>
+                            <td><?php echo htmlspecialchars($user['role']); ?></td>
+                            <td><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($user['created_at']))); ?></td>
+                            <td>
+                                <a href="index.php?page=user-edit&id=<?php echo $user['id']; ?>" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </a>
+                                <a href="index.php?page=user-delete&id=<?php echo $user['id']; ?>" class="btn btn-sm btn-danger" 
+                                   onclick="return confirm('Bạn có chắc muốn xóa người dùng này?');">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+                <nav aria-label="User pagination">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                            <a class="page-link" href="?page=users&search=<?php echo urlencode($keywords); ?>&page_num=<?php echo $page - 1; ?>">Trước</a>
+                        </li>
+                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                            <li class="page-item <?php echo $i === $page ? 'active' : ''; ?>">
+                                <a class="page-link" href="?page=users&search=<?php echo urlencode($keywords); ?>&page_num=<?php echo $i; ?>"><?php echo $i; ?></a>
+                            </li>
+                        <?php endfor; ?>
+                        <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
+                            <a class="page-link" href="?page=users&search=<?php echo urlencode($keywords); ?>&page_num=<?php echo $page + 1; ?>">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
+</div>
 
-    <!-- JavaScript Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <script>
-        // Initialize Chart
-        let trafficChart;
-
-        const createTrafficChart = () => {
-            const ctx = document.getElementById('trafficChart').getContext('2d');
-            
-            // Chart data
-            const chartLabels = <?php echo $chart_labels_json; ?>;
-            const chartData = <?php echo $chart_data_json; ?>;
-            
-            // Destroy existing chart if it exists
-            if (trafficChart) {
-                trafficChart.destroy();
-            }
-
-            // Chart colors
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
-            gradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
-            
-            trafficChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartLabels,
-                    datasets: [{
-                        label: '<?php echo $view_mode == "monthly" ? "Lượt truy cập theo tháng" : "Lượt truy cập theo ngày"; ?>',
-                        data: chartData,
-                        backgroundColor: gradient,
-                        borderColor: 'rgba(78, 115, 223, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverRadius: 5,
-                        pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
-                        pointHoverBorderColor: '#fff',
-                        pointHitRadius: 10,
-                        lineTension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            },
-                            title: {
-                                display: true,
-                                text: 'Lượt truy cập'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: '<?php echo $view_mode == "monthly" ? "Tháng" : "Ngày"; ?>'
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    return tooltipItems[0].label;
-                                },
-                                label: function(context) {
-                                    return `Lượt truy cập: ${context.parsed.y.toLocaleString()}`;
-                                }
-                            }
-                        },
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    },
-                    elements: {
-                        line: {
-                            tension: 0.4
-                        }
-                    }
-                }
-            });
-        };
-
-        // Initialize when document is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            createTrafficChart();
-            
-            // Handle refresh button
-            document.getElementById('refreshBtn').addEventListener('click', function() {
-                location.reload();
-            });
-            
-            // Handle PDF download
-            document.getElementById('downloadPDFBtn').addEventListener('click', function() {
-                const { jsPDF } = window.jspdf;
-                html2canvas(document.querySelector('.chart-container')).then(canvas => {
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdf = new jsPDF('landscape');
-                    const imgProps = pdf.getImageProperties(imgData);
-                    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                    
-                    // Add header
-                    pdf.setFontSize(18);
-                    pdf.text('Báo cáo lượt truy cập website', 10, 15);
-                    
-                    // Add date
-                    pdf.setFontSize(12);
-                    pdf.text(`Thời gian: ${new Date().toLocaleDateString('vi-VN')}`, 10, 25);
-                    
-                    // Add stats
-                    pdf.text(`Tổng lượt truy cập: ${<?php echo number_format($total_visits); ?>}`, 10, 35);
-                    pdf.text(`Lượt truy cập hôm nay: ${<?php echo number_format($today_visits); ?>}`, 10, 45);
-                    
-                    // Add chart
-                    pdf.addImage(imgData, 'PNG', 10, 55, pdfWidth, pdfHeight);
-                    
-                    // Save the PDF
-                    pdf.save(`bao_cao_truy_cap_${new Date().toISOString().slice(0,10)}.pdf`);
-                }).catch(error => {
-                    console.error('Error generating PDF:', error);
-                });
-            });
-        });
-
-        // Handle form submission for filter
-        document.getElementById('trafficFilterForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const params = new URLSearchParams(formData).toString();
-            window.location.href = `?${params}`;
-        });
-    </script>
-
-    <style>
-        /* Modernized General Styling */
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
-            color: #333;
-        }
-
-        .container-fluid {
-            padding: 30px;
-            max-width: 1400px;
-        }
-
-        h1 {
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        /* Card Styling */
-        .card {
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-        }
-
-        .visit-card {
-            border-left: 5px solid transparent;
-        }
-
-        .bg-gradient-primary {
-            background: linear-gradient(90deg, #007bff, #0056b3);
-        }
-
-        .bg-gradient-success {
-            background: linear-gradient(90deg, #28a745, #1e7e34);
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        /* Chart Container */
-        .chart-container {
-            position: relative;
-            height: 400px;
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            padding: 15px;
-        }
-
-        .chart-placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: #6c757d;
-        }
-
-        .chart-placeholder i {
-            color: #adb5bd;
-        }
-
-        /* Filter Controls */
-        .chart-controls {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        .form-label {
-            font-weight: 500;
-            font-size: 0.95rem;
-            color: #1a1a1a;
-        }
-
-        .form-control {
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-            padding: 10px;
-            font-size: 0.95rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
-            outline: none;
-        }
-
-        .input-group-text {
-            background: #f1f3f5;
-            border: 1px solid #ced4da;
-            color: #495057;
-            border-radius: 8px 0 0 8px;
-        }
-
-        .btn-group .btn {
-            border-radius: 8px;
-            font-size: 0.95rem;
-            padding: 10px;
-        }
-
-        .btn-outline-primary.active {
-            background: #007bff;
-            color: #fff;
-        }
-
-        .btn-primary {
-            border-radius: 8px;
-            padding: 12px;
-            font-weight: 500;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-        }
-
-        .btn-primary:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-        }
-
-        .btn-outline-primary {
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .btn-outline-primary:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
-        }
-
-        /* Debug Info */
-        .debug-info {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            font-size: 0.9rem;
-            border: 1px solid #e9ecef;
-            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
-        }
-
-        .debug-info ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .debug-info li {
-            margin-bottom: 5px;
-            color: #495057;
-        }
-
-        /* Sidebar Styling */
-        .sidebar {
-            min-height: 100vh;
-            position: sticky;
-            top: 0;
-            background: #1a1a1a;
-        }
-
-        .sidebar .nav-link {
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            color: #e9ecef;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .sidebar .nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .sidebar .nav-link.active {
-            background: #007bff;
-            color: #fff !important;
-            font-weight: 600;
-        }
-
-        .sidebar .nav-link i {
-            width: 24px;
-            text-align: center;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 992px) {
-            .row.g-4 {
-                flex-direction: column;
-            }
-
-            .col-md-6 {
-                width: 100%;
-            }
-
-            .chart-controls .col-md-3 {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .container-fluid {
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 1.75rem;
-            }
-
-            .chart-controls {
-                padding: 15px;
-            }
-
-            .chart-controls .col-md-3 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-
-            .btn-group .btn {
-                font-size: 0.9rem;
-                padding: 8px;
-            }
-
-            .chart-container {
-                height: 300px;
-            }
-        }
-    </style>
-</body>
-</html>
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    .table .btn {
+        margin-right: 5px;
+    }
+    .card {
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 16px 20px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 10px;
+        font-size: 0.95rem;
+    }
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+        outline: none;
+    }
+    .input-group .btn {
+        border-radius: 8px;
+    }
+    .pagination .page-link {
+        border-radius: 5px;
+        margin: 0 3px;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
