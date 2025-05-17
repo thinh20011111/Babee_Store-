@@ -238,10 +238,10 @@ endif; ?>
                 <div class="row align-items-end mb-4">
                     <div class="col-12 col-md-6">
                         <label for="quantity" class="form-label fw-bold mb-2">Số lượng:</label>
-                        <div class="input-group">
-                            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="decreaseQuantity()">-</button>
+                        <div class="input-group input-group-sm">
+                            <button class="btn btn-outline-primary rounded-start" type="button" onclick="decreaseQuantity()">-</button>
                             <input type="number" class="form-control text-center" id="quantity" name="quantity" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
-                            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="increaseQuantity()">+</button>
+                            <button class="btn btn-outline-primary rounded-end" type="button" onclick="increaseQuantity()">+</button>
                         </div>
                     </div>
                     <div class="col-12 col-md-6 mt-3 mt-md-0">
@@ -458,11 +458,11 @@ endif; ?>
     cursor: pointer;
 }
 .thumbnail-item:hover {
-    border-color: #0d6efd !important;
+    border-color: #0d6efd;
     transform: scale(1.05);
 }
 .thumbnail-item.active {
-    border-color: #0d6efd !important;
+    border-color: #0d6efd;
     border-width: 2px;
 }
 .product-image-container img, .product-placeholder {
@@ -470,6 +470,15 @@ endif; ?>
 }
 .product-image-container img:hover {
     opacity: 0.9;
+}
+.input-group .btn {
+    background-color: #fff;
+    border-color: #007bff;
+    color: #007bff;
+}
+.input-group .btn:hover {
+    background-color: #007bff;
+    color: #fff;
 }
 </style>
 
