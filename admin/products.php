@@ -402,16 +402,6 @@ $debug_info = [
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- Debug Info (Development Only) -->
-                <div class="debug-info">
-                    <strong>Debug Info:</strong><br>
-                    Total Rows: <?php echo $debug_info['total_rows']; ?><br>
-                    Total Pages: <?php echo $debug_info['total_pages']; ?><br>
-                    Current Page: <?php echo $debug_info['current_page']; ?><br>
-                    Items per Page: <?php echo $debug_info['items_per_page']; ?><br>
-                    Products Loaded: <?php echo $debug_info['products_count']; ?>
-                </div>
             </div>
         </div>
     </div>
