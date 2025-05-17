@@ -121,14 +121,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Ảnh bổ sung
     $product->images = [];
     if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+        $image_count = 0;
         foreach ($_FILES['additional_images']['name'] as $key => $name) {
+            if ($image_count >= 3) {
+                $error_message = "Chỉ được phép upload tối đa 3 ảnh bổ sung.";
+                break;
+            }
             if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
                 $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
                 $image_path = $upload_dir . time() . '_' . basename($name);
                 if (move_uploaded_file($tmp_name, $image_path)) {
                     $product->images[] = $image_path;
+                    $image_count++;
                 }
             }
+        }
+    }
+
+    // Xử lý xóa ảnh bổ sung
+    $delete_image_ids = isset($_POST['delete_image_ids']) && is_array($_POST['delete_image_ids']) ? $_POST['delete_image_ids'] : [];
+    if ($is_edit && !empty($delete_image_ids)) {
+        try {
+            foreach ($delete_image_ids as $image_id) {
+                $product->deleteImage($image_id);
+            }
+        } catch (Exception $e) {
+            $error_message = "Lỗi khi xóa ảnh bổ sung: " . $e->getMessage();
+            error_log("Delete image error: " . $e->getMessage());
         }
     }
 
@@ -232,6 +251,14 @@ if (!defined('CURRENCY')) {
             height: 24px;
             cursor: pointer;
         }
+        #main-image-preview, #additional-images-preview {
+            min-height: 100px;
+        }
+        .preview-image {
+            max-width: 100px;
+            margin: 5px;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -303,28 +330,32 @@ if (!defined('CURRENCY')) {
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Ảnh chính <span class="text-danger"><?php echo $is_edit ? '' : '*'; ?></span></label>
-                                    <input type="file" class="form-control" name="main_image" accept="image/*" <?php echo $is_edit ? '' : 'required'; ?>>
+                                    <input type="file" class="form-control" id="main-image-input" name="main_image" accept="image/*" <?php echo $is_edit ? '' : 'required'; ?>>
+                                    <div id="main-image-preview" class="border p-2 mt-2 text-center"></div>
                                 </div>
                                 <?php if ($product->image): ?>
                                 <div class="mb-3">
                                     <label class="form-label">Ảnh chính hiện tại</label>
                                     <div class="border p-2 text-center">
-                                        <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid img-preview" alt="Preview">
+                                        <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid img-preview" alt="Main Image">
                                     </div>
                                 </div>
                                 <?php endif; ?>
                                 <div class="mb-3">
-                                    <label class="form-label">Ảnh bổ sung</label>
-                                    <input type="file" class="form-control" name="additional_images[]" accept="image/*" multiple>
+                                    <label class="form-label">Ảnh bổ sung (tối đa 3 ảnh)</label>
+                                    <input type="file" class="form-control" id="additional-images-input" name="additional_images[]" accept="image/*" multiple>
+                                    <div id="additional-images-preview" class="border p-2 mt-2 d-flex flex-wrap"></div>
                                 </div>
                                 <?php if (!empty($product->images)): ?>
                                 <div class="mb-3">
                                     <label class="form-label">Ảnh bổ sung hiện tại</label>
-                                    <div class="d-flex flex-wrap">
+                                    <div class="d-flex flex-wrap" id="existing-images">
                                         <?php foreach ($product->images as $image): ?>
-                                        <div class="additional-image me-2 mb-2">
+                                        <div class="additional-image me-2 mb-2" data-image-id="<?php echo htmlspecialchars($image['id']); ?>">
                                             <img src="<?php echo htmlspecialchars($image['image']); ?>" class="img-fluid img-preview" style="max-width: 100px;" alt="Additional Image">
-                                            <input type="hidden" name="existing_images[]" value="<?php echo htmlspecialchars($image['id']); ?>">
+                                            <button type="button" class="delete-btn" onclick="removeAdditionalImage(<?php echo htmlspecialchars($image['id']); ?>)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>
@@ -394,6 +425,9 @@ if (!defined('CURRENCY')) {
                             </div>
                         </div>
 
+                        <!-- Hidden inputs for delete image IDs -->
+                        <div id="delete-image-ids"></div>
+
                         <div class="text-center">
                             <button class="btn btn-primary"><i class="fas fa-save me-1"></i> <?php echo $is_edit ? 'Cập nhật' : 'Lưu'; ?></button>
                             <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i> Hủy</a>
@@ -441,6 +475,64 @@ if (!defined('CURRENCY')) {
 
     function removeVariantRow(button) {
         button.closest('tr').remove();
+    }
+
+    // Preview ảnh chính
+    document.getElementById('main-image-input').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('main-image-preview');
+        preview.innerHTML = '';
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'img-fluid img-preview';
+                img.alt = 'Main Image Preview';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Preview ảnh bổ sung và giới hạn tối đa 3 ảnh
+    document.getElementById('additional-images-input').addEventListener('change', function(event) {
+        const files = event.target.files;
+        const preview = document.getElementById('additional-images-preview');
+        preview.innerHTML = '';
+
+        if (files.length > 3) {
+            alert('Chỉ được phép chọn tối đa 3 ảnh bổ sung.');
+            event.target.value = ''; // Xóa các file đã chọn
+            return;
+        }
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'img-fluid preview-image';
+                img.alt = 'Additional Image Preview';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    // Xóa ảnh bổ sung hiện tại
+    function removeAdditionalImage(imageId) {
+        const imageDiv = document.querySelector(`.additional-image[data-image-id="${imageId}"]`);
+        if (imageDiv) {
+            imageDiv.remove();
+            const deleteIdsContainer = document.getElementById('delete-image-ids');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'delete_image_ids[]';
+            input.value = imageId;
+            deleteIdsContainer.appendChild(input);
+        }
     }
 </script>
 </body>
