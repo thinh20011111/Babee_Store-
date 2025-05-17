@@ -258,90 +258,79 @@ if (!defined('CURRENCY')) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #f4f6f9 0%, #e9ecef 100%);
+            background: #f8f9fa;
             font-family: 'Segoe UI', Arial, sans-serif;
         }
         .content-wrapper {
             margin-left: 250px;
-            padding: 20px;
+            padding: 30px;
             min-height: 100vh;
         }
         .card {
             border: none;
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 15px;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.5s ease-in-out;
         }
         .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 0 15px rgba(32, 201, 151, 0.3);
         }
-        .card-header {
-            background: linear-gradient(90deg, #007bff, #0056b3);
-            color: #fff;
-            border-radius: 12px 12px 0 0;
-            padding: 15px 20px;
-        }
-        .card-header h6 {
-            margin: 0;
-            font-weight: 600;
-        }
-        .card-body {
+        .chart-container {
+            position: relative;
+            height: 360px;
             padding: 20px;
+            border-radius: 15px;
+            background: #fff;
+        }
+        .chart-header {
+            background: linear-gradient(90deg, #20c997, #6f42c1);
+            color: #fff;
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            text-align: center;
+        }
+        .chart-header h6 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .chart-footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 15px;
         }
         .stat-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border-left: 4px solid #007bff;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
         .stat-card i {
-            font-size: 2.5rem;
-            color: #007bff;
+            font-size: 2.2rem;
+            color: #20c997;
         }
         .stat-card h6 {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #6c757d;
+            text-transform: uppercase;
         }
         .stat-card h4 {
             font-weight: 700;
             color: #343a40;
         }
-        .chart-container {
-            position: relative;
-            height: 350px;
-            background: #fff;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
-        }
-        .chart-container:hover {
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-        }
-        .chart-header {
-            background: #007bff;
-            color: #fff;
-            border-radius: 10px 10px 0 0;
-            padding: 10px 15px;
-            margin: -15px -15px 15px -15px;
-        }
-        .chart-footer {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-top: 10px;
-        }
         .table {
             background: #fff;
             border-radius: 10px;
             overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
         .table thead {
-            background: #343a40;
+            background: linear-gradient(90deg, #20c997, #6f42c1);
             color: #fff;
-        }
-        .table tbody tr {
-            transition: background 0.2s ease;
         }
         .table tbody tr:hover {
             background: #f1f3f5;
@@ -349,8 +338,8 @@ if (!defined('CURRENCY')) {
         .list-group-item {
             border: none;
             border-radius: 8px;
-            margin-bottom: 10px;
             background: #f8f9fa;
+            margin-bottom: 10px;
             transition: background 0.2s ease;
         }
         .list-group-item:hover {
@@ -378,29 +367,36 @@ if (!defined('CURRENCY')) {
             font-size: 0.85rem;
         }
         .progress {
-            height: 15px;
-            border-radius: 8px;
+            height: 12px;
+            border-radius: 6px;
         }
         .progress-bar {
-            border-radius: 8px;
+            border-radius: 6px;
         }
         .debug-info {
             background: #fff;
             padding: 15px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-top: 30px;
             font-size: 0.9rem;
-            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
         }
         .error-message {
             color: #dc3545;
             font-weight: 600;
             margin-top: 10px;
         }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         @media (max-width: 992px) {
             .content-wrapper {
                 margin-left: 0;
+                padding: 15px;
+            }
+            .chart-container {
+                height: 300px;
             }
             .stat-card {
                 text-align: center;
@@ -408,74 +404,71 @@ if (!defined('CURRENCY')) {
             .stat-card i {
                 margin-bottom: 10px;
             }
-            .chart-container {
-                height: 300px;
-            }
         }
     </style>
 </head>
 <body>
     <div class="content-wrapper">
         <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0 fw-bold text-primary">Dashboard</h1>
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <h1 class="h3 mb-0 fw-bold text-dark">Dashboard</h1>
                 <button class="btn btn-primary" onclick="refreshDashboard()">
                     <i class="fas fa-sync-alt me-2"></i> Cập nhật Dữ liệu
                 </button>
             </div>
 
             <!-- Statistics Cards -->
-            <div class="row g-4 mb-4">
+            <div class="row g-4 mb-5">
                 <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card shadow-sm">
+                    <div class="card stat-card">
                         <div class="card-body d-flex align-items-center">
                             <i class="fas fa-money-bill-wave me-3"></i>
                             <div>
-                                <h6 class="text-uppercase">Tổng Doanh thu</h6>
+                                <h6>Tổng Doanh thu</h6>
                                 <h4 class="mb-0"><?php echo CURRENCY . number_format($total_revenue); ?></h4>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card shadow-sm">
+                    <div class="card stat-card">
                         <div class="card-body d-flex align-items-center">
                             <i class="fas fa-shopping-cart me-3"></i>
                             <div>
-                                <h6 class="text-uppercase">Tổng Đơn hàng</h6>
+                                <h6>Tổng Đơn hàng</h6>
                                 <h4 class="mb-0"><?php echo number_format($order_count); ?></h4>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card shadow-sm">
+                    <div class="card stat-card">
                         <div class="card-body d-flex align-items-center">
                             <i class="fas fa-box me-3"></i>
                             <div>
-                                <h6 class="text-uppercase">Tổng Sản phẩm</h6>
+                                <h6>Tổng Sản phẩm</h6>
                                 <h4 class="mb-0"><?php echo number_format($product_count); ?></h4>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card shadow-sm">
+                    <div class="card stat-card">
                         <div class="card-body d-flex align-items-center">
                             <i class="fas fa-users me-3"></i>
                             <div>
-                                <h6 class="text-uppercase">Tổng Người dùng</h6>
+                                <h6>Tổng Người dùng</h6>
                                 <h4 class="mb-0"><?php echo number_format($user_count); ?></h4>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card shadow-sm">
+                    <div class="card stat-card">
                         <div class="card-body d-flex align-items-center">
                             <i class="fas fa-chart-line me-3"></i>
                             <div>
-                                <h6 class="text-uppercase">Lượt truy cập</h6>
+                                <h6>Lượt truy cập</h6>
                                 <h4 class="mb-0"><?php echo number_format($total_visits); ?></h4>
                                 <small class="text-muted">Hôm nay: <?php echo number_format($today_visits); ?></small>
                             </div>
@@ -485,10 +478,10 @@ if (!defined('CURRENCY')) {
             </div>
 
             <!-- Charts -->
-            <div class="row mb-4">
+            <div class="row g-4 mb-5 mt-4">
                 <!-- Website Traffic Chart -->
                 <div class="col-lg-6">
-                    <div class="chart-container">
+                    <div class="card chart-container">
                         <div class="chart-header">
                             <h6><i class="fas fa-chart-line me-2"></i> Lượt truy cập 7 ngày gần đây</h6>
                         </div>
@@ -502,7 +495,7 @@ if (!defined('CURRENCY')) {
                 
                 <!-- Monthly Revenue Chart -->
                 <div class="col-lg-6">
-                    <div class="chart-container">
+                    <div class="card chart-container">
                         <div class="chart-header">
                             <h6><i class="fas fa-chart-bar me-2"></i> Doanh thu Hàng tháng</h6>
                         </div>
@@ -513,10 +506,12 @@ if (!defined('CURRENCY')) {
                         <div id="revenueChartError" class="error-message"></div>
                     </div>
                 </div>
+            </div>
 
+            <div class="row g-4 mb-5 mt-4">
                 <!-- Order Status Chart -->
-                <div class="col-lg-6">
-                    <div class="chart-container">
+                <div class="col-lg-12">
+                    <div class="card chart-container">
                         <div class="chart-header">
                             <h6><i class="fas fa-chart-pie me-2"></i> Trạng thái Đơn hàng</h6>
                         </div>
@@ -536,17 +531,17 @@ if (!defined('CURRENCY')) {
                         <?php if ($total_orders == 0): ?>
                             <div class="text-center text-muted py-4">Không có dữ liệu trạng thái đơn hàng.</div>
                         <?php else: ?>
-                            <div class="row mb-4">
+                            <div class="row g-3 mb-4">
                                 <?php foreach ($status_labels as $index => $label): 
                                     $count = $status_counts[$index];
                                     $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
                                     $color = $status_colors[$index];
                                 ?>
-                                <div class="col">
+                                <div class="col-md-4">
                                     <div class="card border-<?php echo $color; ?> h-100 shadow-sm rounded">
-                                        <div class="card-body p-2 text-center">
-                                            <h6 class="text-<?php echo $color; ?>"><?php echo $label; ?></h6>
-                                            <h3 class="mb-0"><?php echo $count; ?></h3>
+                                        <div class="card-body p-3 text-center">
+                                            <h6 class="text-<?php echo $color; ?> mb-2"><?php echo $label; ?></h6>
+                                            <h3 class="mb-2"><?php echo $count; ?></h3>
                                             <div class="progress mt-2">
                                                 <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
                                                     style="width: <?php echo $percentage; ?>%" 
@@ -555,14 +550,14 @@ if (!defined('CURRENCY')) {
                                                     aria-valuemax="100">
                                                 </div>
                                             </div>
-                                            <small class="text-muted"><?php echo $percentage; ?>%</small>
+                                            <small class="text-muted mt-2"><?php echo $percentage; ?>%</small>
                                         </div>
                                     </div>
                                 </div>
                                 <?php endforeach; ?>
                             </div>
                             <div class="row justify-content-center">
-                                <div class="col-md-10">
+                                <div class="col-md-8">
                                     <div class="progress">
                                         <?php foreach ($status_labels as $index => $label): 
                                             $count = $status_counts[$index];
@@ -576,7 +571,7 @@ if (!defined('CURRENCY')) {
                                             aria-valuemin="0" 
                                             aria-valuemax="100" 
                                             title="<?php echo $label; ?>: <?php echo $count; ?> (<?php echo $percentage; ?>%)">
-                                            <?php if ($percentage >= 10): ?>
+                                            <?php if ($percentage >= 15): ?>
                                                 <?php echo $label; ?> <?php echo $percentage; ?>%
                                             <?php endif; ?>
                                         </div>
@@ -592,11 +587,11 @@ if (!defined('CURRENCY')) {
             </div>
 
             <!-- Recent Orders & Best Sellers -->
-            <div class="row">
+            <div class="row g-4">
                 <div class="col-lg-8">
-                    <div class="card shadow-sm">
+                    <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6><i class="fas fa-shopping-cart me-2"></i> Đơn hàng Gần đây</h6>
+                            <h6 class="m-0 fw-bold text-dark"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng Gần đây</h6>
                             <a href="index.php?page=orders" class="btn btn-sm btn-primary">Xem Tất cả</a>
                         </div>
                         <div class="card-body">
@@ -672,9 +667,9 @@ if (!defined('CURRENCY')) {
                 </div>
 
                 <div class="col-lg-4">
-                    <div class="card shadow-sm">
+                    <div class="card">
                         <div class="card-header">
-                            <h6><i class="fas fa-star me-2"></i> Sản phẩm Bán chạy</h6>
+                            <h6 class="m-0 fw-bold text-dark"><i class="fas fa-star me-2"></i> Sản phẩm Bán chạy</h6>
                         </div>
                         <div class="card-body">
                             <div class="list-group list-group-flush">
@@ -760,8 +755,8 @@ if (!defined('CURRENCY')) {
             }
             
             const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 300);
-            trafficGradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
-            trafficGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
+            trafficGradient.addColorStop(0, 'rgba(32, 201, 151, 0.8)');
+            trafficGradient.addColorStop(1, 'rgba(32, 201, 151, 0.1)');
             
             try {
                 new Chart(trafficContext, {
@@ -772,15 +767,15 @@ if (!defined('CURRENCY')) {
                             label: 'Lượt truy cập',
                             data: trafficData,
                             backgroundColor: trafficGradient,
-                            borderColor: 'rgba(78, 115, 223, 1)',
+                            borderColor: 'rgba(32, 201, 151, 1)',
                             borderWidth: 3,
-                            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                            pointBackgroundColor: 'rgba(32, 201, 151, 1)',
                             pointBorderColor: '#fff',
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                            pointHoverRadius: 7,
+                            pointHoverBackgroundColor: 'rgba(32, 201, 151, 1)',
                             pointHoverBorderColor: '#fff',
                             pointHitRadius: 10,
-                            lineTension: 0.3,
+                            lineTension: 0.4,
                             fill: true
                         }]
                     },
@@ -813,7 +808,7 @@ if (!defined('CURRENCY')) {
                         },
                         plugins: {
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
                                 titleFont: { size: 14 },
                                 bodyFont: { size: 12 },
                                 callbacks: {
@@ -833,6 +828,10 @@ if (!defined('CURRENCY')) {
                         interaction: {
                             intersect: false,
                             mode: 'index'
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
                         }
                     }
                 });
@@ -867,21 +866,21 @@ if (!defined('CURRENCY')) {
             }
             
             const revenueGradient = revenueContext.createLinearGradient(0, 0, 0, 300);
-            revenueGradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
-            revenueGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
+            revenueGradient.addColorStop(0, 'rgba(111, 66, 193, 0.8)');
+            revenueGradient.addColorStop(1, 'rgba(111, 66, 193, 0.1)');
             
             try {
                 new Chart(revenueContext, {
-                    type: 'bar', // Use bar chart
+                    type: 'bar',
                     data: {
                         labels: revenueLabels,
                         datasets: [{
                             label: 'Doanh thu',
                             data: revenueData,
                             backgroundColor: revenueGradient,
-                            borderColor: 'rgba(78, 115, 223, 1)',
+                            borderColor: 'rgba(111, 66, 193, 1)',
                             borderWidth: 1,
-                            borderRadius: 8
+                            borderRadius: 10
                         }]
                     },
                     options: {
@@ -914,7 +913,7 @@ if (!defined('CURRENCY')) {
                         },
                         plugins: {
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
                                 titleFont: { size: 14 },
                                 bodyFont: { size: 12 },
                                 callbacks: {
@@ -930,6 +929,10 @@ if (!defined('CURRENCY')) {
                                     font: { size: 14 }
                                 }
                             }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
                         }
                     }
                 });
