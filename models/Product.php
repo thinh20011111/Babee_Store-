@@ -23,19 +23,24 @@ class Product {
         $this->conn = $db;
     }
     
-    // Read all products
-    public function read($limit = null) {
+    // Read all products with pagination
+    public function read($items_per_page = null, $page = 1) {
         $query = "SELECT p.*, c.name as category_name
                 FROM " . $this->table_name . " p
                 LEFT JOIN categories c ON p.category_id = c.id
                 ORDER BY p.created_at DESC";
         
-        // Add limit if specified
-        if ($limit) {
-            $query .= " LIMIT " . $limit;
+        // Add pagination if items_per_page is specified
+        if ($items_per_page) {
+            $start = ($page - 1) * $items_per_page;
+            $query .= " LIMIT ?, ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $start, PDO::PARAM_INT);
+            $stmt->bindParam(2, $items_per_page, PDO::PARAM_INT);
+        } else {
+            $stmt = $this->conn->prepare($query);
         }
         
-        $stmt = $this->conn->prepare($query);
         $stmt->execute();
         
         return $stmt;

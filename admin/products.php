@@ -51,7 +51,7 @@ if (!empty($search)) {
 // Process products and add total stock
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $product->id = $row['id'];
-    $row['total_stock'] = $product->getTotalStock(); // Add total stock from variants
+    $row['total_stock'] = $product->getTotalStock(); // Add total stock from particuliers
     $products[] = $row;
 }
 
