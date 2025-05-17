@@ -289,7 +289,7 @@ endif; ?>
                     <div class="col-6 col-md-3">
                         <div class="feature-item text-center p-3 rounded shadow-sm">
                             <i class="fas fa-undo fs-3 mb-2 text-primary"></i>
-                            <p class="mb-0 small">ĐỔI TRẢ 30 NGÀY</p>
+                            <p class="mb-0 small">ĐỔI TRẢ 7 NGÀY</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
@@ -342,38 +342,27 @@ endif; ?>
                                     <th>Size</th>
                                     <th>Chiều cao (cm)</th>
                                     <th>Cân nặng (kg)</th>
-                                    <th>Ngực (cm)</th>
-                                    <th>Eo (cm)</th>
+                                    <th>Tuổi (tháng)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>S</td>
-                                    <td>155-165</td>
-                                    <td>45-55</td>
-                                    <td>86-91</td>
-                                    <td>71-76</td>
+                                    <td>1</td>
+                                    <td>59-66</td>
+                                    <td>3-5</td>
+                                    <td>1-3</td>
                                 </tr>
                                 <tr>
-                                    <td>M</td>
-                                    <td>165-170</td>
-                                    <td>55-65</td>
-                                    <td>91-97</td>
-                                    <td>76-81</td>
+                                    <td>2</td>
+                                    <td>66-72</td>
+                                    <td>6.5-9</td>
+                                    <td>6-9</td>
                                 </tr>
                                 <tr>
-                                    <td>L</td>
-                                    <td>170-175</td>
-                                    <td>65-75</td>
-                                    <td>97-102</td>
-                                    <td>81-86</td>
-                                </tr>
-                                <tr>
-                                    <td>XL</td>
-                                    <td>175-180</td>
-                                    <td>75-85</td>
-                                    <td>102-107</td>
-                                    <td>86-91</td>
+                                    <td>3</td>
+                                    <td>72-80</td>
+                                    <td>8.5-10</td>
+                                    <td>9-12</td>
                                 </tr>
                             </tbody>
                         </table>
