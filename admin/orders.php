@@ -545,7 +545,6 @@ $debug_info = [
                     </div>
                 </div>
                 
-                <!-- Debug Info (Development Only) -->
                 <?php endif; ?>
             </div>
         </div>

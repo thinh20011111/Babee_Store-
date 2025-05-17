@@ -507,16 +507,6 @@ $debug_info = [
                         </div>
                     </div>
                 </div>
-                
-                <!-- Debug Info (Development Only) -->
-                <div class="debug-info">
-                    <strong>Debug Info:</strong><br>
-                    Total Rows: <?php echo $debug_info['total_rows']; ?><br>
-                    Total Pages: <?php echo $debug_info['total_pages']; ?><br>
-                    Current Page: <?php echo $debug_info['current_page']; ?><br>
-                    Items per Page: <?php echo $debug_info['items_per_page']; ?><br>
-                    Users Loaded: <?php echo $debug_info['users_count']; ?>
-                </div>
                 <?php endif; ?>
             </div>
         </div>
