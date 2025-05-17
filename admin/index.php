@@ -14,12 +14,15 @@ define('DEBUG_MODE', true); // Set to false in production
 $debug_logs = [];
 $error_occurred = false;
 
+// Block sidebar rendering in included pages
+define('BLOCK_SIDEBAR', true);
+
 // Track sidebar inclusion
 if (!defined('SIDEBAR_INCLUDED')) {
     define('SIDEBAR_INCLUDED', true);
     $debug_logs[] = "Sidebar included in index.php";
 } else {
-    $debug_logs[] = "Warning: Sidebar already included before index.php";
+    $debug_logs[] = "Warning: Sidebar inclusion attempted multiple times in index.php";
 }
 
 // Include database connection
@@ -55,6 +58,11 @@ if ($_SESSION['user_role'] == 'admin') {
 if (!in_array($page, $allowed_pages)) {
     $debug_logs[] = "Invalid page requested: $page";
     $page = 'dashboard';
+}
+
+// Traffic page debug
+if ($page === 'traffic') {
+    $debug_logs[] = "Traffic page accessed by user_role: {$_SESSION['user_role']}";
 }
 
 // Khởi tạo biến cho product-edit
