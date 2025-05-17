@@ -2,7 +2,7 @@
     </main>
 
     <!-- Newsletter - Modern with Bold Colors -->
-    <section class="newsletter-section py-5" style="background-color: var(--primary-color);">
+    <section class="newsletter-section py-5" style="background-color: var(--primary-color, #0d6efd);">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-md-8 text-center">
@@ -20,19 +20,19 @@
     </section>
 
     <!-- Footer - Bold, Modern and Clean -->
-    <footer class="site-footer pt-5 pb-3" style="background-color: var(--dark-bg-color);">
+    <footer class="site-footer pt-5 pb-3" style="background-color: var(--dark-bg-color, #212529);">
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
                     <div class="footer-brand mb-4">
-                        <h2 class="text-white"><span class="text-primary fw-black">BA</span><span style="color: var(--accent-color);">BEE</span></h2>
+                        <h2 class="text-white"><span class="text-primary fw-black">BA</span><span style="color: var(--accent-color, #ff2d55);">BEE</span></h2>
                     </div>
                     <p class="text-white-50 mb-4">Thời trang đường phố dành cho giới trẻ. Nổi bật, phá cách và luôn dẫn đầu xu hướng.</p>
-                    <div class="social-links">
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-facebook-f social-icon"></i></a>
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-instagram social-icon"></i></a>
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-tiktok social-icon"></i></a>
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-youtube social-icon"></i></a>
+                    <div class="footer-social-links">
+                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-facebook-f footer-social-icon"></i></a>
+                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-instagram footer-social-icon"></i></a>
+                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-tiktok footer-social-icon"></i></a>
+                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-youtube footer-social-icon"></i></a>
                     </div>
                 </div>
                 
@@ -58,7 +58,7 @@
                 
                 <div class="col-lg-4 col-md-6">
                     <h5 class="text-white mb-4 footer-heading">LIÊN HỆ VỚI CHÚNG TÔI</h5>
-                    <ul class="list-unstyled contact-info">
+                    <ul class="list-unstyled footer-contact-info">
                         <?php
                         $settings = new Settings($conn);
                         $contact_address = $settings->getValue('contact_address', '');
@@ -81,16 +81,8 @@
             
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                    <p class="mb-0 text-white-50">&copy; <?php echo date('Y'); ?> BABEE - Thời trang cho bé.</p>
+                    <p class="mb-0 text-white-50">© <?php echo date('Y'); ?> BABEE - Thời trang cho bé.</p>
                 </div>
-                <!-- <div class="col-md-6 text-center text-md-end">
-                    <ul class="list-inline mb-0">
-                        <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=VISA" alt="Visa" class="payment-icon"></li>
-                        <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=MC" alt="MasterCard" class="payment-icon"></li>
-                        <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=PayPal" alt="PayPal" class="payment-icon"></li>
-                        <li class="list-inline-item"><img src="https://via.placeholder.com/40x25/ffffff/000000?text=Momo" alt="Momo" class="payment-icon"></li>
-                    </ul>
-                </div> -->
             </div>
         </div>
     </footer>
@@ -103,5 +95,160 @@
     
     <!-- Custom JS -->
     <script src="assets/js/script.js"></script>
+
+    <style>
+    /* Scoped styles for footer */
+    .site-footer {
+        padding-top: 3rem;
+        padding-bottom: 1.5rem;
+        background-color: var(--dark-bg-color, #212529);
+    }
+
+    .site-footer .footer-brand h2 {
+        font-size: 2rem;
+        margin-bottom: 0;
+        line-height: 1.2;
+    }
+
+    .site-footer .footer-heading {
+        font-size: 1.25rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #ffffff;
+    }
+
+    .site-footer .footer-links {
+        padding-left: 0;
+    }
+
+    .site-footer .footer-links .footer-link {
+        color: #adb5bd;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .site-footer .footer-links .footer-link:hover {
+        opacity: 0.8;
+        color: #ffffff;
+    }
+
+    .site-footer .footer-social-links .footer-social-icon {
+        color: #adb5bd;
+        font-size: 1.5rem;
+        transition: color 0.2s ease;
+    }
+
+    .site-footer .footer-social-links .footer-social-icon:hover {
+        color: #ffffff;
+    }
+
+    .site-footer .footer-contact-info {
+        padding-left: 0;
+    }
+
+    .site-footer .footer-contact-info li {
+        color: #adb5bd;
+        font-size: 0.95rem;
+    }
+
+    .site-footer .footer-contact-info i {
+        color: var(--primary-color, #0d6efd);
+        width: 1.5rem;
+        text-align: center;
+    }
+
+    .site-footer hr {
+        border-color: #495057;
+        opacity: 0.5;
+    }
+
+    .site-footer .text-white-50 {
+        color: #adb5bd !important;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 575.98px) {
+        .site-footer {
+            padding-top: 2rem;
+            padding-bottom: 1rem;
+        }
+
+        .site-footer .footer-brand h2 {
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .site-footer .footer-brand p {
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .site-footer .footer-social-links {
+            text-align: center;
+        }
+
+        .site-footer .footer-heading {
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .site-footer .footer-links,
+        .site-footer .footer-contact-info {
+            text-align: center;
+        }
+
+        .site-footer .footer-links .footer-link,
+        .site-footer .footer-contact-info li {
+            font-size: 0.9rem;
+        }
+
+        .site-footer .footer-social-links .footer-social-icon {
+            font-size: 1.25rem;
+        }
+
+        .site-footer .row > div {
+            margin-bottom: 1.5rem;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 767.98px) {
+        .site-footer .footer-brand h2 {
+            font-size: 1.75rem;
+        }
+
+        .site-footer .footer-heading {
+            font-size: 1.15rem;
+        }
+
+        .site-footer .footer-links .footer-link,
+        .site-footer .footer-contact-info li {
+            font-size: 0.9rem;
+        }
+
+        .site-footer .footer-social-links .footer-social-icon {
+            font-size: 1.35rem;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .site-footer .footer-brand h2 {
+            font-size: 2rem;
+        }
+
+        .site-footer .footer-heading {
+            font-size: 1.25rem;
+        }
+
+        .site-footer .footer-links .footer-link,
+        .site-footer .footer-contact-info li {
+            font-size: 0.95rem;
+        }
+
+        .site-footer .footer-social-links .footer-social-icon {
+            font-size: 1.5rem;
+        }
+    }
+    </style>
 </body>
 </html>
