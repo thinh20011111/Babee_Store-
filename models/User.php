@@ -21,10 +21,13 @@ class User {
         $this->conn = $db;
     }
     
-    // Read all users
-    public function read() {
-        $query = "SELECT * FROM " . $this->table_name . " ORDER BY created_at DESC";
+    // Read all users with pagination
+    public function read($items_per_page = 10, $page = 1) {
+        $offset = ($page - 1) * $items_per_page;
+        $query = "SELECT * FROM " . $this->table_name . " ORDER BY created_at DESC LIMIT ?, ?";
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $offset, PDO::PARAM_INT);
+        $stmt->bindParam(2, $items_per_page, PDO::PARAM_INT);
         $stmt->execute();
         
         return $stmt;
@@ -208,14 +211,43 @@ class User {
         return false;
     }
     
-    // Search users
-    public function search($keywords) {
+    // Search users with pagination
+    public function search($keywords, $items_per_page = 10, $page = 1) {
+        $offset = ($page - 1) * $items_per_page;
         $query = "SELECT * FROM " . $this->table_name . " 
                 WHERE 
                     username LIKE ? OR 
                     email LIKE ? OR 
                     full_name LIKE ? 
-                ORDER BY created_at DESC";
+                ORDER BY created_at DESC 
+                LIMIT ?, ?";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        // Sanitize keywords
+        $keywords = htmlspecialchars(strip_tags($keywords));
+        $keywords = "%{$keywords}%";
+        
+        // Bind parameters
+        $stmt->bindParam(1, $keywords);
+        $stmt->bindParam(2, $keywords);
+        $stmt->bindParam(3, $keywords);
+        $stmt->bindParam(4, $offset, PDO::PARAM_INT);
+        $stmt->bindParam(5, $items_per_page, PDO::PARAM_INT);
+        
+        // Execute query
+        $stmt->execute();
+        
+        return $stmt;
+    }
+    
+    // Count search results
+    public function countSearch($keywords) {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " 
+                WHERE 
+                    username LIKE ? OR 
+                    email LIKE ? OR 
+                    full_name LIKE ?";
         
         $stmt = $this->conn->prepare($query);
         
@@ -228,10 +260,10 @@ class User {
         $stmt->bindParam(2, $keywords);
         $stmt->bindParam(3, $keywords);
         
-        // Execute query
         $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        return $stmt;
+        return $row['total'];
     }
     
     // Check if email exists
@@ -263,7 +295,7 @@ class User {
         return password_verify($password, $this->password);
     }
     
-    // Count users
+    // Count all users
     public function countAll() {
         $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
         $stmt = $this->conn->prepare($query);
