@@ -70,6 +70,7 @@ if ($product_id > 0) {
     }
 } else {
     $variants = [];
+    $product->images = [];
 }
 
 // Process form submission
@@ -79,13 +80,12 @@ $error_message = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form data
     $product->name = isset($_POST['name']) ? trim($_POST['name']) : '';
-    $product->description = isset($_POST['name']) ? trim($_POST['description']) : '';
+    $product->description = isset($_POST['description']) ? trim($_POST['description']) : '';
     $product->price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
     $product->sale_price = isset($_POST['sale_price']) ? floatval($_POST['sale_price']) : 0;
     $product->category_id = isset($_POST['category_id']) ? intval($_POST['category_id']) : 0;
     $product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
     $product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
-    $product->image = isset($_POST['image']) ? trim($_POST['image']) : '';
 
     // Get variants data
     $variants_data = [];
@@ -100,6 +100,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // Xử lý upload ảnh
+    $upload_dir = '../uploads/images/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    // Ảnh chính
+    if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
+        $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
+        if (move_uploaded_file($_FILES['main_image']['tmp_name'], $main_image_path)) {
+            $product->image = $main_image_path;
+        } else {
+            $error_message = "Lỗi khi upload ảnh chính.";
+        }
+    } elseif (!$is_edit) {
+        $error_message = "Vui lòng chọn ảnh chính.";
+    }
+
+    // Ảnh bổ sung
+    $product->images = [];
+    if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+        foreach ($_FILES['additional_images']['name'] as $key => $name) {
+            if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
+                $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
+                $image_path = $upload_dir . time() . '_' . basename($name);
+                if (move_uploaded_file($tmp_name, $image_path)) {
+                    $product->images[] = $image_path;
+                }
+            }
+        }
+    }
+
     // Validate form data
     if (empty($product->name)) {
         $error_message = "Vui lòng nhập tên sản phẩm.";
@@ -109,6 +141,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error_message = "Vui lòng chọn danh mục.";
     } elseif (empty($variants_data)) {
         $error_message = "Vui lòng thêm ít nhất một biến thể.";
+    } elseif (empty($product->image) && !$is_edit) {
+        $error_message = "Vui lòng chọn ảnh chính.";
     } else {
         // Save product
         try {
@@ -182,6 +216,22 @@ if (!defined('CURRENCY')) {
         .table-variants th, .table-variants td {
             vertical-align: middle;
         }
+        .additional-image {
+            position: relative;
+            display: inline-block;
+        }
+        .additional-image .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -215,7 +265,7 @@ if (!defined('CURRENCY')) {
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="index.php?page=product-edit<?php echo $is_edit ? '&id=' . $product_id : ''; ?>" method="POST">
+                    <form action="index.php?page=product-edit<?php echo $is_edit ? '&id=' . $product_id : ''; ?>" method="POST" enctype="multipart/form-data">
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -252,14 +302,31 @@ if (!defined('CURRENCY')) {
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Link hình ảnh</label>
-                                    <input type="text" class="form-control" name="image" value="<?php echo htmlspecialchars($product->image); ?>">
+                                    <label class="form-label">Ảnh chính <span class="text-danger"><?php echo $is_edit ? '' : '*'; ?></span></label>
+                                    <input type="file" class="form-control" name="main_image" accept="image/*" <?php echo $is_edit ? '' : 'required'; ?>>
                                 </div>
                                 <?php if ($product->image): ?>
                                 <div class="mb-3">
-                                    <label class="form-label">Hình hiện tại</label>
+                                    <label class="form-label">Ảnh chính hiện tại</label>
                                     <div class="border p-2 text-center">
                                         <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid img-preview" alt="Preview">
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                                <div class="mb-3">
+                                    <label class="form-label">Ảnh bổ sung</label>
+                                    <input type="file" class="form-control" name="additional_images[]" accept="image/*" multiple>
+                                </div>
+                                <?php if (!empty($product->images)): ?>
+                                <div class="mb-3">
+                                    <label class="form-label">Ảnh bổ sung hiện tại</label>
+                                    <div class="d-flex flex-wrap">
+                                        <?php foreach ($product->images as $image): ?>
+                                        <div class="additional-image me-2 mb-2">
+                                            <img src="<?php echo htmlspecialchars($image['image']); ?>" class="img-fluid img-preview" style="max-width: 100px;" alt="Additional Image">
+                                            <input type="hidden" name="existing_images[]" value="<?php echo htmlspecialchars($image['id']); ?>">
+                                        </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                                 <?php endif; ?>

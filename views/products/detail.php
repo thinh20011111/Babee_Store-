@@ -33,6 +33,10 @@ if (!isset($related_products)) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$related_products không được định nghĩa\n", FILE_APPEND);
     $related_products = [];
 }
+if (!isset($product->images)) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$product->images không được định nghĩa\n", FILE_APPEND);
+    $product->images = [];
+}
 
 $page_title = htmlspecialchars($product->name ?? 'Sản phẩm');
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Page title: $page_title\n", FILE_APPEND);
@@ -41,6 +45,9 @@ file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Page title: $page_ti
 $colors = !empty($variants) ? array_unique(array_filter(array_column($variants, 'color'), fn($color) => !empty($color))) : [];
 $has_multiple_colors = count($colors) > 1;
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Colors available: " . json_encode($colors) . ", Has multiple colors: " . ($has_multiple_colors ? 'true' : 'false') . "\n", FILE_APPEND);
+
+// Ghi log số lượng ảnh
+file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Main image: " . ($product->image ? $product->image : 'N/A') . ", Additional images count: " . count($product->images) . "\n", FILE_APPEND);
 
 // Include header
 try {
@@ -68,6 +75,8 @@ try {
     <strong>Debug Info:</strong><br>
     Product ID: <?php echo htmlspecialchars($product->id ?? 'N/A'); ?><br>
     Product Name: <?php echo htmlspecialchars($product->name ?? 'N/A'); ?><br>
+    Main Image: <?php echo htmlspecialchars($product->image ?? 'N/A'); ?><br>
+    Additional Images Count: <?php echo count($product->images); ?><br>
     Total Stock: <?php echo !empty($product->id) ? $product->getTotalStock() : 0; ?><br>
     Variants Count: <?php echo count($variants ?? []); ?><br>
     Variants: <?php echo htmlspecialchars(json_encode($variants ?? [])); ?><br>
@@ -105,7 +114,7 @@ endif; ?>
         <!-- Product Images -->
         <div class="col-lg-6 mb-4 mb-lg-0">
             <div class="product-image-container position-relative shadow-sm rounded">
-                <?php if(!empty($product->image)): ?>
+                <?php if (!empty($product->image)): ?>
                 <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded main-image" alt="<?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
                 <?php else: ?>
                 <div class="product-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 500px;">
@@ -113,7 +122,7 @@ endif; ?>
                 </div>
                 <?php endif; ?>
                 
-                <?php if(($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
+                <?php if (($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
                 <span class="badge bg-danger position-absolute top-0 end-0 m-3">SALE</span>
                 <?php endif; ?>
             </div>
@@ -121,10 +130,11 @@ endif; ?>
             <!-- Product Thumbnails -->
             <div class="product-thumbnails mt-3">
                 <div class="row g-2">
+                    <!-- Main Image Thumbnail -->
                     <div class="col-3">
                         <div class="thumbnail-item border rounded p-1 <?php echo !empty($product->image) ? 'active' : ''; ?>" data-image="<?php echo htmlspecialchars($product->image ?? ''); ?>">
-                            <?php if(!empty($product->image)): ?>
-                            <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
+                            <?php if (!empty($product->image)): ?>
+                            <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Main Image Thumbnail">
                             <?php else: ?>
                             <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
                                 <i class="fas fa-tshirt fa-2x text-secondary"></i>
@@ -132,20 +142,14 @@ endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
-                    <!-- Placeholder thumbnails -->
-                    <?php for($i = 0; $i < 3; $i++): ?>
+                    <!-- Additional Images Thumbnails -->
+                    <?php foreach ($product->images as $index => $image): ?>
                     <div class="col-3">
-                        <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($product->image ?? ''); ?>">
-                            <?php if(!empty($product->image)): ?>
-                            <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Thumbnail">
-                            <?php else: ?>
-                            <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
-                                <i class="fas fa-tshirt fa-2x text-secondary"></i>
-                            </div>
-                            <?php endif; ?>
+                        <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($image['image']); ?>">
+                            <img src="<?php echo htmlspecialchars($image['image']); ?>" class="img-fluid rounded" alt="Additional Image Thumbnail <?php echo $index + 1; ?>">
                         </div>
                     </div>
-                    <?php endfor; ?>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -157,7 +161,7 @@ endif; ?>
             
             <!-- Price -->
             <div class="product-price mb-4">
-                <?php if(($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
+                <?php if (($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
                 <span class="text-danger fs-3 fw-bold"><?php echo CURRENCY . number_format($product->sale_price); ?></span>
                 <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo CURRENCY . number_format($product->price); ?></span>
                 <?php else: ?>
@@ -173,7 +177,7 @@ endif; ?>
                     $total_stock = !empty($product->id) ? $product->getTotalStock() : 0;
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Total stock: $total_stock\n", FILE_APPEND);
                     ?>
-                    <?php if($total_stock > 0): ?>
+                    <?php if ($total_stock > 0): ?>
                     <span class="badge bg-success rounded-pill py-2 px-3">CÒN HÀNG</span>
                     <?php else: ?>
                     <span class="badge bg-danger rounded-pill py-2 px-3">HẾT HÀNG</span>
@@ -191,12 +195,12 @@ endif; ?>
             </div>
         
             <!-- Add to Cart Form -->
-            <?php if($total_stock > 0): ?>
+            <?php if ($total_stock > 0): ?>
             <form id="add-to-cart-form" class="mb-4 product-detail-form">
                 <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product->id ?? 0); ?>">
                 
                 <!-- Variant Selector (chỉ hiển thị nếu có variants) -->
-                <?php if(!empty($variants) && is_array($variants)): ?>
+                <?php if (!empty($variants) && is_array($variants)): ?>
                 <div class="product-variants mb-4">
                     <label class="fw-bold d-block mb-2">Biến thể:</label>
                     <div class="row g-3">
@@ -215,14 +219,14 @@ endif; ?>
                                     return false;
                                 })) : [];
                                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Sizes available: " . json_encode($sizes) . "\n", FILE_APPEND);
-                                foreach($sizes as $size):
+                                foreach ($sizes as $size):
                                 ?>
                                 <option value="<?php echo htmlspecialchars($size); ?>"><?php echo htmlspecialchars($size); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
-                        <?php if($has_multiple_colors): ?>
+                        <?php if ($has_multiple_colors): ?>
                         <div class="col-md-6">
                             <label class="fw-bold d-block mb-2">Màu sắc:</label>
                             <select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
@@ -394,17 +398,17 @@ endif; ?>
 </div>
 
 <!-- Related Products -->
-<?php if(!empty($related_products)): ?>
+<?php if (!empty($related_products)): ?>
 <section class="related-products mt-5">
     <h3 class="mb-4">Sản phẩm liên quan</h3>
     <div class="row">
-        <?php foreach($related_products as $related_product): ?>
+        <?php foreach ($related_products as $related_product): ?>
         <div class="col-6 col-md-3 mb-4">
             <div class="product-card h-100">
                 <div class="card border-0 shadow-sm h-100 rounded">
                     <div class="position-relative">
                         <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
-                            <?php if(!empty($related_product['image'])): ?>
+                            <?php if (!empty($related_product['image'])): ?>
                             <img src="<?php echo htmlspecialchars($related_product['image']); ?>" class="card-img-top img-fluid rounded" alt="<?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?>">
                             <?php else: ?>
                             <div class="card-img-top bg-light p-4 d-flex align-items-center justify-content-center" style="height: 180px;">
@@ -412,7 +416,7 @@ endif; ?>
                             </div>
                             <?php endif; ?>
                         </a>
-                        <?php if(($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
+                        <?php if (($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
                         <span class="badge bg-danger position-absolute top-0 end-0 m-2">Giảm giá</span>
                         <?php endif; ?>
                     </div>
@@ -421,7 +425,7 @@ endif; ?>
                             <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>" class="text-decoration-none text-dark"><?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?></a>
                         </h5>
                         <div class="price-block mb-3">
-                            <?php if(($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
+                            <?php if (($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
                             <span class="text-danger fw-bold"><?php echo CURRENCY . number_format($related_product['sale_price']); ?></span>
                             <span class="text-muted text-decoration-line-through ms-2"><?php echo CURRENCY . number_format($related_product['price']); ?></span>
                             <?php else: ?>
@@ -509,6 +513,8 @@ console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?
 console.log('Related Products Count:', <?php echo json_encode(count($related_products ?? [])); ?>);
 console.log('Total Stock:', <?php echo json_encode($total_stock); ?>);
 console.log('Has Multiple Colors:', <?php echo json_encode($has_multiple_colors); ?>);
+console.log('Main Image:', <?php echo json_encode($product->image ?? 'N/A'); ?>);
+console.log('Additional Images:', <?php echo json_encode($product->images); ?>);
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded');
@@ -538,6 +544,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const imageSrc = this.dataset.image;
                 if (mainImage && imageSrc) {
                     mainImage.src = imageSrc;
+                    console.log('Main image updated to:', imageSrc);
+                } else {
+                    console.warn('Không thể cập nhật ảnh chính:', { mainImage: !!mainImage, imageSrc });
                 }
             });
         });
