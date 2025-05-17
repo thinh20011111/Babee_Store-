@@ -20,58 +20,20 @@ class OrderController {
         $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || (isset($_POST['ajax']) && $_POST['ajax'] === 'true');
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // [Giữ nguyên logic debug và validation từ code cũ]
-            $raw_post = file_get_contents('php://input');
-            $debug_output = "DEBUG: Raw POST (php://input): $raw_post\n";
-            $debug_output .= "DEBUG: X-Requested-With header: " . ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? 'not set') . "\n";
-            $hex_shipping_name = isset($_POST['shipping_name']) ? bin2hex($_POST['shipping_name']) : 'not set';
-            $debug_output .= "DEBUG: Raw POST (\$_POST):\n" . print_r($_POST, true) . "\n";
-            $debug_output .= "DEBUG: Hex of shipping_name: $hex_shipping_name\n";
-
-            $chars = isset($_POST['shipping_name']) && extension_loaded('mbstring') ? mb_str_split($_POST['shipping_name'], 1, 'UTF-8') : (isset($_POST['shipping_name']) ? str_split($_POST['shipping_name']) : []);
-            $debug_output .= "DEBUG: Character-by-character (shipping_name):\n";
-            foreach ($chars as $index => $char) {
-                $hex = bin2hex($char);
-                $debug_output .= "Char at position $index: '$char' (hex: $hex)\n";
-            }
-
-            $mbstring_enabled = extension_loaded('mbstring') ? 'Yes' : 'No';
-            $mbstring_encoding = mb_internal_encoding();
-            $shipping_name_encoding = isset($_POST['shipping_name']) ? mb_detect_encoding($_POST['shipping_name'], 'UTF-8, ISO-8859-1', true) : 'not set';
-            $debug_output .= "DEBUG: mbstring enabled: $mbstring_enabled\n";
-            $debug_output .= "DEBUG: mbstring internal encoding: $mbstring_encoding\n";
-            $debug_output .= "DEBUG: Detected encoding of shipping_name: $shipping_name_encoding\n";
-
             $raw_shipping_name = isset($_POST['shipping_name']) ? $_POST['shipping_name'] : '';
-            $debug_output .= "DEBUG: Step 1 - Raw shipping_name (before any processing): '$raw_shipping_name' (length: " . strlen($raw_shipping_name) . ")\n";
-
             $raw_shipping_name = preg_replace('/^\xEF\xBB\xBF/', '', $raw_shipping_name);
             $raw_shipping_name = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw_shipping_name);
-            $debug_output .= "DEBUG: Step 2 - After removing BOM/control chars: '$raw_shipping_name' (length: " . strlen($raw_shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($raw_shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
-
+            $shipping_name_encoding = mb_detect_encoding($raw_shipping_name, 'UTF-8, ISO-8859-1', true);
             if ($shipping_name_encoding !== 'UTF-8' && $shipping_name_encoding !== false) {
-                $converted_shipping_name = iconv($shipping_name_encoding, 'UTF-8//IGNORE', $raw_shipping_name);
-                $debug_output .= "DEBUG: Step 3 - After iconv conversion (from $shipping_name_encoding to UTF-8): '$converted_shipping_name' (length: " . strlen($converted_shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($converted_shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
-                $raw_shipping_name = $converted_shipping_name;
-            } else {
-                $debug_output .= "DEBUG: Step 3 - No iconv conversion needed (already UTF-8 or undetected)\n";
+                $raw_shipping_name = iconv($shipping_name_encoding, 'UTF-8//IGNORE', $raw_shipping_name);
             }
-
             $this->order->shipping_name = $raw_shipping_name;
-            $debug_output .= "DEBUG: Step 4 - Final shipping_name: '{$this->order->shipping_name}' (length: " . strlen($this->order->shipping_name) . ", mb_length: " . (extension_loaded('mbstring') ? mb_strlen($this->order->shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
-
-            error_log($debug_output, 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            if (!$isAjax) {
-                echo "<pre>$debug_output</pre>";
-            }
 
             $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-            error_log("DEBUG: Cart content before order creation: " . print_r($cart, true) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             if (empty($cart)) {
                 $response = ['status' => 'error', 'message' => 'Giỏ hàng trống.'];
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -94,20 +56,12 @@ class OrderController {
             $this->order->customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
             $this->order->notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
-            $debug_validation = "DEBUG: Before validation - shipping_name: '{$this->order->shipping_name}' (mb_length: " . (extension_loaded('mbstring') ? mb_strlen($this->order->shipping_name, 'UTF-8') : 'mbstring not loaded') . ", empty() result: " . (empty($this->order->shipping_name) ? 'true' : 'false') . ")\n";
-            error_log($debug_validation, 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            if (!$isAjax) {
-                echo "<pre>$debug_validation</pre>";
-            }
-
             $is_mbstring_enabled = extension_loaded('mbstring');
             $shipping_name_length = $is_mbstring_enabled ? mb_strlen($this->order->shipping_name, 'UTF-8') : strlen($this->order->shipping_name);
             if ($shipping_name_length === 0) {
                 $response = ['status' => 'error', 'message' => 'Vui lòng nhập tên người nhận.'];
-                error_log("ERROR: OrderController::create - Validation failed: shipping_name length is 0 (raw: '$raw_shipping_name', final: '{$this->order->shipping_name}', mb_length: $shipping_name_length, mbstring_enabled: $is_mbstring_enabled)\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -118,10 +72,8 @@ class OrderController {
             }
             if (trim($this->order->shipping_address) === '' || trim($this->order->shipping_city) === '' || trim($this->order->shipping_phone) === '') {
                 $response = ['status' => 'error', 'message' => 'Vui lòng điền đầy đủ thông tin giao hàng.'];
-                error_log("ERROR: OrderController::create - Validation failed: Missing shipping details\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -132,10 +84,8 @@ class OrderController {
             }
             if (trim($this->order->customer_email) === '' || !filter_var($this->order->customer_email, FILTER_VALIDATE_EMAIL)) {
                 $response = ['status' => 'error', 'message' => 'Vui lòng nhập email hợp lệ.'];
-                error_log("ERROR: OrderController::create - Validation failed: Invalid email\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -146,10 +96,8 @@ class OrderController {
             }
             if (trim($this->order->payment_method) === '') {
                 $response = ['status' => 'error', 'message' => 'Vui lòng chọn phương thức thanh toán.'];
-                error_log("ERROR: OrderController::create - Validation failed: Missing payment method\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -160,10 +108,8 @@ class OrderController {
             }
             if ($this->order->total_amount <= 0) {
                 $response = ['status' => 'error', 'message' => 'Tổng giá đơn hàng không hợp lệ.'];
-                error_log("ERROR: OrderController::create - Validation failed: Invalid total amount\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
                     exit;
                 } else {
@@ -173,35 +119,26 @@ class OrderController {
                 }
             }
 
-            $debug_before_save = "DEBUG: Before saving order - shipping_name: '{$this->order->shipping_name}' (mb_length: " . (extension_loaded('mbstring') ? mb_strlen($this->order->shipping_name, 'UTF-8') : 'mbstring not loaded') . ")\n";
-            error_log($debug_before_save, 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            if (!$isAjax) {
-                echo "<pre>$debug_before_save</pre>";
-            }
-
             $this->conn->beginTransaction();
             try {
-                error_log("DEBUG: Starting transaction for order creation\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 if ($order_id = $this->order->create()) {
-                    error_log("DEBUG: Order created successfully, ID: $order_id\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     foreach ($cart as $item) {
-                        error_log("DEBUG: Processing cart item - product_id: {$item['product_id']}, variant_id: {$item['variant_id']}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         $query = "INSERT INTO order_details (order_id, product_id, variant_id, quantity, price) 
                                   VALUES (:order_id, :product_id, :variant_id, :quantity, :price)";
                         $stmt = $this->conn->prepare($query);
                         $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
-                        error_log("DEBUG: Preparing to insert order detail - product_id: {$item['product_id']}, variant_id: {$item['variant_id']}, quantity: {$item['quantity']}, price: $price\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-                        $stmt->execute([
+                        if (!$stmt->execute([
                             ':order_id' => $order_id,
                             ':product_id' => $item['product_id'],
                             ':variant_id' => $item['variant_id'],
                             ':quantity' => $item['quantity'],
                             ':price' => $price
-                        ]);
+                        ])) {
+                            throw new Exception("Không thể lưu chi tiết đơn hàng cho sản phẩm ID {$item['product_id']}. Error: " . print_r($stmt->errorInfo(), true));
+                        }
 
                         $product = new Product($this->conn);
                         $product->id = $item['product_id'];
-                        error_log("DEBUG: Updating stock for product_id: {$item['product_id']}, variant_id: {$item['variant_id']}, quantity: {$item['quantity']}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                         if (!$product->updateVariantStock($item['variant_id'], $item['quantity'])) {
                             throw new Exception("Không thể cập nhật tồn kho cho biến thể ID {$item['variant_id']}.");
                         }
@@ -209,24 +146,20 @@ class OrderController {
 
                     try {
                         $this->sendOrderConfirmationEmail($order_id, $this->order->customer_email);
-                        error_log("DEBUG: Email xác nhận đã được gửi thành công cho {$this->order->customer_email}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     } catch (Exception $e) {
-                        error_log("CẢNH BÁO: Không gửi được email xác nhận, nhưng đơn hàng vẫn được tạo: {$e->getMessage()}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
+                        // Ghi log nhưng không làm thất bại giao dịch
                     }
 
                     $this->conn->commit();
-                    error_log("DEBUG: Transaction committed successfully\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     unset($_SESSION['cart']);
                     $response = [
                         'status' => 'success',
                         'message' => 'Đơn hàng đã được tạo thành công.',
                         'redirect' => "index.php?controller=order&action=success&id=$order_id"
                     ];
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     if ($isAjax) {
                         header('Content-Type: application/json');
                         echo json_encode($response);
-                        echo "<!-- DEBUG: Ajax response sent -->";
                         exit;
                     } else {
                         $_SESSION['order_message'] = $response['message'];
@@ -239,13 +172,10 @@ class OrderController {
             } catch (Exception $e) {
                 $this->conn->rollBack();
                 $error_message = "Lỗi khi tạo đơn hàng: " . $e->getMessage();
-                error_log("ERROR: OrderController::create - Failed: $error_message\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 $response = ['status' => 'error', 'message' => $error_message];
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
-                    echo "<!-- DEBUG: Ajax error response sent -->";
                     exit;
                 } else {
                     $_SESSION['order_message'] = $response['message'];
@@ -255,13 +185,10 @@ class OrderController {
             } catch (Throwable $t) {
                 $this->conn->rollBack();
                 $error_message = "Lỗi nghiêm trọng khi tạo đơn hàng: " . $t->getMessage();
-                error_log("FATAL: OrderController::create - Uncaught error: $error_message\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                 $response = ['status' => 'error', 'message' => $error_message];
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
                     echo json_encode($response);
-                    echo "<!-- DEBUG: Ajax fatal error response sent -->";
                     exit;
                 } else {
                     $_SESSION['order_message'] = $response['message'];
@@ -272,12 +199,9 @@ class OrderController {
         }
 
         $response = ['status' => 'error', 'message' => 'Yêu cầu không hợp lệ.'];
-        error_log("DEBUG: OrderController::create - Not a POST request\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
         if ($isAjax) {
             header('Content-Type: application/json');
-            error_log("DEBUG: JSON response: " . json_encode($response) . "\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             echo json_encode($response);
-            echo "<!-- DEBUG: Ajax invalid request response sent -->";
             exit;
         } else {
             header("Location: index.php?controller=cart");
@@ -358,7 +282,6 @@ class OrderController {
                             ];
                         }
                     }
-
                 } else {
                     $error = "Không tìm thấy đơn hàng.";
                 }
@@ -416,7 +339,6 @@ class OrderController {
             $_SESSION['order_message'] = "Đơn hàng đã được hủy thành công.";
         } catch (Exception $e) {
             $this->conn->rollBack();
-            error_log("Lỗi hủy đơn hàng: " . $e->getMessage(), 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             $_SESSION['order_message'] = "Lỗi khi hủy đơn hàng: " . $e->getMessage();
         }
         header("Location: index.php?controller=user&action=orders");
@@ -430,44 +352,23 @@ class OrderController {
 
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($order_id <= 0) {
-            echo "<pre>DEBUG: OrderController::success - Invalid order_id: $order_id</pre>";
             header("Location: index.php?controller=home");
             exit;
         }
         
         $this->order->id = $order_id;
         if (!$this->order->readOne()) {
-            echo "<pre>DEBUG: OrderController::success - readOne failed for order_id: $order_id</pre>";
             header("Location: index.php?controller=home");
             exit;
         }
         
-        $order_details = $this->order->getOrderDetails();
-        $items_debug = [];
-        while ($item = $order_details->fetch(PDO::FETCH_ASSOC)) {
-            $items_debug[] = $item;
-        }
-        echo "<pre>DEBUG: OrderController::success - order_details for order_id $order_id:\n";
-        echo print_r($items_debug, true);
-        echo "</pre>";
-
-        // Reset con trỏ bằng cách gọi lại getOrderDetails
-        $order_details = $this->order->getOrderDetails();
-        echo "<pre>DEBUG: OrderController::success - order_details rowCount: " . $order_details->rowCount() . "</pre>";
-
-        // Gán cho view
-        $order_items = $order_details;
+        $order_items = $this->order->getOrderDetails();
         include 'views/order/view.php';
     }
     
     private function sendOrderConfirmationEmail($order_id, $customer_email) {
         $mail = new PHPMailer(true);
         try {
-            $mail->SMTPDebug = 2;
-            $mail->Debugoutput = function($str, $level) {
-                error_log("SMTP DEBUG [$level]: $str\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
-            };
-
             $query = "SELECT setting_value FROM settings WHERE setting_key = 'contact_email'";
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
@@ -524,10 +425,7 @@ class OrderController {
                 <pre>$items_list</pre>
             ";
             $mail->send();
-
-            error_log("DEBUG: OrderController::sendOrderConfirmationEmail - Email sent to $customer_email and $admin_email\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
         } catch (Exception $e) {
-            error_log("LỖI: OrderController::sendOrderConfirmationEmail - Failed: {$mail->ErrorInfo}\n", 3, '/home/vol1000_36631514/babee.wuaze.com/logs/cart_debug.log');
             throw new Exception("Không thể gửi email xác nhận: {$mail->ErrorInfo}");
         }
     }
