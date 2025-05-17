@@ -118,10 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error_message = "Vui lòng chọn ảnh chính.";
     }
 
-    // Ảnh bổ sung
-    $product->images = [];
-    if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+    // Ảnh bổ sung (chỉ xử lý nếu có file được chọn)
+    if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name']) && !empty($_FILES['additional_images']['name'][0])) {
         $image_count = 0;
+        $product->images = [];
         foreach ($_FILES['additional_images']['name'] as $key => $name) {
             if ($image_count >= 3) {
                 $error_message = "Chỉ được phép upload tối đa 3 ảnh bổ sung.";
@@ -197,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Show success if redirected from create
+// Show success)\\ if redirected from create
 if (isset($_GET['success']) && $_GET['success'] == 1) {
     $success_message = "Lưu sản phẩm thành công.";
 }
@@ -293,6 +293,12 @@ if (!defined('CURRENCY')) {
                 </div>
                 <div class="card-body">
                     <form action="index.php?page=product-edit<?php echo $is_edit ? '&id=' . $product_id : ''; ?>" method="POST" enctype="multipart/form-data">
+                        <div class="text-center mb-4">
+                            <button class="btn btn-primary"><i class="fas fa-save me-1"></i> <?php echo $is_edit ? 'Cập nhật' : 'Lưu'; ?></button>
+                            <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-arrow-left me-1"></i> Back</a>
+                            <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i> Hủy</a>
+                        </div>
+
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -427,12 +433,6 @@ if (!defined('CURRENCY')) {
 
                         <!-- Hidden inputs for delete image IDs -->
                         <div id="delete-image-ids"></div>
-
-                        <div class="text-center">
-                            <button class="btn btn-primary"><i class="fas fa-save me-1"></i> <?php echo $is_edit ? 'Cập nhật' : 'Lưu'; ?></button>
-                            <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-arrow-left me-1"></i> Back</a>
-                            <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i> Hủy</a>
-                        </div>
                     </form>
                 </div>
             </div>
@@ -527,12 +527,14 @@ if (!defined('CURRENCY')) {
         const imageDiv = document.querySelector(`.additional-image[data-image-id="${imageId}"]`);
         if (imageDiv) {
             imageDiv.remove();
+            console.log(`Removing image ID: ${imageId}`);
             const deleteIdsContainer = document.getElementById('delete-image-ids');
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'delete_image_ids[]';
             input.value = imageId;
             deleteIdsContainer.appendChild(input);
+            console.log(`Added delete_image_ids input for ID: ${imageId}`);
         }
     }
 </script>
