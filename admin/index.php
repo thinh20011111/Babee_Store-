@@ -14,9 +14,6 @@ define('DEBUG_MODE', true); // Set to false in production
 $debug_logs = [];
 $error_occurred = false;
 
-// Block sidebar rendering in included pages
-define('BLOCK_SIDEBAR', true);
-
 // Track sidebar inclusion
 if (!defined('SIDEBAR_INCLUDED')) {
     define('SIDEBAR_INCLUDED', true);
@@ -152,7 +149,7 @@ if ($page === 'dashboard') {
         $start_date = date('Y-m-d', strtotime('-7 days'));
         $traffic_stats = $traffic->getStatsRange($start_date, $end_date);
         if (empty($traffic_stats) && file_exists('../models/sample/traffic_data.php')) {
-            require_once '../models/sample/traffic_data.php';
+            require_once '../models/sample/traffic_dataga.php';
             $traffic_stats = array_slice(getSampleDailyTraffic(), -7);
         }
         foreach ($traffic_stats as $stat) {
@@ -196,7 +193,13 @@ if (!defined('CURRENCY')) {
 </head>
 <body class="d-flex">
     <!-- Sidebar -->
-    <?php include_once 'sidebar.php'; ?>
+    <?php 
+    $sidebar_included = include_once 'sidebar.php';
+    if (!$sidebar_included) {
+        $debug_logs[] = "Error: Failed to include sidebar.php";
+        error_log("Failed to include sidebar.php");
+    }
+    ?>
 
     <!-- Main Content -->
     <div class="flex-grow-1 p-4 bg-light">

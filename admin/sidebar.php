@@ -6,17 +6,18 @@ if (!defined('ADMIN_INCLUDED')) {
 }
 
 // Prevent multiple sidebar renderings
-if (defined('SIDEBAR_RENDERED') || defined('BLOCK_SIDEBAR')) {
+if (defined('SIDEBAR_RENDERED')) {
     if (defined('DEBUG_MODE') && DEBUG_MODE) {
-        $GLOBALS['debug_logs'][] = "Sidebar rendering blocked at " . date('Y-m-d H:i:s') . " (SIDEBAR_RENDERED or BLOCK_SIDEBAR defined)";
+        $GLOBALS['debug_logs'][] = "Sidebar rendering skipped at " . date('Y-m-d H:i:s') . " (SIDEBAR_RENDERED already defined)";
     }
-    return; // Exit if sidebar already rendered or blocked
+    return; // Exit if sidebar already rendered
 }
 define('SIDEBAR_RENDERED', true);
 
 // Log sidebar rendering
 if (defined('DEBUG_MODE') && DEBUG_MODE) {
-    $GLOBALS['debug_logs'][] = "Sidebar rendered at " . date('Y-m-d H:i:s') . " for user_role: {$_SESSION['user_role']}";
+    $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashboard';
+    $GLOBALS['debug_logs'][] = "Sidebar rendered at " . date('Y-m-d H:i:s') . " for user_role: {$_SESSION['user_role']}, page: $current_page";
 }
 
 // Define accessible pages for roles
@@ -32,7 +33,7 @@ $user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'staff';
 $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashboard';
 ?>
 
-<div id="admin-sidebar" class="bg-dark sidebar p-3 text-white" style="width: 250px; min-height: 100vh; position: sticky; top: 0;">
+<div id="admin-sidebar" class="bg-dark sidebar p-3 text-white" style="width: 250px; min-height: 100vh; position: sticky; top: 0; display: block;">
     <h4 class="text-center mb-4">Admin Panel</h4>
     <ul class="nav flex-column">
         <?php if (in_array('dashboard', $accessible_pages[$user_role])): ?>
@@ -102,6 +103,11 @@ $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashbo
 </div>
 
 <style>
+    .sidebar {
+        display: block !important;
+        background: #1a1a1a;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    }
     .sidebar .nav-link {
         padding: 12px 20px;
         border-radius: 8px;
@@ -120,5 +126,12 @@ $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashbo
     .sidebar .nav-link i {
         width: 24px;
         text-align: center;
+    }
+    @media (max-width: 992px) {
+        .sidebar {
+            width: 100%;
+            position: relative;
+            min-height: auto;
+        }
     }
 </style>
