@@ -295,30 +295,66 @@ class OrderController {
             session_start();
         }
 
-        if (!isset($_SESSION['user_id'])) {
-            $_SESSION['redirect_after_login'] = 'index.php?controller=user&action=orders';
-            header("Location: index.php?controller=user&action=login");
-            exit;
-        }
-        
         $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($order_id <= 0) {
-            header("Location: index.php?controller=user&action=orders");
+            $_SESSION['order_message'] = "Mã đơn hàng không hợp lệ.";
+            header("Location: index.php?controller=order&action=success&id=$order_id");
             exit;
         }
-        
+
         $this->order->id = $order_id;
-        if (!$this->order->readOne() || $this->order->user_id != $_SESSION['user_id']) {
-            header("Location: index.php?controller=user&action=orders");
+        if (!$this->order->readOne()) {
+            $_SESSION['order_message'] = "Không tìm thấy đơn hàng.";
+            header("Location: index.php?controller=order&action=success&id=$order_id");
             exit;
         }
-        
+
+        // Kiểm tra trạng thái đơn hàng
         if ($this->order->status != 'pending') {
             $_SESSION['order_message'] = "Chỉ các đơn hàng đang chờ xử lý mới có thể bị hủy.";
-            header("Location: index.php?controller=user&action=orders");
+            header("Location: index.php?controller=order&action=success&id=$order_id");
             exit;
         }
-        
+
+        // Nếu người dùng đã đăng nhập
+        if (isset($_SESSION['user_id'])) {
+            if ($this->order->user_id != $_SESSION['user_id'] && $_SESSION['user_role'] != 'admin') {
+                $_SESSION['order_message'] = "Bạn không có quyền hủy đơn hàng này.";
+                header("Location: index.php?controller=order&action=success&id=$order_id");
+                exit;
+            }
+        } else {
+            // Nếu không đăng nhập, yêu cầu xác minh qua order_number và customer_email
+            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+                $order_number = isset($_POST['order_number']) ? trim($_POST['order_number']) : '';
+                $customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
+
+                if (empty($order_number) || empty($customer_email)) {
+                    $_SESSION['order_message'] = "Vui lòng nhập mã đơn hàng và email.";
+                    header("Location: index.php?controller=order&action=success&id=$order_id");
+                    exit;
+                }
+
+                $query = "SELECT * FROM orders WHERE id = :order_id AND order_number = :order_number AND customer_email = :customer_email LIMIT 1";
+                $stmt = $this->conn->prepare($query);
+                $stmt->execute([
+                    ':order_id' => $order_id,
+                    ':order_number' => $order_number,
+                    ':customer_email' => $customer_email
+                ]);
+
+                if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $_SESSION['order_message'] = "Thông tin xác minh không đúng.";
+                    header("Location: index.php?controller=order&action=success&id=$order_id");
+                    exit;
+                }
+            } else {
+                // Hiển thị form xác minh
+                include 'views/order/verify_cancel.php';
+                exit;
+            }
+        }
+
         $this->conn->beginTransaction();
         try {
             $this->order->status = 'cancelled';
@@ -341,7 +377,7 @@ class OrderController {
             $this->conn->rollBack();
             $_SESSION['order_message'] = "Lỗi khi hủy đơn hàng: " . $e->getMessage();
         }
-        header("Location: index.php?controller=user&action=orders");
+        header("Location: index.php?controller=order&action=success&id=$order_id");
         exit;
     }
     
