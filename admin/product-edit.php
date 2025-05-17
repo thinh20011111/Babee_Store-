@@ -4,11 +4,16 @@ if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
-// Kết nối cơ sở dữ liệu đảm bảo hỗ trợ UTF-8
+// Include database connection
+require_once '../config/database.php';
 try {
+    $db = new Database();
+    $conn = $db->getConnection();
+    // Set UTF-8 encoding
     $conn->exec("SET NAMES utf8mb4");
 } catch (PDOException $e) {
-    error_log("Database charset error: " . $e->getMessage());
+    error_log("Database connection or charset error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
 }
 
 // Load required models
@@ -21,6 +26,7 @@ try {
     $category = new Category($conn);
 } catch (Exception $e) {
     error_log("Model initialization error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
 }
 
 // Get categories for dropdown
@@ -32,6 +38,7 @@ try {
     }
 } catch (PDOException $e) {
     error_log("Error fetching categories: " . $e->getMessage());
+    $categories = [];
 }
 
 // Check if it's an edit or add operation
@@ -72,7 +79,7 @@ $error_message = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form data
     $product->name = isset($_POST['name']) ? trim($_POST['name']) : '';
-    $product->description = isset($_POST['description']) ? trim($_POST['description']) : '';
+    $product->description = isset($_POST['name']) ? trim($_POST['description']) : '';
     $product->price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
     $product->sale_price = isset($_POST['sale_price']) ? floatval($_POST['sale_price']) : 0;
     $product->category_id = isset($_POST['category_id']) ? intval($_POST['category_id']) : 0;
@@ -155,7 +162,7 @@ if (!defined('CURRENCY')) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $is_edit ? 'Chỉnh sửa' : 'Thêm mới'; ?> sản phẩm</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous">
     <style>
         .sidebar {
             min-height: 100vh;
@@ -179,35 +186,9 @@ if (!defined('CURRENCY')) {
 </head>
 <body>
 <div class="d-flex">
-        <div class="bg-dark sidebar p-3 text-white" style="width: 250px;">
-            <h4 class="text-center mb-4">Admin Panel</h4>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'dashboard') ? 'active bg-primary' : ''; ?>" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'orders') ? 'active bg-primary' : ''; ?>" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'products') ? 'active bg-primary' : ''; ?>" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'users') ? 'active bg-primary' : ''; ?>" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'traffic') ? 'active bg-primary' : ''; ?>" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'banners') ? 'active bg-primary' : ''; ?>" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'settings') ? 'active bg-primary' : ''; ?>" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'promotions') ? 'active bg-primary' : ''; ?>" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
-                </li>
-            </ul>
-        </div>
+    <!-- Sidebar -->
+    <?php include 'sidebar.php'; ?>
+    
     <div class="flex-grow-1 p-4">
         <div class="container-fluid">
             <h1 class="mt-4 mb-3"><?php echo $is_edit ? 'Chỉnh sửa' : 'Thêm mới'; ?> sản phẩm</h1>

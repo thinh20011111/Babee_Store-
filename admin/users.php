@@ -1,154 +1,109 @@
 <?php
-// Users management page
-// Check direct script access
+// Traffic statistics page for admin
 if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
+// Define debug mode
+define('DEBUG_MODE', true); // Set to false in production
+
+// Include database connection
+require_once '../config/database.php';
+try {
+    $db = new Database();
+    $conn = $db->getConnection();
+    // Set UTF-8 encoding
+    $conn->exec("SET NAMES utf8mb4");
+} catch (PDOException $e) {
+    error_log("Database connection or charset error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
+}
+
 // Restrict access to admin only
-if ($_SESSION['user_role'] != 'admin') {
-    echo "<div class='alert alert-danger'>You don't have permission to access this page.</div>";
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] != 'admin') {
+    echo "<div class='alert alert-danger alert-dismissible fade show' role='alert'>You don't have permission to access this page.<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button></div>";
     exit;
 }
 
 // Load required models
-require_once '../models/User.php';
+require_once '../models/TrafficLog.php';
 
-// Initialize objects
-$user = new User($conn);
+// Initialize debug log
+$debug_logs = [];
 
-// Process actions
-$action = isset($_GET['action']) ? $_GET['action'] : '';
-$success_message = '';
-$error_message = '';
+// Initialize traffic log
+try {
+    $traffic = new TrafficLog($conn);
+} catch (Exception $e) {
+    error_log("TrafficLog initialization error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
+}
 
-// Delete user
-if ($action == 'delete' && isset($_GET['id'])) {
-    $user->id = $_GET['id'];
+// Get statistics
+try {
+    // Get total visits
+    $total_visits = $traffic->getTotalVisits() ?? 0;
     
-    // Prevent self-deletion
-    if ($user->id == $_SESSION['user_id']) {
-        $error_message = "You cannot delete your own account.";
-    } else {
-        if ($user->delete()) {
-            $success_message = "User deleted successfully.";
-        } else {
-            $error_message = "Failed to delete user.";
-        }
-    }
-}
-
-// View/edit single user
-$edit_user = null;
-if ($action == 'edit' && isset($_GET['id'])) {
-    $user->id = $_GET['id'];
-    if ($user->readOne()) {
-        $edit_user = $user;
-    } else {
-        $error_message = "User not found.";
-    }
-}
-
-// Process edit form
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_user'])) {
-    $user->id = $_POST['user_id'];
-    $user->username = $_POST['username'];
-    $user->email = $_POST['email'];
-    $user->full_name = $_POST['full_name'];
-    $user->phone = $_POST['phone'];
-    $user->address = $_POST['address'];
-    $user->role = $_POST['role'];
+    // Get today's visits
+    $today_visits = $traffic->getTodayVisits() ?? 0;
     
-    if ($user->update()) {
-        $success_message = "User updated successfully.";
-        
-        // Refresh user data
-        $user->readOne();
-        $edit_user = $user;
-    } else {
-        $error_message = "Failed to update user.";
-    }
-}
-
-// Process password reset
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reset_password'])) {
-    $user->id = $_POST['user_id'];
-    $user->password = $_POST['new_password'];
+    // Get traffic data for range (30 days by default)
+    $view_mode = isset($_GET['view']) ? $_GET['view'] : 'daily';
+    $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d', strtotime('-30 days'));
+    $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
     
-    if ($user->updatePassword()) {
-        $success_message = "Password reset successfully.";
+    if ($view_mode == 'monthly') {
+        $traffic_stats = $traffic->getStatsRange($start_date, $end_date, 'month');
+        $debug_logs[] = "Fetched monthly traffic stats from $start_date to $end_date: " . count($traffic_stats) . " data points";
     } else {
-        $error_message = "Failed to reset password.";
+        $traffic_stats = $traffic->getStatsRange($start_date, $end_date, 'day');
+        $debug_logs[] = "Fetched daily traffic stats from $start_date to $end_date: " . count($traffic_stats) . " data points";
     }
-}
-
-// Process add user form
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user'])) {
-    $user->username = $_POST['username'];
-    $user->email = $_POST['email'];
-    $user->password = $_POST['password'];
-    $user->full_name = $_POST['full_name'];
-    $user->phone = $_POST['phone'];
-    $user->address = $_POST['address'];
-    $user->role = $_POST['role'];
     
-    // Check if email exists
-    $temp_user = new User($conn);
-    $temp_user->email = $user->email;
-    if ($temp_user->emailExists()) {
-        $error_message = "Email already exists.";
+    $debug_logs[] = "Traffic statistics fetched: Total=$total_visits, Today=$today_visits";
+} catch (Exception $e) {
+    $debug_logs[] = "Error fetching traffic statistics: " . $e->getMessage();
+    error_log("Traffic statistics error: " . $e->getMessage());
+    $traffic_stats = [];
+}
+
+// Use sample data if no real data
+if (empty($traffic_stats)) {
+    require_once '../models/sample/traffic_data.php';
+    
+    if ($view_mode == 'monthly') {
+        $traffic_stats = getSampleMonthlyTraffic();
+        $debug_logs[] = "Using sample monthly data: " . count($traffic_stats) . " data points";
     } else {
-        if ($user->create()) {
-            $success_message = "User created successfully.";
-        } else {
-            $error_message = "Failed to create user.";
-        }
+        $traffic_stats = getSampleDailyTraffic();
+        $debug_logs[] = "Using sample daily data: " . count($traffic_stats) . " data points";
     }
+    
+    $total_visits = array_sum(array_column($traffic_stats, 'count'));
+    $today_visits = end($traffic_stats)['count'] ?? 0;
 }
 
-// Get search parameter
-$search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$page = isset($_GET['pg']) ? intval($_GET['pg']) : 1;
-if ($page < 1) $page = 1;
-$items_per_page = 10;
+// Prepare chart data
+$chart_labels = [];
+$chart_data = [];
 
-// Get users
-$users = [];
-if (!empty($search)) {
-    $stmt = $user->search($search, $items_per_page, $page);
-    $total_rows = $user->countSearch($search);
-} else {
-    $stmt = $user->read($items_per_page, $page);
-    $total_rows = $user->countAll();
+foreach ($traffic_stats as $stat) {
+    if ($view_mode == 'monthly') {
+        $chart_labels[] = date('M Y', strtotime($stat['period'] . '-01'));
+    } else {
+        $chart_labels[] = date('d/m', strtotime($stat['period']));
+    }
+    $chart_data[] = $stat['count'];
 }
 
-// Fetch users
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $users[] = $row;
+// Convert to JSON for JavaScript
+$chart_labels_json = json_encode($chart_labels);
+$chart_data_json = json_encode($chart_data);
+
+// Define currency constant
+if (!defined('CURRENCY')) {
+    define('CURRENCY', 'đ');
 }
-
-// Calculate total pages and pagination range
-$total_pages = ceil($total_rows / $items_per_page);
-$start_item = ($page - 1) * $items_per_page + 1;
-$end_item = min($page * $items_per_page, $total_rows);
-
-// Pagination display logic
-$max_visible_pages = 5; // Max page numbers to show (excluding First, Last, ellipsis)
-$half_visible = floor($max_visible_pages / 2);
-$start_page = max(1, $page - $half_visible);
-$end_page = min($total_pages, $start_page + $max_visible_pages - 1);
-if ($end_page - $start_page < $max_visible_pages - 1) {
-    $start_page = max(1, $end_page - $max_visible_pages + 1);
-}
-
-// Debug output (for development)
-$debug_info = [
-    'total_rows' => $total_rows,
-    'total_pages' => $total_pages,
-    'current_page' => $page,
-    'items_per_page' => $items_per_page,
-    'users_count' => count($users)
-];
 ?>
 
 <!DOCTYPE html>
@@ -156,419 +111,514 @@ $debug_info = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management</title>
-    <!-- Bootstrap CSS -->
+    <title>Traffic Statistics - Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous">
-    <style>
-        .sidebar {
-            min-height: 100vh;
-            position: sticky;
-            top: 0;
-        }
-        .card {
-            transition: transform 0.3s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .badge {
-            padding: 8px 12px;
-        }
-        .pagination .page-link {
-            color: #007bff;
-            transition: background-color 0.2s, color 0.2s;
-        }
-        .pagination .page-link:hover {
-            background-color: #e9ecef;
-            color: #0056b3;
-        }
-        .pagination .page-item.active .page-link {
-            background-color: #007bff;
-            border-color: #007bff;
-            color: white;
-        }
-        .pagination .page-item.disabled .page-link {
-            color: #6c757d;
-            pointer-events: none;
-            background-color: #f8f9fa;
-        }
-        .pagination-info {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-bottom: 1rem;
-        }
-        .debug-info {
-            display: none; /* Enable in development */
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            max-width: 300px;
-        }
-    </style>
 </head>
 <body>
     <div class="d-flex">
         <!-- Sidebar -->
-        <div class="bg-dark sidebar p-3 text-white" style="width: 250px;">
-            <h4 class="text-center mb-4">Admin Panel</h4>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'dashboard') ? 'active bg-primary' : ''; ?>" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'orders') ? 'active bg-primary' : ''; ?>" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'products') ? 'active bg-primary' : ''; ?>" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'users') ? 'active bg-primary' : ''; ?>" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'traffic') ? 'active bg-primary' : ''; ?>" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'banners') ? 'active bg-primary' : ''; ?>" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'settings') ? 'active bg-primary' : ''; ?>" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'promotions') ? 'active bg-primary' : ''; ?>" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
-                </li>
-            </ul>
-        </div>
+        <?php include 'sidebar.php'; ?>
 
         <!-- Main Content -->
-        <div class="flex-grow-1 p-4">
+        <div class="flex-grow-1 p-4 bg-light">
             <div class="container-fluid">
-                <h1 class="mt-4 mb-3">User Management</h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="index.php?page=dashboard">Dashboard</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Users</li>
-                    </ol>
-                </nav>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0 fw-bold text-primary">Thống kê lượt truy cập</h1>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary" id="downloadPDFBtn" title="Export to PDF">
+                            <i class="fas fa-file-pdf me-2"></i> Xuất PDF
+                        </button>
+                        <button class="btn btn-primary" id="refreshBtn" title="Refresh data">
+                            <i class="fas fa-sync-alt me-2"></i> Làm mới
+                        </button>
+                    </div>
+                </div>
 
-                <?php if (!empty($success_message)): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?php echo $success_message; ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <!-- Filter Controls -->
+                <div class="chart-controls mb-4 p-4 bg-white shadow-sm rounded">
+                    <form id="trafficFilterForm" class="row g-3 align-items-end" method="GET" action="">
+                        <div class="col-md-3">
+                            <label for="start_date" class="form-label fw-medium">Từ ngày</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <input type="date" class="form-control rounded" id="start_date" name="start_date" 
+                                    value="<?php echo htmlspecialchars($start_date); ?>" max="<?php echo date('Y-m-d'); ?>">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="end_date" class="form-label fw-medium">Đến ngày</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <input type="date" class="form-control rounded" id="end_date" name="end_date" 
+                                    value="<?php echo htmlspecialchars($end_date); ?>" max="<?php echo date('Y-m-d'); ?>">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Chế độ xem</label>
+                            <div class="btn-group view-toggle w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary <?php echo $view_mode == 'daily' ? 'active' : ''; ?>" 
+                                    onclick="this.form.view.value='daily'; this.form.submit();">
+                                    Theo ngày
+                                </button>
+                                <button type="button" class="btn btn-outline-primary <?php echo $view_mode == 'monthly' ? 'active' : ''; ?>"
+                                    onclick="this.form.view.value='monthly'; this.form.submit();">
+                                    Theo tháng
+                                </button>
+                            </div>
+                            <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100 rounded">
+                                <i class="fas fa-filter me-2"></i> Lọc dữ liệu
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <?php endif; ?>
-                
-                <?php if (!empty($error_message)): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?php echo $error_message; ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+                <!-- Statistics Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 rounded visit-card">
+                            <div class="card-body d-flex align-items-center bg-gradient-primary text-white">
+                                <i class="fas fa-chart-line fa-3x me-3"></i>
+                                <div>
+                                    <h6 class="text-uppercase mb-1">Tổng lượt truy cập</h6>
+                                    <h4 class="mb-0"><?php echo number_format($total_visits); ?></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 rounded visit-card">
+                            <div class="card-body d-flex align-items-center bg-gradient-success text-white">
+                                <i class="fas fa-calendar-day fa-3x me-3"></i>
+                                <div>
+                                    <h6 class="text-uppercase mb-1">Lượt truy cập hôm nay</h6>
+                                    <h4 class="mb-0"><?php echo number_format($today_visits); ?></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <?php endif; ?>
-                
-                <?php if ($edit_user): ?>
-                <!-- Edit User Form -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5><i class="fas fa-user-edit me-2"></i> Edit User: <?php echo htmlspecialchars($edit_user->username); ?></h5>
-                        <a href="index.php?page=users" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i> Back to Users
-                        </a>
+
+                <!-- Traffic Chart -->
+                <div class="card shadow-sm rounded mb-4 border-0">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-bar me-2"></i> 
+                            <?php echo $view_mode == 'monthly' ? 'Lượt truy cập theo tháng' : 'Lượt truy cập theo ngày'; ?>
+                        </h6>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <form action="index.php?page=users&action=edit&id=<?php echo $edit_user->id; ?>" method="POST">
-                                    <input type="hidden" name="user_id" value="<?php echo $edit_user->id; ?>">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($edit_user->username); ?>" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                                            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($edit_user->email); ?>" required>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="full_name" class="form-label">Full Name</label>
-                                        <input type="text" class="form-control" id="full_name" name="full_name" value="<?php echo htmlspecialchars($edit_user->full_name); ?>">
-                                    </div>
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="phone" class="form-label">Phone</label>
-                                            <input type="text" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($edit_user->phone); ?>">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="role" name="role" required>
-                                                <option value="customer" <?php echo ($edit_user->role == 'customer') ? 'selected' : ''; ?>>Customer</option>
-                                                <option value="staff" <?php echo ($edit_user->role == 'staff') ? 'selected' : ''; ?>>Staff</option>
-                                                <option value="admin" <?php echo ($edit_user->role == 'admin') ? 'selected' : ''; ?>>Administrator</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="address" class="form-label">Address</label>
-                                        <textarea class="form-control" id="address" name="address" rows="3"><?php echo htmlspecialchars($edit_user->address); ?></textarea>
-                                    </div>
-                                    <button type="submit" name="update_user" class="btn btn-primary">Update User</button>
-                                </form>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="m-0 fw-bold"><i class="fas fa-key me-2"></i> Reset Password</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <form action="index.php?page=users&action=edit&id=<?php echo $edit_user->id; ?>" method="POST">
-                                            <input type="hidden" name="user_id" value="<?php echo $edit_user->id; ?>">
-                                            <div class="mb-3">
-                                                <label for="new_password" class="form-label">New Password <span class="text-danger">*</span></label>
-                                                <input type="password" class="form-control" id="new_password" name="new_password" required>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
-                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                                            </div>
-                                            <div class="d-grid">
-                                                <button type="submit" name="reset_password" class="btn btn-warning" onclick="return validatePasswordReset()">Reset Password</button>
-                                            </div>
-                                        </form>
-                                    </div>
+                        <div class="chart-container bg-white rounded shadow-sm">
+                            <canvas id="trafficChart"></canvas>
+                            <?php if (empty($chart_data)): ?>
+                            <div class="chart-placeholder">
+                                <div class="text-center">
+                                    <i class="fas fa-chart-bar fa-3x mb-3 text-muted"></i>
+                                    <p>Không có dữ liệu lượt truy cập trong khoảng thời gian đã chọn.</p>
                                 </div>
                             </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
-                <?php else: ?>
-                <!-- Users List View -->
-                <div class="row mb-4">
-                    <!-- Add User Form -->
-                    <div class="col-md-4">
-                        <div class="card shadow-sm">
-                            <div class="card-header">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-user-plus me-2"></i> Add New User</h6>
-                            </div>
-                            <div class="card-body">
-                                <form action="index.php?page=users" method="POST">
-                                    <div class="mb-3">
-                                        <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="username" name="username" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                                        <input type="email" class="form-control" id="email" name="email" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
-                                        <input type="password" class="form-control" id="password" name="password" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="full_name" class="form-label">Full Name</label>
-                                        <input type="text" class="form-control" id="full_name" name="full_name">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="phone" class="form-label">Phone</label>
-                                        <input type="text" class="form-control" id="phone" name="phone">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="address" class="form-label">Address</label>
-                                        <textarea class="form-control" id="address" name="address" rows="2"></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
-                                        <select class="form-select" id="role" name="role" required>
-                                            <option value="customer">Customer</option>
-                                            <option value="staff">Staff</option>
-                                            <option value="admin">Administrator</option>
-                                        </select>
-                                    </div>
-                                    <div class="d-grid">
-                                        <button type="submit" name="add_user" class="btn btn-success">Add User</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Users List Table -->
-                    <div class="col-md-8">
-                        <div class="card shadow-sm">
-                            <div class="card-header">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-users me-2"></i> Users List</h6>
-                            </div>
-                            <div class="card-body">
-                                <!-- Search Form -->
-                                <div class="mb-4">
-                                    <form action="index.php" method="GET" class="d-flex">
-                                        <input type="hidden" name="page" value="users">
-                                        <input type="text" name="search" class="form-control me-2" placeholder="Search users..." value="<?php echo htmlspecialchars($search); ?>">
-                                        <button type="submit" class="btn btn-primary">Search</button>
-                                    </form>
-                                </div>
-                                
-                                <!-- Users Table -->
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-striped table-hover">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Username</th>
-                                                <th>Email</th>
-                                                <th>Role</th>
-                                                <th>Registered</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php if (empty($users)): ?>
-                                            <tr>
-                                                <td colspan="6" class="text-center">No users found</td>
-                                            </tr>
-                                            <?php else: ?>
-                                            <?php foreach ($users as $user_item): ?>
-                                            <tr>
-                                                <td><?php echo $user_item['id']; ?></td>
-                                                <td><?php echo htmlspecialchars($user_item['username']); ?></td>
-                                                <td><?php echo htmlspecialchars($user_item['email']); ?></td>
-                                                <td>
-                                                    <?php
-                                                    $role_class = '';
-                                                    switch($user_item['role']) {
-                                                        case 'admin': $role_class = 'bg-danger text-white'; break;
-                                                        case 'staff': $role_class = 'bg-warning text-dark'; break;
-                                                        default: $role_class = 'bg-info text-dark';
-                                                    }
-                                                    ?>
-                                                    <span class="badge <?php echo $role_class; ?>"><?php echo ucfirst($user_item['role']); ?></span>
-                                                </td>
-                                                <td><?php echo date('M d, Y', strtotime($user_item['created_at'])); ?></td>
-                                                <td>
-                                                    <a href="index.php?page=users&action=edit&id=<?php echo $user_item['id']; ?>" class="btn btn-primary btn-sm me-1">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <?php if ($user_item['id'] != $_SESSION['user_id']): ?>
-                                                    <a href="index.php?page=users&action=delete&id=<?php echo $user_item['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <!-- Pagination -->
-                                <?php if ($total_rows > 0): ?>
-                                <div class="pagination-info text-center">
-                                    Showing <?php echo $start_item; ?> to <?php echo $end_item; ?> of <?php echo $total_rows; ?> users
-                                </div>
-                                <nav aria-label="Page navigation">
-                                    <ul class="pagination justify-content-center mt-3">
-                                        <!-- First Page -->
-                                        <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                                            <a class="page-link" href="index.php?page=users&<?php 
-                                                echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
-                                                echo 'pg=1';
-                                            ?>" aria-label="First">
-                                                <i class="fas fa-angle-double-left"></i>
-                                            </a>
-                                        </li>
-                                        <!-- Previous Page -->
-                                        <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                                            <a class="page-link" href="index.php?page=users&<?php 
-                                                echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
-                                                echo 'pg=' . ($page - 1);
-                                            ?>" aria-label="Previous">
-                                                <i class="fas fa-angle-left"></i>
-                                            </a>
-                                        </li>
-                                        <!-- Page Numbers -->
-                                        <?php if ($start_page > 1): ?>
-                                        <li class="page-item disabled">
-                                            <span class="page-link">...</span>
-                                        </li>
-                                        <?php endif; ?>
-                                        <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
-                                        <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
-                                            <a class="page-link" href="index.php?page=users&<?php 
-                                                echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
-                                                echo 'pg=' . $i;
-                                            ?>"><?php echo $i; ?></a>
-                                        </li>
-                                        <?php endfor; ?>
-                                        <?php if ($end_page < $total_pages): ?>
-                                        <li class="page-item disabled">
-                                            <span class="page-link">...</span>
-                                        </li>
-                                        <?php endif; ?>
-                                        <!-- Next Page -->
-                                        <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                                            <a class="page-link" href="index.php?page=users&<?php 
-                                                echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
-                                                echo 'pg=' . ($page + 1);
-                                            ?>" aria-label="Next">
-                                                <i class="fas fa-angle-right"></i>
-                                            </a>
-                                        </li>
-                                        <!-- Last Page -->
-                                        <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                                            <a class="page-link" href="index.php?page=users&<?php 
-                                                echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
-                                                echo 'pg=' . $total_pages;
-                                            ?>" aria-label="Last">
-                                                <i class="fas fa-angle-double-right"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </nav>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Debug Info (Development Only) -->
-                <div class="debug-info">
-                    <strong>Debug Info:</strong><br>
-                    Total Rows: <?php echo $debug_info['total_rows']; ?><br>
-                    Total Pages: <?php echo $debug_info['total_pages']; ?><br>
-                    Current Page: <?php echo $debug_info['current_page']; ?><br>
-                    Items per Page: <?php echo $debug_info['items_per_page']; ?><br>
-                    Users Loaded: <?php echo $debug_info['users_count']; ?>
+
+                <!-- Debug Info -->
+                <?php if (DEBUG_MODE && !empty($debug_logs)): ?>
+                <div class="debug-info p-3 bg-light rounded shadow-sm">
+                    <h6 class="fw-bold text-muted"><i class="fas fa-bug me-2"></i>Debug Information</h6>
+                    <ul class="mb-0">
+                        <?php foreach ($debug_logs as $log): ?>
+                        <li><?php echo htmlspecialchars($log); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS and Popper -->
+    <!-- JavaScript Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <script>
-    function validatePasswordReset() {
-        const newPassword = document.getElementById('new_password').value;
-        const confirmPassword = document.getElementById('confirm_password').value;
-        
-        if (newPassword.length < 6) {
-            alert('Password must be at least 6 characters long');
-            return false;
-        }
-        
-        if (newPassword !== confirmPassword) {
-            alert('Passwords do not match');
-            return false;
-        }
-        
-        return true;
-    }
+        // Initialize Chart
+        let trafficChart;
+
+        const createTrafficChart = () => {
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            
+            // Chart data
+            const chartLabels = <?php echo $chart_labels_json; ?>;
+            const chartData = <?php echo $chart_data_json; ?>;
+            
+            // Destroy existing chart if it exists
+            if (trafficChart) {
+                trafficChart.destroy();
+            }
+
+            // Chart colors
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
+            gradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
+            
+            trafficChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: '<?php echo $view_mode == "monthly" ? "Lượt truy cập theo tháng" : "Lượt truy cập theo ngày"; ?>',
+                        data: chartData,
+                        backgroundColor: gradient,
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointHoverBorderColor: '#fff',
+                        pointHitRadius: 10,
+                        lineTension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            },
+                            title: {
+                                display: true,
+                                text: 'Lượt truy cập'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '<?php echo $view_mode == "monthly" ? "Tháng" : "Ngày"; ?>'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return tooltipItems[0].label;
+                                },
+                                label: function(context) {
+                                    return `Lượt truy cập: ${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.4
+                        }
+                    }
+                }
+            });
+        };
+
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            createTrafficChart();
+            
+            // Handle refresh button
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                location.reload();
+            });
+            
+            // Handle PDF download
+            document.getElementById('downloadPDFBtn').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                html2canvas(document.querySelector('.chart-container')).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('landscape');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    
+                    // Add header
+                    pdf.setFontSize(18);
+                    pdf.text('Báo cáo lượt truy cập website', 10, 15);
+                    
+                    // Add date
+                    pdf.setFontSize(12);
+                    pdf.text(`Thời gian: ${new Date().toLocaleDateString('vi-VN')}`, 10, 25);
+                    
+                    // Add stats
+                    pdf.text(`Tổng lượt truy cập: ${<?php echo number_format($total_visits); ?>}`, 10, 35);
+                    pdf.text(`Lượt truy cập hôm nay: ${<?php echo number_format($today_visits); ?>}`, 10, 45);
+                    
+                    // Add chart
+                    pdf.addImage(imgData, 'PNG', 10, 55, pdfWidth, pdfHeight);
+                    
+                    // Save the PDF
+                    pdf.save(`bao_cao_truy_cap_${new Date().toISOString().slice(0,10)}.pdf`);
+                }).catch(error => {
+                    console.error('Error generating PDF:', error);
+                });
+            });
+        });
+
+        // Handle form submission for filter
+        document.getElementById('trafficFilterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const params = new URLSearchParams(formData).toString();
+            window.location.href = `?${params}`;
+        });
     </script>
+
+    <style>
+        /* Modernized General Styling */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+            color: #333;
+        }
+
+        .container-fluid {
+            padding: 30px;
+            max-width: 1400px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        /* Card Styling */
+        .card {
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .visit-card {
+            border-left: 5px solid transparent;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(90deg, #28a745, #1e7e34);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+        }
+
+        .chart-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #6c757d;
+        }
+
+        .chart-placeholder i {
+            color: #adb5bd;
+        }
+
+        /* Filter Controls */
+        .chart-controls {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #1a1a1a;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            padding: 10px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+
+        .input-group-text {
+            background: #f1f3f5;
+            border: 1px solid #ced4da;
+            color: #495057;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .btn-group .btn {
+            border-radius: 8px;
+            font-size: 0.95rem;
+            padding: 10px;
+        }
+
+        .btn-outline-primary.active {
+            background: #007bff;
+            color: #fff;
+        }
+
+        .btn-primary {
+            border-radius: 8px;
+            padding: 12px;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-primary {
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .btn-outline-primary:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        /* Debug Info */
+        .debug-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.9rem;
+            border: 1px solid #e9ecef;
+            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
+        }
+
+        .debug-info ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .debug-info li {
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            min-height: 100vh;
+            position: sticky;
+            top: 0;
+            background: #1a1a1a;
+        }
+
+        .sidebar .nav-link {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #e9ecef;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .sidebar .nav-link.active {
+            background: #007bff;
+            color: #fff !important;
+            font-weight: 600;
+        }
+
+        .sidebar .nav-link i {
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .row.g-4 {
+                flex-direction: column;
+            }
+
+            .col-md-6 {
+                width: 100%;
+            }
+
+            .chart-controls .col-md-3 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .chart-controls {
+                padding: 15px;
+            }
+
+            .chart-controls .col-md-3 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+
+            .btn-group .btn {
+                font-size: 0.9rem;
+                padding: 8px;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
 </body>
 </html>

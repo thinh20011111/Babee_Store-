@@ -5,13 +5,30 @@ if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
+// Include database connection
+require_once '../config/database.php';
+try {
+    $db = new Database();
+    $conn = $db->getConnection();
+    // Set UTF-8 encoding
+    $conn->exec("SET NAMES utf8mb4");
+} catch (PDOException $e) {
+    error_log("Database connection or charset error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
+}
+
 // Load required models
 require_once '../models/Product.php';
 require_once '../models/Category.php';
 
 // Initialize objects
-$product = new Product($conn);
-$category = new Category($conn);
+try {
+    $product = new Product($conn);
+    $category = new Category($conn);
+} catch (Exception $e) {
+    error_log("Model initialization error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
+}
 
 // Process actions
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -21,38 +38,50 @@ $error_message = '';
 // Delete product
 if ($action == 'delete' && isset($_GET['id'])) {
     $product->id = $_GET['id'];
-    if ($product->delete()) {
-        $success_message = "Product deleted successfully.";
-    } else {
-        $error_message = "Failed to delete product.";
+    try {
+        if ($product->delete()) {
+            $success_message = "Product deleted successfully.";
+        } else {
+            $error_message = "Failed to delete product.";
+        }
+    } catch (Exception $e) {
+        $error_message = "Error deleting product: " . $e->getMessage();
+        error_log("Delete product error: " . $e->getMessage());
     }
 }
 
 // Get search and filter parameters
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$page = isset($_GET['pg']) ? intval($_GET['pg']) : 1;
 if ($page < 1) $page = 1;
 $items_per_page = 10;
 
 // Get products
 $products = [];
-if (!empty($search)) {
-    $stmt = $product->search($search, $page, $items_per_page);
-    $total_rows = $product->countSearch($search);
-} else if ($category_id > 0) {
-    $stmt = $product->readByCategory($category_id, $page, $items_per_page);
-    $total_rows = $product->countByCategory($category_id);
-} else {
-    $stmt = $product->read($items_per_page, $page);
-    $total_rows = $product->countAll();
-}
+try {
+    if (!empty($search)) {
+        $stmt = $product->search($search, $page, $items_per_page);
+        $total_rows = $product->countSearch($search);
+    } else if ($category_id > 0) {
+        $stmt = $product->readByCategory($category_id, $page, $items_per_page);
+        $total_rows = $product->countByCategory($category_id);
+    } else {
+        $stmt = $product->read($items_per_page, $page);
+        $total_rows = $product->countAll();
+    }
 
-// Process products and add total stock
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $product->id = $row['id'];
-    $row['total_stock'] = $product->getTotalStock(); // Add total stock from particuliers
-    $products[] = $row;
+    // Process products and add total stock
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $product->id = $row['id'];
+        $row['total_stock'] = $product->getTotalStock(); // Add total stock from variants
+        $products[] = $row;
+    }
+} catch (Exception $e) {
+    error_log("Error fetching products: " . $e->getMessage());
+    $error_message = "Error loading products.";
+    $products = [];
+    $total_rows = 0;
 }
 
 // Calculate total pages and pagination range
@@ -71,9 +100,14 @@ if ($end_page - $start_page < $max_visible_pages - 1) {
 
 // Get all categories for filter
 $categories = [];
-$category_stmt = $category->read();
-while ($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
-    $categories[] = $row;
+try {
+    $category_stmt = $category->read();
+    while ($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
+        $categories[] = $row;
+    }
+} catch (Exception $e) {
+    error_log("Error fetching categories: " . $e->getMessage());
+    $categories = [];
 }
 
 // Define currency constant if not defined
@@ -159,35 +193,7 @@ $debug_info = [
 <body>
     <div class="d-flex">
         <!-- Sidebar -->
-        <div class="bg-dark sidebar p-3 text-white" style="width: 250px;">
-            <h4 class="text-center mb-4">Admin Panel</h4>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'dashboard') ? 'active bg-primary' : ''; ?>" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'orders') ? 'active bg-primary' : ''; ?>" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'products') ? 'active bg-primary' : ''; ?>" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'users') ? 'active bg-primary' : ''; ?>" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'traffic') ? 'active bg-primary' : ''; ?>" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'banners') ? 'active bg-primary' : ''; ?>" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'settings') ? 'active bg-primary' : ''; ?>" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'promotions') ? 'active bg-primary' : ''; ?>" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
-                </li>
-            </ul>
-        </div>
+        <?php include 'sidebar.php'; ?>
 
         <!-- Main Content -->
         <div class="flex-grow-1 p-4">
@@ -217,7 +223,7 @@ $debug_info = [
                 <div class="card shadow-sm mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="m-0 fw-bold text-primary"><i class="fas fa-table me-2"></i> Products List</h6>
-                        <a href="/admin/index.php?page=product-edit" class="btn btn-primary btn-sm">
+                        <a href="index.php?page=product-edit" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus me-1"></i> Add New Product
                         </a>
                     </div>
@@ -225,14 +231,14 @@ $debug_info = [
                         <!-- Search and Filter Form -->
                         <div class="row mb-4">
                             <div class="col-md-6">
-                                <form action="/admin/index.php" method="GET" class="d-flex">
+                                <form action="index.php" method="GET" class="d-flex">
                                     <input type="hidden" name="page" value="products">
                                     <input type="text" name="search" class="form-control me-2" placeholder="Search products..." value="<?php echo htmlspecialchars($search); ?>">
                                     <button type="submit" class="btn btn-primary">Search</button>
                                 </form>
                             </div>
                             <div class="col-md-6">
-                                <form action="/admin/index.php" method="GET" class="d-flex justify-content-end">
+                                <form action="index.php" method="GET" class="d-flex justify-content-end">
                                     <input type="hidden" name="page" value="products">
                                     <select name="category_id" class="form-select me-2" style="max-width: 200px;">
                                         <option value="0">All Categories</option>
@@ -310,10 +316,10 @@ $debug_info = [
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <a href="/admin/index.php?page=product-edit&id=<?php echo $item['id']; ?>" class="btn btn-primary btn-sm me-1">
+                                            <a href="index.php?page=product-edit&id=<?php echo $item['id']; ?>" class="btn btn-primary btn-sm me-1">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="/admin/index.php?page=products&action=delete&id=<?php echo $item['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this product?')">
+                                            <a href="index.php?page=products&action=delete&id=<?php echo $item['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this product?')">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </td>
@@ -333,20 +339,20 @@ $debug_info = [
                             <ul class="pagination justify-content-center mt-3">
                                 <!-- First Page -->
                                 <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                    <a class="page-link" href="index.php?page=products&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
-                                        echo 'page=1';
+                                        echo 'pg=1';
                                     ?>" aria-label="First">
                                         <i class="fas fa-angle-double-left"></i>
                                     </a>
                                 </li>
                                 <!-- Previous Page -->
                                 <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                    <a class="page-link" href="index.php?page=products&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
-                                        echo 'page=' . ($page - 1);
+                                        echo 'pg=' . ($page - 1);
                                     ?>" aria-label="Previous">
                                         <i class="fas fa-angle-left"></i>
                                     </a>
@@ -359,10 +365,10 @@ $debug_info = [
                                 <?php endif; ?>
                                 <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
                                 <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
-                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                    <a class="page-link" href="index.php?page=products&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
-                                        echo 'page=' . $i;
+                                        echo 'pg=' . $i;
                                     ?>"><?php echo $i; ?></a>
                                 </li>
                                 <?php endfor; ?>
@@ -373,20 +379,20 @@ $debug_info = [
                                 <?php endif; ?>
                                 <!-- Next Page -->
                                 <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                    <a class="page-link" href="index.php?page=products&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
-                                        echo 'page=' . ($page + 1);
+                                        echo 'pg=' . ($page + 1);
                                     ?>" aria-label="Next">
                                         <i class="fas fa-angle-right"></i>
                                     </a>
                                 </li>
                                 <!-- Last Page -->
                                 <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                    <a class="page-link" href="index.php?page=products&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
                                         echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
-                                        echo 'page=' . $total_pages;
+                                        echo 'pg=' . $total_pages;
                                     ?>" aria-label="Last">
                                         <i class="fas fa-angle-double-right"></i>
                                     </a>

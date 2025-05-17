@@ -5,6 +5,18 @@ if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
+// Include database connection
+require_once '../config/database.php';
+try {
+    $db = new Database();
+    $conn = $db->getConnection();
+    // Set UTF-8 encoding
+    $conn->exec("SET NAMES utf8mb4");
+} catch (PDOException $e) {
+    error_log("Database connection or charset error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
+}
+
 // Restrict access to admin only
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] != 'admin') {
     echo "<div class='alert alert-danger'>You don't have permission to access this page.</div>";
@@ -15,7 +27,12 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] != 'admin') {
 require_once '../models/Promotion.php';
 
 // Initialize objects
-$promotion = new Promotion($conn);
+try {
+    $promotion = new Promotion($conn);
+} catch (Exception $e) {
+    error_log("Model initialization error: " . $e->getMessage());
+    die("Internal Server Error - Check logs for details.");
+}
 
 // Process actions
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -25,10 +42,15 @@ $error_message = '';
 // Delete promotion
 if ($action == 'delete' && isset($_GET['id'])) {
     $promotion->id = $_GET['id'];
-    if ($promotion->delete()) {
-        $success_message = "Promotion deleted successfully.";
-    } else {
-        $error_message = "Failed to delete promotion.";
+    try {
+        if ($promotion->delete()) {
+            $success_message = "Promotion deleted successfully.";
+        } else {
+            $error_message = "Failed to delete promotion.";
+        }
+    } catch (Exception $e) {
+        $error_message = "Error deleting promotion: " . $e->getMessage();
+        error_log("Delete promotion error: " . $e->getMessage());
     }
 }
 
@@ -36,34 +58,45 @@ if ($action == 'delete' && isset($_GET['id'])) {
 $edit_promotion = null;
 if ($action == 'edit' && isset($_GET['id'])) {
     $promotion->id = $_GET['id'];
-    if ($promotion->readOne()) {
-        $edit_promotion = $promotion;
-    } else {
-        $error_message = "Promotion not found.";
+    try {
+        if ($promotion->readOne()) {
+            $edit_promotion = $promotion;
+        } else {
+            $error_message = "Promotion not found.";
+        }
+    } catch (Exception $e) {
+        $error_message = "Error loading promotion: " . $e->getMessage();
+        error_log("Read promotion error: " . $e->getMessage());
     }
 }
 
 // Process add/edit form
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
-        $promotion->name = $_POST['name'];
-        $promotion->code = strtoupper(trim($_POST['code']));
-        $promotion->discount_type = $_POST['discount_type'];
-        $promotion->discount_value = floatval($_POST['discount_value']);
-        $promotion->start_date = $_POST['start_date'];
+        $promotion->name = trim($_POST['name'] ?? '');
+        $promotion->code = strtoupper(trim($_POST['code'] ?? ''));
+        $promotion->discount_type = $_POST['discount_type'] ?? '';
+        $promotion->discount_value = floatval($_POST['discount_value'] ?? 0);
+        $promotion->start_date = $_POST['start_date'] ?? '';
         $promotion->end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
         $promotion->is_active = isset($_POST['is_active']) ? 1 : 0;
-        $promotion->min_purchase = floatval($_POST['min_purchase']);
-        $promotion->usage_limit = intval($_POST['usage_limit']);
+        $promotion->min_purchase = floatval($_POST['min_purchase'] ?? 0);
+        $promotion->usage_limit = intval($_POST['usage_limit'] ?? 0);
 
         // Validate inputs
         if (empty($promotion->name) || empty($promotion->code) || $promotion->discount_value <= 0) {
             throw new Exception("Please fill all required fields with valid values.");
         }
+        if (!preg_match('/^[A-Za-z0-9]+$/', $promotion->code)) {
+            throw new Exception("Promotion code must contain only letters and numbers.");
+        }
+        if (!in_array($promotion->discount_type, ['percentage', 'fixed'])) {
+            throw new Exception("Invalid discount type.");
+        }
 
         if (isset($_POST['edit_id'])) {
             // Update existing promotion
-            $promotion->id = $_POST['edit_id'];
+            $promotion->id = intval($_POST['edit_id']);
             if ($promotion->update()) {
                 $success_message = "Promotion updated successfully.";
                 $promotion->readOne();
@@ -82,14 +115,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     } catch (Exception $e) {
         $error_message = $e->getMessage();
+        error_log("Save promotion error: " . $e->getMessage());
     }
 }
 
 // Get all promotions
 $promotions = [];
-$stmt = $promotion->read();
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $promotions[] = $row;
+try {
+    $stmt = $promotion->read();
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $promotions[] = $row;
+    }
+} catch (Exception $e) {
+    $error_message = "Error loading promotions: " . $e->getMessage();
+    error_log("Fetch promotions error: " . $e->getMessage());
 }
 ?>
 
@@ -101,59 +140,33 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     <title>Promotion Management - Admin Dashboard</title>
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous">
 </head>
 <body>
     <div class="d-flex">
         <!-- Sidebar -->
-        <div class="bg-dark sidebar p-3 text-white" style="width: 250px;">
-            <h4 class="text-center mb-4">Admin Panel</h4>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'dashboard') ? 'active bg-primary' : ''; ?>" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'orders') ? 'active bg-primary' : ''; ?>" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'products') ? 'active bg-primary' : ''; ?>" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'users') ? 'active bg-primary' : ''; ?>" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'traffic') ? 'active bg-primary' : ''; ?>" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'banners') ? 'active bg-primary' : ''; ?>" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'settings') ? 'active bg-primary' : ''; ?>" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'promotions') ? 'active bg-primary' : ''; ?>" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
-                </li>
-            </ul>
-        </div>
+        <?php include 'sidebar.php'; ?>
 
         <!-- Main Content -->
         <div class="flex-grow-1 p-4">
             <div class="container-fluid px-4">
                 <h1 class="mt-4">Promotion Management</h1>
                 <ol class="breadcrumb mb-4">
-                    <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="index.php?page=dashboard">Dashboard</a></li>
                     <li class="breadcrumb-item active">Promotions</li>
                 </ol>
 
                 <?php if (!empty($success_message)): ?>
-                <div class="alert alert-success">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <?php echo htmlspecialchars($success_message); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 <?php endif; ?>
 
                 <?php if (!empty($error_message)): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <?php echo htmlspecialchars($error_message); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 <?php endif; ?>
 
