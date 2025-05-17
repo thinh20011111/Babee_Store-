@@ -298,54 +298,47 @@ include 'views/layouts/header.php';
         <p class="text-muted">@babee_studio</p>
     </div>
     <div class="row g-2">
-        <div class="col-4 col-md-2">
+        <div class="col-6 col-md-3">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
+                <div class="ratio ratio-1x1">
+                <img src="https://drive.google.com/file/d/1cDIvwA_8cEzT45K10ouXfZPvW_xRs-uC/view?usp=drive_link" alt="Image 1" class="w-100 h-100">
+                </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                <i class="fab fa-instagram text-white fa-2x"></i>
                 </div>
             </a>
         </div>
-        <div class="col-4 col-md-2">
+        <div class="col-6 col-md-3">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
+                <div class="ratio ratio-1x1">
+                <img src="https://drive.google.com/file/d/1GCYT2R1Byi8IPnR3KTzXz6UnV-mzIpvl/view?usp=drive_link" alt="Image 1" class="w-100 h-100">
+                </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                <i class="fab fa-instagram text-white fa-2x"></i>
                 </div>
             </a>
         </div>
-        <div class="col-4 col-md-2">
+        <div class="col-6 col-md-3">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
+                <div class="ratio ratio-1x1">
+                <img src="https://drive.google.com/file/d/1fCGY45rHdey4CTaHgANgwNbG1ifrMy1w/view?usp=drive_link" alt="Image 1" class="w-100 h-100">
+                </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                <i class="fab fa-instagram text-white fa-2x"></i>
                 </div>
             </a>
         </div>
-        <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
+        <div class="col-6 col-md-3">
+            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
+                <div class="ratio ratio-1x1">
+                <img src="https://drive.google.com/file/d/1w7t-_6WWG6M6i9LOBJikJqkhTGL_PS7b/view?usp=drive_link" alt="Image 1" class="w-100 h-100">
+                </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                <i class="fab fa-instagram text-white fa-2x"></i>
                 </div>
             </a>
         </div>
-        <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
-                </div>
-            </a>
-        </div>
-        <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
-                </div>
-            </a>
-        </div>
+
     </div>
 </section>
 

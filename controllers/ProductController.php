@@ -1,557 +1,630 @@
 <?php
-class ProductController {
+class Product {
+    // Database connection and table name
     private $conn;
-    private $product;
-    private $category;
+    private $table_name = "products";
     
+    // Object properties
+    public $id;
+    public $name;
+    public $description;
+    public $price;
+    public $sale_price;
+    public $category_id;
+    public $image;
+    public $is_featured;
+    public $is_sale;
+    public $created_at;
+    public $updated_at;
+    public $variants; // Store product variants
+    public $images;  // Store additional product images for admin/user detail views
+    
+    // Constructor with DB connection
     public function __construct($db) {
         $this->conn = $db;
-        $this->product = new Product($db);
-        $this->category = new Category($db);
     }
     
-    // List products by category
-    public function list() {
-        // Get category ID from URL
-        $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
+    // Read all products with pagination
+    public function read($items_per_page = null, $page = 1) {
+        $query = "SELECT p.*, c.name as category_name
+                FROM " . $this->table_name . " p
+                LEFT JOIN categories c ON p.category_id = c.id
+                ORDER BY p.created_at DESC";
         
-        // Get current page
-        $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-        if ($page < 1) $page = 1;
-        
-        // Get search keyword
-        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-        
-        // Set up variables for pagination
-        $items_per_page = ITEMS_PER_PAGE;
-        $total_rows = 0;
-        $products = [];
-        
-        // Get all categories for sidebar
-        $categories = [];
-        $category_stmt = $this->category->read();
-        while ($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
-            $categories[] = $row;
-        }
-        
-        // Get current category info if category_id is specified
-        $category_name = '';
-        if ($category_id > 0) {
-            $this->category->id = $category_id;
-            if ($this->category->readOne()) {
-                $category_name = $this->category->name;
-            }
-        }
-        
-        // Get products based on search or category
-        if (!empty($search)) {
-            // Search products
-            $stmt = $this->product->search($search, $page, $items_per_page);
-            $total_rows = $this->product->countSearch($search);
-        } elseif ($category_id > 0) {
-            // Get products by category
-            $stmt = $this->product->readByCategory($category_id, $page, $items_per_page);
-            $total_rows = $this->product->countByCategory($category_id);
+        // Add pagination if items_per_page is specified
+        if ($items_per_page) {
+            $start = ($page - 1) * $items_per_page;
+            $query .= " LIMIT ?, ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $start, PDO::PARAM_INT);
+            $stmt->bindParam(2, $items_per_page, PDO::PARAM_INT);
         } else {
-            // Get all products with pagination
-            $stmt = $this->product->read($items_per_page);
-            $total_rows = $this->product->countAll();
+            $stmt = $this->conn->prepare($query);
         }
         
-        // Process results
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $products[] = $row;
-        }
+        $stmt->execute();
         
-        // Calculate total pages
-        $total_pages = ceil($total_rows / $items_per_page);
-        
-        // Load product list view
-        include 'views/products/list.php';
+        return $stmt;
     }
     
-    // View product details
-    public function detail() {
-        // Bật error reporting
-        ini_set('display_errors', 1);
-        ini_set('display_startup_errors', 1);
-        error_reporting(E_ALL);
-        
-        // Khởi tạo session
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
+    // Read featured products
+    public function readFeatured($limit = 8) {
+        if (!$this->conn) {
+            return false;
         }
         
-        // Khởi tạo file log
-        $log_file = 'logs/debug.log';
-        if (!file_exists(dirname($log_file))) {
-            mkdir(dirname($log_file), 0755, true);
-        }
-        
-        // Ghi log bắt đầu
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::detail\n", FILE_APPEND);
-        
-        // Get product ID from URL
-        $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID: $product_id\n", FILE_APPEND);
-        
-        if ($product_id <= 0) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID không hợp lệ, chuyển hướng\n", FILE_APPEND);
-            $_SESSION['error_message'] = "ID sản phẩm không hợp lệ.";
-            header("Location: index.php?controller=product&action=list");
-            exit;
-        }
-        
-        // Get product details
         try {
-            $this->product->id = $product_id;
-            if (!$this->product->readOne()) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy sản phẩm với ID $product_id\n", FILE_APPEND);
-                $_SESSION['error_message'] = "Không tìm thấy sản phẩm.";
-                header("Location: index.php?controller=product&action=list");
-                exit;
-            }
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product data: " . json_encode([
-                'id' => $this->product->id,
-                'name' => $this->product->name,
-                'price' => $this->product->price,
-                'sale_price' => $this->product->sale_price,
-                'category_id' => $this->product->category_id,
-                'image' => $this->product->image,
-                'images' => $this->product->images
-            ], JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
-        } catch (Exception $e) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
-            $_SESSION['error_message'] = "Lỗi khi đọc dữ liệu sản phẩm: " . htmlspecialchars($e->getMessage());
-            header("Location: index.php?controller=product&action=list");
-            exit;
-        }
-        
-        // Get variants
-        try {
-            $variants = $this->product->variants;
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variants for product ID $product_id: " . json_encode($variants, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
-        } catch (Exception $e) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc variants: " . $e->getMessage() . "\n", FILE_APPEND);
-            $variants = [];
-        }
-        
-        // Get category name
-        try {
-            $category_name = $this->product->category_name ?? $this->category->getNameById($this->product->category_id);
-            if (empty($category_name)) {
-                $category_name = 'Danh mục không xác định';
-            }
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Category name: $category_name\n", FILE_APPEND);
-        } catch (Exception $e) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc category name: " . $e->getMessage() . "\n", FILE_APPEND);
-            $category_name = 'Danh mục không xác định';
-        }
-        
-        // Get related products
-        try {
-            $related_products = [];
-            $stmt = $this->product->readRelatedProducts($product_id, $this->product->category_id, 4);
-            if ($stmt) {
-                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $related_products[] = $row;
-                }
-            }
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Related products: " . json_encode($related_products, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
-        } catch (Exception $e) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc related products: " . $e->getMessage() . "\n", FILE_APPEND);
-            $related_products = [];
-        }
-        
-        // Prepare data for view
-        $data = [
-            'product' => $this->product,
-            'variants' => $variants,
-            'category_name' => $category_name,
-            'related_products' => $related_products
-        ];
-        
-        // Ghi log dữ liệu truyền vào view
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Data for view: " . json_encode($data, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
-        
-        // Load product detail view
-        try {
-            extract($data);
-            $view_path = __DIR__ . '/../views/products/detail.php';
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đường dẫn view được thử: $view_path\n", FILE_APPEND);
-            if (!file_exists($view_path)) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $view_path không tồn tại\n", FILE_APPEND);
-                die("Lỗi: Không tìm thấy file detail.php tại $view_path. Vui lòng kiểm tra thư mục /htdocs/views/.");
-            }
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu load $view_path\n", FILE_APPEND);
-            include $view_path;
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành load $view_path\n", FILE_APPEND);
-        } catch (Exception $e) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi load view: " . $e->getMessage() . "\n", FILE_APPEND);
-            $_SESSION['error_message'] = "Lỗi khi load trang chi tiết sản phẩm: " . htmlspecialchars($e->getMessage());
-            header("Location: index.php?controller=product&action=list");
-            exit;
+            $query = "SELECT p.*, c.name as category_name
+                    FROM " . $this->table_name . " p
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE p.is_featured = 1
+                    ORDER BY p.created_at DESC
+                    LIMIT ?";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt;
+        } catch(PDOException $e) {
+            error_log("Database error in Product::readFeatured: " . $e->getMessage());
+            return false;
         }
     }
     
-    // Create new product (Admin)
+    // Read all sale products (simple version)
+    public function readAllSale($limit = 8) {
+        if (!$this->conn) {
+            return false;
+        }
+        
+        try {
+            $query = "SELECT p.*, c.name as category_name
+                    FROM " . $this->table_name . " p
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE p.is_sale = 1
+                    ORDER BY p.created_at DESC
+                    LIMIT ?";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt;
+        } catch(PDOException $e) {
+            error_log("Database error in Product::readAllSale: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Read products by category
+    public function readByCategory($category_id, $page = 1, $items_per_page = ITEMS_PER_PAGE) {
+        // Calculate the starting row
+        $start = ($page - 1) * $items_per_page;
+        
+        $query = "SELECT p.*, c.name as category_name
+                FROM " . $this->table_name . " p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.category_id = ?
+                ORDER BY p.created_at DESC
+                LIMIT ?, ?";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $category_id, PDO::PARAM_INT);
+        $stmt->bindParam(2, $start, PDO::PARAM_INT);
+        $stmt->bindParam(3, $items_per_page, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt;
+    }
+    
+    // Read related products (same category, exclude current product)
+    public function readRelatedProducts($product_id, $category_id, $limit = 4) {
+        if (!$this->conn) {
+            return false;
+        }
+        
+        try {
+            $query = "SELECT p.*, c.name as category_name
+                    FROM " . $this->table_name . " p
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE p.category_id = ? AND p.id != ?
+                    ORDER BY RAND()
+                    LIMIT ?";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $category_id, PDO::PARAM_INT);
+            $stmt->bindParam(2, $product_id, PDO::PARAM_INT);
+            $stmt->bindParam(3, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt;
+        } catch(PDOException $e) {
+            error_log("Database error in Product::readRelatedProducts: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Read sale products with pagination
+    public function readSale($limit = 8, $offset = 0) {
+        if (!$this->conn) {
+            return false;
+        }
+        
+        try {
+            $query = "SELECT p.*, c.name as category_name
+                    FROM " . $this->table_name . " p
+                    LEFT JOIN categories c ON p.category_id = c.id
+                    WHERE p.is_sale = 1
+                    ORDER BY p.created_at DESC
+                    LIMIT ?, ?";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $offset, PDO::PARAM_INT);
+            $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt;
+        } catch(PDOException $e) {
+            error_log("Database error in Product::readSale with pagination: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Count sale products
+    public function countSale() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE is_sale = 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $row['total'];
+    }
+    
+    // Count products by category
+    public function countByCategory($category_id) {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name . " WHERE category_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $category_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $row['total'];
+    }
+    
+    // Read single product
+    public function readOne() {
+        $query = "SELECT p.*, c.name as category_name
+                FROM " . $this->table_name . " p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.id = ?
+                LIMIT 0,1";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $this->name = $row['name'];
+            $this->description = $row['description'];
+            $this->price = $row['price'];
+            $this->sale_price = $row['sale_price'];
+            $this->category_id = $row['category_id'];
+            $this->image = $row['image'];
+            $this->is_featured = $row['is_featured'];
+            $this->is_sale = $row['is_sale'];
+            $this->created_at = $row['created_at'];
+            $this->updated_at = $row['updated_at'];
+            $this->variants = $this->getVariants();
+            $this->images = $this->getImages($this->id); // Load additional images
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Get product variants
+    public function getVariants() {
+        $query = "SELECT id, product_id, color, size, price, stock FROM product_variants WHERE product_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+        $variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        error_log("Variants for product ID {$this->id}: " . json_encode($variants));
+        return $variants;
+    }
+    
+    // Get product images
+    public function getImages($product_id) {
+        $query = "SELECT id, product_id, image, created_at FROM product_images WHERE product_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $product_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        error_log("Images for product ID {$product_id}: " . json_encode($images));
+        return $images;
+    }
+    
+    // Add product image
+    public function addImage($product_id, $image_path) {
+        try {
+            $query = "INSERT INTO product_images (product_id, image, created_at) 
+                      VALUES (?, ?, NOW())";
+            $stmt = $this->conn->prepare($query);
+            
+            $image_path = htmlspecialchars(strip_tags($image_path));
+            
+            $stmt->bindParam(1, $product_id, PDO::PARAM_INT);
+            $stmt->bindParam(2, $image_path);
+            
+            if ($stmt->execute()) {
+                error_log("Added image for product ID: {$product_id}, path: {$image_path}");
+                return $this->conn->lastInsertId();
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Error adding image for product ID: {$product_id} - " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Delete all images for a product
+    public function deleteImages($product_id) {
+        try {
+            $query = "DELETE FROM product_images WHERE product_id = ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $product_id, PDO::PARAM_INT);
+            
+            if ($stmt->execute()) {
+                error_log("Deleted all images for product ID: {$product_id}");
+                return true;
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Error deleting images for product ID: {$product_id} - " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Get total stock from variants
+    public function getTotalStock() {
+        $query = "SELECT SUM(stock) as total_stock FROM product_variants WHERE product_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Total stock for product ID {$this->id}: " . ($row['total_stock'] ?? 0));
+        return $row['total_stock'] ?? 0;
+    }
+    
+    // Create product
     public function create() {
-        // Khởi tạo session
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        
-        // Khởi tạo file log
-        $log_file = 'logs/debug.log';
-        if (!file_exists(dirname($log_file))) {
-            mkdir(dirname($log_file), 0755, true);
-        }
-        
-        // Ghi log bắt đầu
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::create\n", FILE_APPEND);
-        
-        // Kiểm tra quyền admin
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không có quyền admin\n", FILE_APPEND);
-            $_SESSION['error_message'] = "Bạn không có quyền thêm sản phẩm.";
-            header("Location: index.php?controller=product&action=list");
-            exit;
-        }
-        
-        // Xử lý form
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            try {
-                $this->product->name = trim($_POST['name'] ?? '');
-                $this->product->description = trim($_POST['description'] ?? '');
-                $this->product->price = floatval($_POST['price'] ?? 0);
-                $this->product->sale_price = floatval($_POST['sale_price'] ?? 0);
-                $this->product->category_id = intval($_POST['category_id'] ?? 0);
-                $this->product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
-                $this->product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
-                
-                // Kiểm tra dữ liệu đầu vào
-                if (empty($this->product->name) || $this->product->price <= 0 || $this->product->category_id <= 0) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
-                    $_SESSION['error_message'] = "Vui lòng điền đầy đủ thông tin sản phẩm.";
-                    header("Location: index.php?controller=product&action=create");
-                    exit;
-                }
-                
-                // Xử lý upload ảnh
-                $upload_dir = 'uploads/images/';
-                if (!is_dir($upload_dir)) {
-                    mkdir($upload_dir, 0755, true);
-                }
-                
-                // Ảnh chính
-                if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
-                    $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
-                    if (!move_uploaded_file($_FILES['main_image']['tmp_name'], $main_image_path)) {
-                        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh chính\n", FILE_APPEND);
-                        $_SESSION['error_message'] = "Lỗi khi upload ảnh chính.";
-                        header("Location: index.php?controller=product&action=create");
-                        exit;
-                    }
-                    $this->product->image = $main_image_path;
-                } else {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Thiếu ảnh chính\n", FILE_APPEND);
-                    $_SESSION['error_message'] = "Vui lòng chọn ảnh chính.";
-                    header("Location: index.php?controller=product&action=create");
-                    exit;
-                }
-                
-                // Ảnh bổ sung
-                $this->product->images = [];
-                if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
-                    foreach ($_FILES['additional_images']['name'] as $key => $name) {
-                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
-                            $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
-                            $image_path = $upload_dir . time() . '_' . basename($name);
-                            if (move_uploaded_file($tmp_name, $image_path)) {
-                                $this->product->images[] = $image_path;
-                            } else {
-                                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh bổ sung: $name\n", FILE_APPEND);
-                            }
-                        }
+        try {
+            $query = "INSERT INTO " . $this->table_name . " 
+                    SET 
+                        name = :name, 
+                        description = :description, 
+                        price = :price, 
+                        sale_price = :sale_price, 
+                        category_id = :category_id, 
+                        image = :image, 
+                        is_featured = :is_featured, 
+                        is_sale = :is_sale, 
+                        created_at = :created_at, 
+                        updated_at = :updated_at";
+            
+            $stmt = $this->conn->prepare($query);
+            
+            // Sanitize inputs
+            $this->name = htmlspecialchars(strip_tags($this->name));
+            $this->description = htmlspecialchars(strip_tags($this->description));
+            $this->price = htmlspecialchars(strip_tags($this->price));
+            $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
+            $this->category_id = htmlspecialchars(strip_tags($this->category_id));
+            $this->image = htmlspecialchars(strip_tags($this->image));
+            $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
+            $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
+            $this->created_at = date('Y-m-d H:i:s');
+            $this->updated_at = date('Y-m-d H:i:s');
+            
+            // Bind parameters
+            $stmt->bindParam(':name', $this->name);
+            $stmt->bindParam(':description', $this->description);
+            $stmt->bindParam(':price', $this->price);
+            $stmt->bindParam(':sale_price', $this->sale_price);
+            $stmt->bindParam(':category_id', $this->category_id);
+            $stmt->bindParam(':image', $this->image);
+            $stmt->bindParam(':is_featured', $this->is_featured);
+            $stmt->bindParam(':is_sale', $this->is_sale);
+            $stmt->bindParam(':created_at', $this->created_at);
+            $stmt->bindParam(':updated_at', $this->updated_at);
+            
+            // Execute the query
+            if ($stmt->execute()) {
+                $this->id = $this->conn->lastInsertId();
+                // Add additional images if provided
+                if (!empty($this->images) && is_array($this->images)) {
+                    foreach ($this->images as $image_path) {
+                        $this->addImage($this->id, $image_path);
                     }
                 }
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Additional images: " . json_encode($this->product->images) . "\n", FILE_APPEND);
-                
-                // Tạo sản phẩm
-                if ($product_id = $this->product->create()) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Tạo sản phẩm thành công, ID: $product_id\n", FILE_APPEND);
-                    $_SESSION['success_message'] = "Tạo sản phẩm thành công.";
-                    header("Location: index.php?controller=product&action=list");
-                    exit;
-                } else {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi tạo sản phẩm\n", FILE_APPEND);
-                    $_SESSION['error_message'] = "Lỗi khi tạo sản phẩm.";
-                    header("Location: index.php?controller=product&action=create");
-                    exit;
-                }
-            } catch (Exception $e) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi tạo sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
-                $_SESSION['error_message'] = "Lỗi khi tạo sản phẩm: " . htmlspecialchars($e->getMessage());
-                header("Location: index.php?controller=product&action=create");
-                exit;
+                return $this->id;
             }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Create error for product: " . $e->getMessage());
+            return false;
         }
-        
-        // Load form tạo sản phẩm
-        $categories = $this->category->read()->fetchAll(PDO::FETCH_ASSOC);
-        include 'views/admin/products/create.php';
     }
     
-    // Update existing product (Admin)
+    // Update product
     public function update() {
-        // Khởi tạo session
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        
-        // Khởi tạo file log
-        $log_file = 'logs/debug.log';
-        if (!file_exists(dirname($log_file))) {
-            mkdir(dirname($log_file), 0755, true);
-        }
-        
-        // Ghi log bắt đầu
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::update\n", FILE_APPEND);
-        
-        // Kiểm tra quyền admin
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không có quyền admin\n", FILE_APPEND);
-            $_SESSION['error_message'] = "Bạn không có quyền chỉnh sửa sản phẩm.";
-            header("Location: index.php?controller=product&action=list");
-            exit;
-        }
-        
-        // Get product ID
-        $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        if ($product_id <= 0) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID không hợp lệ\n", FILE_APPEND);
-            $_SESSION['error_message'] = "ID sản phẩm không hợp lệ.";
-            header("Location: index.php?controller=product&action=list");
-            exit;
-        }
-        
-        // Load product data
-        $this->product->id = $product_id;
-        if (!$this->product->readOne()) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy sản phẩm với ID $product_id\n", FILE_APPEND);
-            $_SESSION['error_message'] = "Không tìm thấy sản phẩm.";
-            header("Location: index.php?controller=product&action=list");
-            exit;
-        }
-        
-        // Xử lý form
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            try {
-                $this->product->name = trim($_POST['name'] ?? '');
-                $this->product->description = trim($_POST['description'] ?? '');
-                $this->product->price = floatval($_POST['price'] ?? 0);
-                $this->product->sale_price = floatval($_POST['sale_price'] ?? 0);
-                $this->product->category_id = intval($_POST['category_id'] ?? 0);
-                $this->product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
-                $this->product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
-                
-                // Kiểm tra dữ liệu đầu vào
-                if (empty($this->product->name) || $this->product->price <= 0 || $this->product->category_id <= 0) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
-                    $_SESSION['error_message'] = "Vui lòng điền đầy đủ thông tin sản phẩm.";
-                    header("Location: index.php?controller=product&action=update&id=$product_id");
-                    exit;
-                }
-                
-                // Xử lý upload ảnh
-                $upload_dir = 'uploads/images/';
-                if (!is_dir($upload_dir)) {
-                    mkdir($upload_dir, 0755, true);
-                }
-                
-                // Ảnh chính
-                if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
-                    $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
-                    if (!move_uploaded_file($_FILES['main_image']['tmp_name'], $main_image_path)) {
-                        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh chính\n", FILE_APPEND);
-                        $_SESSION['error_message'] = "Lỗi khi upload ảnh chính.";
-                        header("Location: index.php?controller=product&action=update&id=$product_id");
-                        exit;
-                    }
-                    $this->product->image = $main_image_path;
-                }
-                
-                // Ảnh bổ sung
-                $this->product->images = [];
-                if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
-                    foreach ($_FILES['additional_images']['name'] as $key => $name) {
-                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
-                            $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
-                            $image_path = $upload_dir . time() . '_' . basename($name);
-                            if (move_uploaded_file($tmp_name, $image_path)) {
-                                $this->product->images[] = $image_path;
-                            } else {
-                                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh bổ sung: $name\n", FILE_APPEND);
-                            }
-                        }
+        try {
+            $query = "UPDATE " . $this->table_name . " 
+                    SET 
+                        name = :name, 
+                        description = :description, 
+                        price = :price, 
+                        sale_price = :sale_price, 
+                        category_id = :category_id, 
+                        image = :image, 
+                        is_featured = :is_featured, 
+                        is_sale = :is_sale, 
+                        updated_at = :updated_at 
+                    WHERE 
+                        id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            
+            // Sanitize inputs
+            $this->name = htmlspecialchars(strip_tags($this->name));
+            $this->description = htmlspecialchars(strip_tags($this->description));
+            $this->price = htmlspecialchars(strip_tags($this->price));
+            $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
+            $this->category_id = htmlspecialchars(strip_tags($this->category_id));
+            $this->image = htmlspecialchars(strip_tags($this->image));
+            $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
+            $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
+            $this->updated_at = date('Y-m-d H:i:s');
+            
+            // Bind parameters
+            $stmt->bindParam(':name', $this->name);
+            $stmt->bindParam(':description', $this->description);
+            $stmt->bindParam(':price', $this->price);
+            $stmt->bindParam(':sale_price', $this->sale_price);
+            $stmt->bindParam(':category_id', $this->category_id);
+            $stmt->bindParam(':image', $this->image);
+            $stmt->bindParam(':is_featured', $this->is_featured);
+            $stmt->bindParam(':is_sale', $this->is_sale);
+            $stmt->bindParam(':updated_at', $this->updated_at);
+            $stmt->bindParam(':id', $this->id);
+            
+            // Execute the query
+            if ($stmt->execute()) {
+                // Update additional images only if $this->images is explicitly set and not empty
+                error_log("Updating product ID: {$this->id}, images: " . json_encode($this->images));
+                if (isset($this->images) && is_array($this->images) && !empty($this->images)) {
+                    // Delete existing images
+                    $this->deleteImages($this->id);
+                    // Add new images
+                    foreach ($this->images as $image_path) {
+                        $this->addImage($this->id, $image_path);
                     }
                 }
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Additional images: " . json_encode($this->product->images) . "\n", FILE_APPEND);
-                
-                // Cập nhật sản phẩm
-                if ($this->product->update()) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cập nhật sản phẩm thành công, ID: $product_id\n", FILE_APPEND);
-                    $_SESSION['success_message'] = "Cập nhật sản phẩm thành công.";
-                    header("Location: index.php?controller=product&action=list");
-                    exit;
-                } else {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm\n", FILE_APPEND);
-                    $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm.";
-                    header("Location: index.php?controller=product&action=product-edit&id=$product_id");
-                    exit;
-                }
-            } catch (Exception $e) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
-                $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm: " . htmlspecialchars($e->getMessage());
-                header("Location: index.php?controller=product&action=product-edit&id=$product_id");
-                exit;
+                return true;
             }
+            
+            error_log("Failed to update product ID: {$this->id}");
+            return false;
+        } catch (PDOException $e) {
+            error_log("Update error for product ID: {$this->id} - " . $e->getMessage());
+            return false;
         }
-        
-        // Load form cập nhật sản phẩm
-        $categories = $this->category->read()->fetchAll(PDO::FETCH_ASSOC);
-        include 'views/admin/products/update.php';
     }
     
-    // Add product to cart (AJAX)
-    public function addToCart() {
-        // Đảm bảo session đã được khởi tạo
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
+    // Delete product
+    public function delete() {
+        try {
+            $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $this->id);
+            
+            if ($stmt->execute()) {
+                // Images are automatically deleted via ON DELETE CASCADE
+                return true;
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Delete error for product ID: {$this->id} - " . $e->getMessage());
+            return false;
         }
-
-        // Khởi tạo file log
-        $log_file = 'logs/debug.log';
-        if (!file_exists(dirname($log_file))) {
-            mkdir(dirname($log_file), 0755, true);
+    }
+    
+    // Search products
+    public function search($keywords, $page = 1, $items_per_page = ITEMS_PER_PAGE) {
+        // Calculate the starting row
+        $start = ($page - 1) * $items_per_page;
+        
+        $query = "SELECT p.*, c.name as category_name
+                FROM " . $this->table_name . " p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE 
+                    p.name LIKE ? OR 
+                    p.description LIKE ? OR 
+                    c.name LIKE ? 
+                ORDER BY p.created_at DESC
+                LIMIT ?, ?";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        // Sanitize keywords
+        $keywords = htmlspecialchars(strip_tags($keywords));
+        $keywords = "%{$keywords}%";
+        
+        // Bind parameters
+        $stmt->bindParam(1, $keywords);
+        $stmt->bindParam(2, $keywords);
+        $stmt->bindParam(3, $keywords);
+        $stmt->bindParam(4, $start, PDO::PARAM_INT);
+        $stmt->bindParam(5, $items_per_page, PDO::PARAM_INT);
+        
+        // Execute query
+        $stmt->execute();
+        
+        return $stmt;
+    }
+    
+    // Count search results
+    public function countSearch($keywords) {
+        $query = "SELECT COUNT(*) as total
+                FROM " . $this->table_name . " p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE 
+                    p.name LIKE ? OR 
+                    p.description LIKE ? OR 
+                    c.name LIKE ?";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        // Sanitize keywords
+        $keywords = htmlspecialchars(strip_tags($keywords));
+        $keywords = "%{$keywords}%";
+        
+        // Bind parameters
+        $stmt->bindParam(1, $keywords);
+        $stmt->bindParam(2, $keywords);
+        $stmt->bindParam(3, $keywords);
+        
+        // Execute query
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $row['total'];
+    }
+    
+    // Get bestselling products
+    public function getBestsellers($limit = 5) {
+        $query = "SELECT p.*, c.name as category_name, 
+                    SUM(oi.quantity) as total_sold
+                FROM " . $this->table_name . " p
+                LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN order_items oi ON p.id = oi.product_id
+                GROUP BY p.id
+                ORDER BY total_sold DESC
+                LIMIT ?";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt;
+    }
+    
+    // Update stock for a specific variant
+    public function updateVariantStock($variant_id, $quantity) {
+        $query = "UPDATE product_variants 
+                SET 
+                    stock = stock - ?, 
+                    updated_at = NOW() 
+                WHERE 
+                    id = ?";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $quantity, PDO::PARAM_INT);
+        $stmt->bindParam(2, $variant_id, PDO::PARAM_INT);
+        
+        if ($stmt->execute()) {
+            return true;
         }
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] ProductController::addToCart called\n", FILE_APPEND);
+        
+        return false;
+    }
+    
+    // Count all products
+    public function countAll() {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $row['total'];
+    }
 
-        // Đặt header JSON ngay đầu để tránh HTML
-        header('Content-Type: application/json');
+    public function deleteImage($image_id) {
+        try {
+            // Lấy đường dẫn ảnh để xóa file vật lý
+            $query = "SELECT image FROM product_images WHERE id = :id AND product_id = :product_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $image_id, PDO::PARAM_INT);
+            $stmt->bindParam(':product_id', $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            $image = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Kiểm tra nếu là request AJAX
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            // Get product ID, variant ID, and quantity
-            $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-            $variant_id = isset($_POST['variant_id']) ? intval($_POST['variant_id']) : 0;
-            $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
-            
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Input: product_id=$product_id, variant_id=$variant_id, quantity=$quantity\n", FILE_APPEND);
-            
-            // Kiểm tra dữ liệu đầu vào
-            if ($product_id <= 0 || $quantity <= 0) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Invalid input\n", FILE_APPEND);
-                echo json_encode(['success' => false, 'message' => 'Dữ liệu sản phẩm hoặc số lượng không hợp lệ.']);
-                exit;
-            }
-            
-            // Get product details
-            try {
-                $this->product->id = $product_id;
-                if (!$this->product->readOne()) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product not found: ID $product_id\n", FILE_APPEND);
-                    echo json_encode(['success' => false, 'message' => 'Không tìm thấy sản phẩm.']);
-                    exit;
+            // Thực hiện xóa ảnh trong database
+            $query = "DELETE FROM product_images WHERE id = :id AND product_id = :product_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $image_id, PDO::PARAM_INT);
+            $stmt->bindParam(':product_id', $this->id, PDO::PARAM_INT);
+
+            if ($stmt->execute()) {
+                error_log("[" . date('Y-m-d H:i:s') . "] Image ID: $image_id deleted successfully for product ID: {$this->id}");
+                // Xóa file vật lý nếu tồn tại
+                if ($image && file_exists($image['image'])) {
+                    unlink($image['image']);
+                    error_log("[" . date('Y-m-d H:i:s') . "] Physical file deleted: " . $image['image']);
                 }
-            } catch (Exception $e) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error reading product: " . $e->getMessage() . "\n", FILE_APPEND);
-                echo json_encode(['success' => false, 'message' => 'Lỗi khi đọc dữ liệu sản phẩm: ' . $e->getMessage()]);
-                exit;
-            }
-            
-            // Check variant details and stock availability
-            try {
-                $query = "SELECT stock, price FROM product_variants WHERE id = ? AND product_id = ?";
-                $stmt = $this->conn->prepare($query);
-                $stmt->execute([$variant_id, $product_id]);
-                $variant = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if (!$variant && $variant_id > 0) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variant not found: ID $variant_id\n", FILE_APPEND);
-                    echo json_encode(['success' => false, 'message' => 'Không tìm thấy biến thể sản phẩm.']);
-                    exit;
-                }
-                
-                if ($variant_id > 0 && $variant['stock'] < $quantity) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Not enough stock for variant ID $variant_id: stock={$variant['stock']}, requested=$quantity\n", FILE_APPEND);
-                    echo json_encode(['success' => false, 'message' => 'Không đủ hàng trong kho cho biến thể này.']);
-                    exit;
-                }
-            } catch (Exception $e) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error querying variant: " . $e->getMessage() . "\n", FILE_APPEND);
-                echo json_encode(['success' => false, 'message' => 'Lỗi khi kiểm tra biến thể: ' . $e->getMessage()]);
-                exit;
-            }
-            
-            // Create or get cart
-            $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-            
-            // Prepare product data
-            $product_data = [
-                'name' => $this->product->name,
-                'price' => $variant['price'] ?? $this->product->price,
-                'sale_price' => $this->product->sale_price,
-                'image' => $this->product->image,
-                'variant_id' => $variant_id
-            ];
-            
-            // Create unique key for cart item (product_id + variant_id)
-            $cart_key = $product_id . '_' . ($variant_id > 0 ? $variant_id : '0');
-            
-            // Add or update item in cart
-            if (isset($cart[$cart_key])) {
-                $cart[$cart_key]['quantity'] += $quantity;
+                return true;
             } else {
-                $cart[$cart_key] = [
-                    'product_id' => $product_id,
-                    'variant_id' => $variant_id,
-                    'quantity' => $quantity,
-                    'data' => $product_data
-                ];
+                error_log("[" . date('Y-m-d H:i:s') . "] Failed to delete image ID: $image_id for product ID: {$this->id}");
+                return false;
             }
-            
-            // Update session cart
-            $_SESSION['cart'] = $cart;
-            
-            // Calculate cart totals
-            $cart_count = array_sum(array_column($cart, 'quantity'));
-            $cart_total = array_sum(array_map(function($item) {
-                $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
-                return $item['quantity'] * $price;
-            }, $cart));
-            
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cart updated: count=$cart_count, total=$cart_total\n", FILE_APPEND);
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Đã thêm sản phẩm vào giỏ hàng.',
-                'cart_count' => $cart_count,
-                'cart_total' => $cart_total
-            ]);
-            exit;
+        } catch (PDOException $e) {
+            error_log("[" . date('Y-m-d H:i:s') . "] Database error in deleteImage for image ID: $image_id - " . $e->getMessage());
+            return false;
         }
-        
-        // Nếu không phải AJAX
-        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Non-AJAX request: product_id=$product_id\n", FILE_APPEND);
-        
-        if ($product_id <= 0) {
-            header("Location: index.php?controller=product&action=list");
-        } else {
-            header("Location: index.php?controller=product&action=detail&id=" . $product_id);
+    }
+    
+    // Save product variants
+    public function saveVariants($variants) {
+        try {
+            // Xóa các biến thể cũ của sản phẩm
+            $query = "DELETE FROM product_variants WHERE product_id = ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            error_log("Deleted old variants for product ID: " . $this->id);
+
+            // Thêm các biến thể mới
+            $query = "INSERT INTO product_variants (product_id, color, size, price, stock) 
+                      VALUES (?, ?, ?, ?, ?)";
+            $stmt = $this->conn->prepare($query);
+
+            foreach ($variants as $variant) {
+                $color = htmlspecialchars(strip_tags($variant['color'] ?? ''));
+                $size = htmlspecialchars(strip_tags($variant['size'] ?? ''));
+                $price = floatval($variant['price'] ?? 0);
+                $stock = intval($variant['stock'] ?? 0);
+
+                $stmt->bindParam(1, $this->id, PDO::PARAM_INT);
+                $stmt->bindParam(2, $color);
+                $stmt->bindParam(3, $size);
+                $stmt->bindParam(4, $price);
+                $stmt->bindParam(5, $stock, PDO::PARAM_INT);
+
+                $stmt->execute();
+                error_log("Inserted variant for product ID: " . $this->id . ", color: " . $color . ", size: " . $size);
+            }
+
+            return true;
+        } catch (PDOException $e) {
+            error_log("Error saving variants for product ID: " . $this->id . " - " . $e->getMessage());
+            throw new Exception("Error saving variants: " . $e->getMessage());
         }
-        exit;
     }
 }
 ?>
