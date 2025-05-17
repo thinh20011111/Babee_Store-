@@ -192,7 +192,7 @@ endif; ?>
         
             <!-- Add to Cart Form -->
             <?php if($total_stock > 0): ?>
-            <form id="add-to-cart-form" class="mb-4">
+            <form id="add-to-cart-form" class="mb-4 product-detail-form">
                 <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product->id ?? 0); ?>">
                 
                 <!-- Variant Selector (chỉ hiển thị nếu có variants) -->
@@ -260,7 +260,7 @@ endif; ?>
             <div class="product-out-of-stock mb-4 p-3 bg-light text-center rounded shadow-sm">
                 <p class="mb-2 fw-bold text-danger">SẢN PHẨM TẠM HẾT HÀNG</p>
                 <p class="mb-0 small">Vui lòng để lại email để nhận thông báo khi sản phẩm có hàng trở lại</p>
-                <form class="mt-3 d-flex gap-2" id="notify-form">
+                <form class="mt-3 d-flex gap-2 product-detail-form" id="notify-form">
                     <input type="email" class="form-control rounded-pill" name="email" placeholder="Email của bạn" required>
                     <button type="submit" class="btn btn-primary rounded-pill">Thông báo cho tôi</button>
                 </form>
@@ -445,7 +445,7 @@ file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã render related 
 endif; ?>
 
 <!-- Customer Reviews Section -->
-<section class="customer-reviews mt-5">
+<section class="customer-reviews mt-5 mb-5">
     <h3 class="mb-4">Đánh giá của khách hàng</h3>
     <div class="alert alert-info rounded shadow-sm">
         <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
@@ -453,6 +453,34 @@ endif; ?>
 </section>
 
 <style>
+/* Scoped styles for product detail form */
+.product-detail-form .input-group .btn {
+    background-color: #fff;
+    border-color: #007bff;
+    color: #007bff;
+    transition: all 0.2s ease;
+}
+.product-detail-form .input-group .btn:hover {
+    background-color: #007bff;
+    color: #fff;
+}
+.product-detail-form .input-group .form-control {
+    border-color: #007bff;
+}
+.product-detail-form .btn-primary,
+.product-detail-form .btn-outline-secondary {
+    transition: all 0.2s ease;
+}
+.product-detail-form .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+.product-detail-form .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+/* General styles for product detail page */
 .thumbnail-item {
     transition: all 0.3s ease;
     cursor: pointer;
@@ -470,30 +498,6 @@ endif; ?>
 }
 .product-image-container img:hover {
     opacity: 0.9;
-}
-.input-group .btn {
-    background-color: #fff;
-    border-color: #007bff;
-    color: #007bff;
-    transition: all 0.2s ease;
-}
-.input-group .btn:hover {
-    background-color: #007bff;
-    color: #fff;
-}
-.input-group .form-control {
-    border-color: #007bff;
-}
-.btn-primary, .btn-outline-secondary {
-    transition: all 0.2s ease;
-}
-.btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
-.btn-outline-secondary:hover {
-    background-color: #6c757d;
-    color: #fff;
 }
 </style>
 
