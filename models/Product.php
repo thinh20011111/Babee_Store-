@@ -537,6 +537,33 @@ class Product {
         
         return $row['total'];
     }
+
+    public function deleteImage($image_id) {
+        try {
+            // Debug: Thông báo bắt đầu xóa
+            echo "<pre>[" . date('Y-m-d H:i:s') . "] Attempting to delete image ID: $image_id for product ID: {$this->id}</pre>";
+
+            // Thực hiện xóa ảnh
+            $query = "DELETE FROM product_images WHERE id = :id AND product_id = :product_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $image_id, PDO::PARAM_INT);
+            $stmt->bindParam(':product_id', $this->id, PDO::PARAM_INT);
+
+            if ($stmt->execute()) {
+                // Debug: Xóa thành công
+                echo "<pre>[" . date('Y-m-d H:i:s') . "] Image ID: $image_id deleted successfully</pre>";
+                return true;
+            } else {
+                // Debug: Xóa thất bại
+                echo "<pre>[" . date('Y-m-d H:i:s') . "] Failed to delete image ID: $image_id</pre>";
+                return false;
+            }
+        } catch (PDOException $e) {
+            // Debug: Lỗi PDO
+            echo "<pre>[" . date('Y-m-d H:i:s') . "] Database error in deleteImage: " . htmlspecialchars($e->getMessage()) . "</pre>";
+            return false;
+        }
+    }
     
     // Save product variants
     public function saveVariants($variants) {
