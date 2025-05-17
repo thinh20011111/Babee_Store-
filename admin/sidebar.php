@@ -33,7 +33,7 @@ $user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'staff';
 $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashboard';
 ?>
 
-<div id="admin-sidebar" class="bg-dark sidebar p-3 text-white" style="width: 250px; min-height: 100vh; position: sticky; top: 0; display: block;">
+<div id="admin-sidebar" class="bg-dark sidebar p-3 text-white">
     <h4 class="text-center mb-4">Admin Panel</h4>
     <ul class="nav flex-column">
         <?php if (in_array('dashboard', $accessible_pages[$user_role])): ?>
@@ -112,9 +112,16 @@ $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashbo
 
 <style>
     .sidebar {
-        display: block !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 100vh;
+        overflow-y: auto;
         background: #1a1a1a;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        transition: transform 0.3s ease;
     }
     .sidebar .nav-link {
         padding: 12px 20px;
@@ -137,9 +144,10 @@ $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashbo
     }
     @media (max-width: 992px) {
         .sidebar {
-            width: 100%;
-            position: relative;
-            min-height: auto;
+            transform: translateX(-250px);
+        }
+        .sidebar.active {
+            transform: translateX(0);
         }
     }
 </style>
