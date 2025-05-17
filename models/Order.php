@@ -25,21 +25,104 @@ class Order {
         $this->conn = $db;
     }
     
-    // Read all orders
-    public function read($limit = null) {
+    // Read all orders with pagination
+    public function read($items_per_page = null, $page = 1) {
         $query = "SELECT o.*, u.username, u.email, u.full_name
                 FROM " . $this->table_name . " o
                 LEFT JOIN users u ON o.user_id = u.id
                 ORDER BY o.created_at DESC";
         
-        if ($limit) {
-            $query .= " LIMIT " . $limit;
+        // Add pagination if items_per_page is specified
+        if ($items_per_page) {
+            $start = ($page - 1) * $items_per_page;
+            $query .= " LIMIT ?, ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $start, PDO::PARAM_INT);
+            $stmt->bindParam(2, $items_per_page, PDO::PARAM_INT);
+        } else {
+            $stmt = $this->conn->prepare($query);
         }
         
-        $stmt = $this->conn->prepare($query);
         $stmt->execute();
         
         return $stmt;
+    }
+    
+    // Read orders by status with pagination
+    public function readByStatus($status, $page = 1, $items_per_page = 10) {
+        $query = "SELECT o.*, u.username, u.email, u.full_name
+                FROM " . $this->table_name . " o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE o.status = ?
+                ORDER BY o.created_at DESC
+                LIMIT ?, ?";
+        
+        $start = ($page - 1) * $items_per_page;
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $status);
+        $stmt->bindParam(2, $start, PDO::PARAM_INT);
+        $stmt->bindParam(3, $items_per_page, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt;
+    }
+    
+    // Search orders with pagination
+    public function search($keywords, $page = 1, $items_per_page = 10) {
+        $query = "SELECT o.*, u.username, u.email, u.full_name
+                FROM " . $this->table_name . " o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE 
+                    o.order_number LIKE ? OR 
+                    u.username LIKE ? OR 
+                    u.email LIKE ? OR 
+                    u.full_name LIKE ? OR 
+                    o.shipping_phone LIKE ?
+                ORDER BY o.created_at DESC
+                LIMIT ?, ?";
+        
+        $start = ($page - 1) * $items_per_page;
+        $stmt = $this->conn->prepare($query);
+        
+        $keywords = "%{$keywords}%";
+        $stmt->bindParam(1, $keywords);
+        $stmt->bindParam(2, $keywords);
+        $stmt->bindParam(3, $keywords);
+        $stmt->bindParam(4, $keywords);
+        $stmt->bindParam(5, $keywords);
+        $stmt->bindParam(6, $start, PDO::PARAM_INT);
+        $stmt->bindParam(7, $items_per_page, PDO::PARAM_INT);
+        
+        $stmt->execute();
+        
+        return $stmt;
+    }
+    
+    // Count search results
+    public function countSearch($keywords) {
+        $query = "SELECT COUNT(*) as total
+                FROM " . $this->table_name . " o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE 
+                    o.order_number LIKE ? OR 
+                    u.username LIKE ? OR 
+                    u.email LIKE ? OR 
+                    u.full_name LIKE ? OR 
+                    o.shipping_phone LIKE ?";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        $keywords = "%{$keywords}%";
+        $stmt->bindParam(1, $keywords);
+        $stmt->bindParam(2, $keywords);
+        $stmt->bindParam(3, $keywords);
+        $stmt->bindParam(4, $keywords);
+        $stmt->bindParam(5, $keywords);
+        
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return (int)($row['total'] ?? 0);
     }
     
     // Read user orders
