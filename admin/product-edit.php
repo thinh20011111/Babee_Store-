@@ -430,6 +430,7 @@ if (!defined('CURRENCY')) {
 
                         <div class="text-center">
                             <button class="btn btn-primary"><i class="fas fa-save me-1"></i> <?php echo $is_edit ? 'Cập nhật' : 'Lưu'; ?></button>
+                            <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-arrow-left me-1"></i> Back</a>
                             <a href="index.php?page=products" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i> Hủy</a>
                         </div>
                     </form>
