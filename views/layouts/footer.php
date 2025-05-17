@@ -27,12 +27,10 @@
                     <div class="footer-brand mb-4">
                         <h2 class="text-white"><span class="text-primary fw-black">BA</span><span style="color: var(--accent-color, #ff2d55);">BEE</span></h2>
                     </div>
-                    <p class="text-white-50 mb-4">Thời trang đường phố dành cho giới trẻ. Nổi bật, phá cách và luôn dẫn đầu xu hướng.</p>
+                    <p class="text-white-50 mb-4">Thời trang chó bé. Nổi bật, phá cách và luôn dẫn đầu xu hướng.</p>
                     <div class="footer-social-links">
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-facebook-f footer-social-icon"></i></a>
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-instagram footer-social-icon"></i></a>
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-tiktok footer-social-icon"></i></a>
-                        <a href="#" class="me-2 text-decoration-none"><i class="fab fa-youtube footer-social-icon"></i></a>
+                        <a href="https://web.facebook.com/babeemoon.studio" class="me-2 text-decoration-none"><i class="fab fa-facebook-f footer-social-icon"></i></a>
+                        <a href="https://www.tiktok.com/@babee_studio" class="me-2 text-decoration-none"><i class="fab fa-tiktok footer-social-icon"></i></a>
                     </div>
                 </div>
                 

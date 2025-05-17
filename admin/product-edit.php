@@ -119,9 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Ảnh bổ sung (chỉ xử lý nếu có file được chọn)
+    $has_new_images = false;
+    $new_images = [];
     if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name']) && !empty($_FILES['additional_images']['name'][0])) {
         $image_count = 0;
-        $product->images = [];
         foreach ($_FILES['additional_images']['name'] as $key => $name) {
             if ($image_count >= 3) {
                 $error_message = "Chỉ được phép upload tối đa 3 ảnh bổ sung.";
@@ -131,8 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
                 $image_path = $upload_dir . time() . '_' . basename($name);
                 if (move_uploaded_file($tmp_name, $image_path)) {
-                    $product->images[] = $image_path;
+                    $new_images[] = $image_path;
                     $image_count++;
+                    $has_new_images = true;
                 }
             }
         }
@@ -150,6 +152,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             error_log("Delete image error: " . $e->getMessage());
         }
     }
+
+    // Cập nhật $product->images chỉ khi có thay đổi (file mới hoặc xóa ảnh)
+    if ($has_new_images) {
+        $product->images = $new_images;
+    } elseif ($is_edit && !empty($delete_image_ids)) {
+        // Lấy lại ảnh bổ sung còn lại sau khi xóa
+        $current_images = [];
+        foreach ($product->images as $image) {
+            if (!in_array($image['id'], $delete_image_ids)) {
+                $current_images[] = $image['image'];
+            }
+        }
+        $product->images = $current_images;
+    }
+    // Nếu không có file mới và không xóa ảnh, $product->images giữ nguyên từ readOne()
 
     // Validate form data
     if (empty($product->name)) {
@@ -197,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Show success)\\ if redirected from create
+// Show success if redirected from create
 if (isset($_GET['success']) && $_GET['success'] == 1) {
     $success_message = "Lưu sản phẩm thành công.";
 }

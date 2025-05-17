@@ -222,8 +222,8 @@ include 'views/layouts/header.php';
 <!-- Testimonials Section -->
 <section class="testimonials-section mb-5 py-5 bg-light rounded">
     <div class="section-title text-center mb-4">
-        <h2>What Parents Say</h2>
-        <p class="text-muted">Trusted by families across Vietnam</p>
+        <h2>Đánh giá từ khách hàng</h2>
+        <p class="text-muted">Được các ba mẹ Việt Nam tin dùng</p>
     </div>
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -238,7 +238,7 @@ include 'views/layouts/header.php';
                                 <i class="fas fa-star text-warning"></i>
                                 <i class="fas fa-star text-warning"></i>
                             </div>
-                            <p class="testimonial-text mb-3">"The quality of the clothes is amazing! My baby looks so cute in them and they've lasted through multiple washes without fading."</p>
+                            <p class="testimonial-text mb-3">"Chất lượng quần áo thật tuyệt vời! Con tôi trông thật dễ thương khi mặc chúng và chúng mặc được qua nhiều lần giặt mà không bị phai màu."</p>
                             <div class="testimonial-author">
                                 <h6 class="mb-0">Tran Minh Anh</h6>
                                 <small class="text-muted">Mother of 1</small>
@@ -254,7 +254,7 @@ include 'views/layouts/header.php';
                                 <i class="fas fa-star text-warning"></i>
                                 <i class="fas fa-star text-warning"></i>
                             </div>
-                            <p class="testimonial-text mb-3">"Fast shipping and great customer service. I had a question about sizing and they were so helpful. Will definitely shop here again!"</p>
+                            <p class="testimonial-text mb-3">"Giao hàng nhanh và dịch vụ khách hàng tuyệt vời. Tôi có thắc mắc về kích thước và họ rất hữu ích. Chắc chắn sẽ mua sắm ở đây lần nữa!"</p>
                             <div class="testimonial-author">
                                 <h6 class="mb-0">Nguyen Van Hai</h6>
                                 <small class="text-muted">Father of twins</small>
@@ -270,7 +270,7 @@ include 'views/layouts/header.php';
                                 <i class="fas fa-star text-warning"></i>
                                 <i class="fas fa-star-half-alt text-warning"></i>
                             </div>
-                            <p class="testimonial-text mb-3">"I love the variety of styles available. The fabric is soft and gentle on my baby's skin. Perfect for every season!"</p>
+                            <p class="testimonial-text mb-3">"Tôi thích sự đa dạng về kiểu dáng. Chất vải mềm mại và dịu nhẹ với làn da của bé. Hoàn hảo cho mọi mùa!"</p>
                             <div class="testimonial-author">
                                 <h6 class="mb-0">Le Thi Hong</h6>
                                 <small class="text-muted">Mother of 2</small>
@@ -294,12 +294,12 @@ include 'views/layouts/header.php';
 <!-- Instagram Section -->
 <section class="instagram-section mb-5">
     <div class="section-title text-center mb-4">
-        <h2>Follow Us on Instagram</h2>
-        <p class="text-muted">@babeestore</p>
+        <h2>Follow Us on Tiktok</h2>
+        <p class="text-muted">@babee_studio</p>
     </div>
     <div class="row g-2">
         <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
+            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-instagram text-white fa-2x"></i>
@@ -307,7 +307,7 @@ include 'views/layouts/header.php';
             </a>
         </div>
         <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
+            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-instagram text-white fa-2x"></i>
@@ -315,7 +315,7 @@ include 'views/layouts/header.php';
             </a>
         </div>
         <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
+            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-instagram text-white fa-2x"></i>
