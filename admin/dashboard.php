@@ -253,8 +253,105 @@ if (!defined('CURRENCY')) {
     <title>Admin Dashboard</title>
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-JWPUoCYx0Z8TIUlXW38vEzv0fTBuBTTa5T87zwpzOtzOnJ9mLVRN5ZRiB4Axo8UA" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+        .card {
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 0.375rem;
+        }
+        .traffic-chart-container {
+            position: relative;
+            height: 350px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        .traffic-chart-container:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .traffic-chart-container canvas {
+            border-radius: 8px;
+        }
+        .traffic-chart-header {
+            background-color: #007bff;
+            color: white;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            padding: 10px 15px;
+            margin: -15px -15px 15px -15px;
+        }
+        .traffic-chart-header h6 {
+            margin: 0;
+            font-weight: 600;
+        }
+        .traffic-chart-footer {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .badge {
+            padding: 8px 12px;
+        }
+        .list-group-item {
+            border: none;
+            border-radius: 0.375rem;
+        }
+        .table img {
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+        .table img:hover {
+            opacity: 0.9;
+        }
+        .debug-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .bestseller-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 0.25rem;
+            border: 1px solid #dee2e6;
+        }
+        .bestseller-img-placeholder {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            border: 1px solid #dee2e6;
+        }
+    </style>
 </head>
 <body>
     <div class="d-flex">
@@ -323,8 +420,11 @@ if (!defined('CURRENCY')) {
                                 <i class="fas fa-chart-line fa-3x text-primary me-3"></i>
                                 <div>
                                     <h6 class="text-uppercase text-muted mb-1">Lượt truy cập</h6>
-                                    <h4 class="mb-0"><?php echo number_format($total_visits); ?></h endometriosis
-
+                                    <h4 class="mb-0"><?php echo number_format($total_visits); ?></h4>
+                                    <small class="text-muted">Hôm nay: <?php echo number_format($today_visits); ?></small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -561,18 +661,6 @@ if (!defined('CURRENCY')) {
                         </div>
                     </div>
                 </div>
-
-                <!-- Debug Information -->
-                <?php if (DEBUG_MODE): ?>
-                <div class="debug-info mt-4">
-                    <h6>Debug Information:</h6>
-                    <ul>
-                        <?php foreach ($debug_logs as $log): ?>
-                        <li><?php echo htmlspecialchars($log); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -657,14 +745,14 @@ if (!defined('CURRENCY')) {
                             data: trafficData,
                             backgroundColor: trafficGradient,
                             borderColor: 'rgba(78, 115, 223, 1)',
-                            borderWidth: 3,
+                            borderWidth: 3, // Tăng độ dày đường
                             pointBackgroundColor: 'rgba(78, 115, 223, 1)',
                             pointBorderColor: '#fff',
                             pointHoverRadius: 6,
                             pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
                             pointHoverBorderColor: '#fff',
                             pointHitRadius: 10,
-                            tension: 0.3,
+                            lineTension: 0.3,
                             fill: true
                         }]
                     },
@@ -673,10 +761,10 @@ if (!defined('CURRENCY')) {
                         maintainAspectRatio: false,
                         scales: {
                             y: {
-                                beginAtZero: false,
+                                beginAtZero: false, // Tự động điều chỉnh trục Y
                                 ticks: {
                                     precision: 0,
-                                    stepSize: 1
+                                    stepSize: 1 // Đảm bảo các bước là số nguyên
                                 },
                                 title: {
                                     display: true,
