@@ -121,7 +121,7 @@ if (!defined('CURRENCY')) {
                     <a class="nav-link text-white" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white active" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
+                    <a class="nav-link text-white" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-white" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
