@@ -302,130 +302,147 @@ class Product {
     
     // Create product
     public function create() {
-        $query = "INSERT INTO " . $this->table_name . " 
-                SET 
-                    name = :name, 
-                    description = :description, 
-                    price = :price, 
-                    sale_price = :sale_price, 
-                    category_id = :category_id, 
-                    image = :image, 
-                    is_featured = :is_featured, 
-                    is_sale = :is_sale, 
-                    created_at = :created_at, 
-                    updated_at = :updated_at";
-        
-        $stmt = $this->conn->prepare($query);
-        
-        // Sanitize inputs
-        $this->name = htmlspecialchars(strip_tags($this->name));
-        $this->description = htmlspecialchars(strip_tags($this->description));
-        $this->price = htmlspecialchars(strip_tags($this->price));
-        $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
-        $this->category_id = htmlspecialchars(strip_tags($this->category_id));
-        $this->image = htmlspecialchars(strip_tags($this->image));
-        $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
-        $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
-        $this->created_at = date('Y-m-d H:i:s');
-        $this->updated_at = date('Y-m-d H:i:s');
-        
-        // Bind parameters
-        $stmt->bindParam(':name', $this->name);
-        $stmt->bindParam(':description', $this->description);
-        $stmt->bindParam(':price', $this->price);
-        $stmt->bindParam(':sale_price', $this->sale_price);
-        $stmt->bindParam(':category_id', $this->category_id);
-        $stmt->bindParam(':image', $this->image);
-        $stmt->bindParam(':is_featured', $this->is_featured);
-        $stmt->bindParam(':is_sale', $this->is_sale);
-        $stmt->bindParam(':created_at', $this->created_at);
-        $stmt->bindParam(':updated_at', $this->updated_at);
-        
-        // Execute the query
-        if ($stmt->execute()) {
-            $this->id = $this->conn->lastInsertId();
-            // Add additional images if provided
-            if (!empty($this->images) && is_array($this->images)) {
-                foreach ($this->images as $image_path) {
-                    $this->addImage($this->id, $image_path);
+        try {
+            $query = "INSERT INTO " . $this->table_name . " 
+                    SET 
+                        name = :name, 
+                        description = :description, 
+                        price = :price, 
+                        sale_price = :sale_price, 
+                        category_id = :category_id, 
+                        image = :image, 
+                        is_featured = :is_featured, 
+                        is_sale = :is_sale, 
+                        created_at = :created_at, 
+                        updated_at = :updated_at";
+            
+            $stmt = $this->conn->prepare($query);
+            
+            // Sanitize inputs
+            $this->name = htmlspecialchars(strip_tags($this->name));
+            $this->description = htmlspecialchars(strip_tags($this->description));
+            $this->price = htmlspecialchars(strip_tags($this->price));
+            $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
+            $this->category_id = htmlspecialchars(strip_tags($this->category_id));
+            $this->image = htmlspecialchars(strip_tags($this->image));
+            $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
+            $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
+            $this->created_at = date('Y-m-d H:i:s');
+            $this->updated_at = date('Y-m-d H:i:s');
+            
+            // Bind parameters
+            $stmt->bindParam(':name', $this->name);
+            $stmt->bindParam(':description', $this->description);
+            $stmt->bindParam(':price', $this->price);
+            $stmt->bindParam(':sale_price', $this->sale_price);
+            $stmt->bindParam(':category_id', $this->category_id);
+            $stmt->bindParam(':image', $this->image);
+            $stmt->bindParam(':is_featured', $this->is_featured);
+            $stmt->bindParam(':is_sale', $this->is_sale);
+            $stmt->bindParam(':created_at', $this->created_at);
+            $stmt->bindParam(':updated_at', $this->updated_at);
+            
+            // Execute the query
+            if ($stmt->execute()) {
+                $this->id = $this->conn->lastInsertId();
+                // Add additional images if provided
+                if (!empty($this->images) && is_array($this->images)) {
+                    foreach ($this->images as $image_path) {
+                        $this->addImage($this->id, $image_path);
+                    }
                 }
+                return $this->id;
             }
-            return $this->id;
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Create error for product: " . $e->getMessage());
+            return false;
         }
-        
-        return false;
     }
     
     // Update product
     public function update() {
-        $query = "UPDATE " . $this->table_name . " 
-                SET 
-                    name = :name, 
-                    description = :description, 
-                    price = :price, 
-                    sale_price = :sale_price, 
-                    category_id = :category_id, 
-                    image = :image, 
-                    is_featured = :is_featured, 
-                    is_sale = :is_sale, 
-                    updated_at = :updated_at 
-                WHERE 
-                    id = :id";
-        
-        $stmt = $this->conn->prepare($query);
-        
-        // Sanitize inputs
-        $this->name = htmlspecialchars(strip_tags($this->name));
-        $this->description = htmlspecialchars(strip_tags($this->description));
-        $this->price = htmlspecialchars(strip_tags($this->price));
-        $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
-        $this->category_id = htmlspecialchars(strip_tags($this->category_id));
-        $this->image = htmlspecialchars(strip_tags($this->image));
-        $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
-        $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
-        $this->updated_at = date('Y-m-d H:i:s');
-        
-        // Bind parameters
-        $stmt->bindParam(':name', $this->name);
-        $stmt->bindParam(':description', $this->description);
-        $stmt->bindParam(':price', $this->price);
-        $stmt->bindParam(':sale_price', $this->sale_price);
-        $stmt->bindParam(':category_id', $this->category_id);
-        $stmt->bindParam(':image', $this->image);
-        $stmt->bindParam(':is_featured', $this->is_featured);
-        $stmt->bindParam(':is_sale', $this->is_sale);
-        $stmt->bindParam(':updated_at', $this->updated_at);
-        $stmt->bindParam(':id', $this->id);
-        
-        // Execute the query
-        if ($stmt->execute()) {
-            // Update additional images if provided
-            if (isset($this->images) && is_array($this->images)) {
-                // Delete existing images
-                $this->deleteImages($this->id);
-                // Add new images
-                foreach ($this->images as $image_path) {
-                    $this->addImage($this->id, $image_path);
+        try {
+            $query = "UPDATE " . $this->table_name . " 
+                    SET 
+                        name = :name, 
+                        description = :description, 
+                        price = :price, 
+                        sale_price = :sale_price, 
+                        category_id = :category_id, 
+                        image = :image, 
+                        is_featured = :is_featured, 
+                        is_sale = :is_sale, 
+                        updated_at = :updated_at 
+                    WHERE 
+                        id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            
+            // Sanitize inputs
+            $this->name = htmlspecialchars(strip_tags($this->name));
+            $this->description = htmlspecialchars(strip_tags($this->description));
+            $this->price = htmlspecialchars(strip_tags($this->price));
+            $this->sale_price = htmlspecialchars(strip_tags($this->sale_price));
+            $this->category_id = htmlspecialchars(strip_tags($this->category_id));
+            $this->image = htmlspecialchars(strip_tags($this->image));
+            $this->is_featured = htmlspecialchars(strip_tags($this->is_featured));
+            $this->is_sale = htmlspecialchars(strip_tags($this->is_sale));
+            $this->updated_at = date('Y-m-d H:i:s');
+            
+            // Bind parameters
+            $stmt->bindParam(':name', $this->name);
+            $stmt->bindParam(':description', $this->description);
+            $stmt->bindParam(':price', $this->price);
+            $stmt->bindParam(':sale_price', $this->sale_price);
+            $stmt->bindParam(':category_id', $this->category_id);
+            $stmt->bindParam(':image', $this->image);
+            $stmt->bindParam(':is_featured', $this->is_featured);
+            $stmt->bindParam(':is_sale', $this->is_sale);
+            $stmt->bindParam(':updated_at', $this->updated_at);
+            $stmt->bindParam(':id', $this->id);
+            
+            // Execute the query
+            if ($stmt->execute()) {
+                // Update additional images only if $this->images is explicitly set and not empty
+                error_log("Updating product ID: {$this->id}, images: " . json_encode($this->images));
+                if (isset($this->images) && is_array($this->images) && !empty($this->images)) {
+                    // Delete existing images
+                    $this->deleteImages($this->id);
+                    // Add new images
+                    foreach ($this->images as $image_path) {
+                        $this->addImage($this->id, $image_path);
+                    }
                 }
+                return true;
             }
-            return true;
+            
+            error_log("Failed to update product ID: {$this->id}");
+            return false;
+        } catch (PDOException $e) {
+            error_log("Update error for product ID: {$this->id} - " . $e->getMessage());
+            return false;
         }
-        
-        return false;
     }
     
     // Delete product
     public function delete() {
-        $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(1, $this->id);
-        
-        if ($stmt->execute()) {
-            // Images are automatically deleted via ON DELETE CASCADE
-            return true;
+        try {
+            $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $this->id);
+            
+            if ($stmt->execute()) {
+                // Images are automatically deleted via ON DELETE CASCADE
+                return true;
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Delete error for product ID: {$this->id} - " . $e->getMessage());
+            return false;
         }
-        
-        return false;
     }
     
     // Search products
@@ -540,27 +557,34 @@ class Product {
 
     public function deleteImage($image_id) {
         try {
-            // Debug: Thông báo bắt đầu xóa
-            // echo "<pre>[" . date('Y-m-d H:i:s') . "] Attempting to delete image ID: $image_id for product ID: {$this->id}</pre>";
+            // Lấy đường dẫn ảnh để xóa file vật lý
+            $query = "SELECT image FROM product_images WHERE id = :id AND product_id = :product_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $image_id, PDO::PARAM_INT);
+            $stmt->bindParam(':product_id', $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            $image = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Thực hiện xóa ảnh
+            // Thực hiện xóa ảnh trong database
             $query = "DELETE FROM product_images WHERE id = :id AND product_id = :product_id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id', $image_id, PDO::PARAM_INT);
             $stmt->bindParam(':product_id', $this->id, PDO::PARAM_INT);
 
             if ($stmt->execute()) {
-                // Debug: Xóa thành công
-                // echo "<pre>[" . date('Y-m-d H:i:s') . "] Image ID: $image_id deleted successfully</pre>";
+                error_log("[" . date('Y-m-d H:i:s') . "] Image ID: $image_id deleted successfully for product ID: {$this->id}");
+                // Xóa file vật lý nếu tồn tại
+                if ($image && file_exists($image['image'])) {
+                    unlink($image['image']);
+                    error_log("[" . date('Y-m-d H:i:s') . "] Physical file deleted: " . $image['image']);
+                }
                 return true;
             } else {
-                // Debug: Xóa thất bại
-                // echo "<pre>[" . date('Y-m-d H:i:s') . "] Failed to delete image ID: $image_id</pre>";
+                error_log("[" . date('Y-m-d H:i:s') . "] Failed to delete image ID: $image_id for product ID: {$this->id}");
                 return false;
             }
         } catch (PDOException $e) {
-            // Debug: Lỗi PDO
-            // echo "<pre>[" . date('Y-m-d H:i:s') . "] Database error in deleteImage: " . htmlspecialchars($e->getMessage()) . "</pre>";
+            error_log("[" . date('Y-m-d H:i:s') . "] Database error in deleteImage for image ID: $image_id - " . $e->getMessage());
             return false;
         }
     }
