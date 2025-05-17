@@ -55,8 +55,19 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $products[] = $row;
 }
 
-// Calculate total pages
+// Calculate total pages and pagination range
 $total_pages = ceil($total_rows / $items_per_page);
+$start_item = ($page - 1) * $items_per_page + 1;
+$end_item = min($page * $items_per_page, $total_rows);
+
+// Pagination display logic
+$max_visible_pages = 5; // Max page numbers to show (excluding First, Last, ellipsis)
+$half_visible = floor($max_visible_pages / 2);
+$start_page = max(1, $page - $half_visible);
+$end_page = min($total_pages, $start_page + $max_visible_pages - 1);
+if ($end_page - $start_page < $max_visible_pages - 1) {
+    $start_page = max(1, $end_page - $max_visible_pages + 1);
+}
 
 // Get all categories for filter
 $categories = [];
@@ -78,9 +89,9 @@ if (!defined('CURRENCY')) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Management</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous">
     <style>
         .sidebar {
             min-height: 100vh;
@@ -101,10 +112,26 @@ if (!defined('CURRENCY')) {
         }
         .pagination .page-link {
             color: #007bff;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .pagination .page-link:hover {
+            background-color: #e9ecef;
+            color: #0056b3;
         }
         .pagination .page-item.active .page-link {
             background-color: #007bff;
             border-color: #007bff;
+            color: white;
+        }
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d;
+            pointer-events: none;
+            background-color: #f8f9fa;
+        }
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -115,28 +142,28 @@ if (!defined('CURRENCY')) {
             <h4 class="text-center mb-4">Admin Panel</h4>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'dashboard') ? 'active bg-primary' : ''; ?>" href="index.php?page=dashboard"><i class="fas fa-home me-2"></i> Trang chủ</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'orders') ? 'active bg-primary' : ''; ?>" href="index.php?page=orders"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'products') ? 'active bg-primary' : ''; ?>" href="index.php?page=products"><i class="fas fa-box me-2"></i> Sản phẩm</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'users') ? 'active bg-primary' : ''; ?>" href="index.php?page=users"><i class="fas fa-users me-2"></i> Người dùng</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'traffic') ? 'active bg-primary' : ''; ?>" href="index.php?page=traffic"><i class="fas fa-chart-line me-2"></i> Lượt truy cập</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'banners') ? 'active bg-primary' : ''; ?>" href="index.php?page=banners"><i class="fas fa-images me-2"></i> Giao diện</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'settings') ? 'active bg-primary' : ''; ?>" href="index.php?page=settings"><i class="fas fa-cog me-2"></i> Cài đặt</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
+                    <a class="nav-link text-white <?php echo ($_GET['page'] === 'promotions') ? 'active bg-primary' : ''; ?>" href="index.php?page=promotions"><i class="fas fa-tags me-2"></i> Khuyến mãi</a>
                 </li>
             </ul>
         </div>
@@ -147,7 +174,7 @@ if (!defined('CURRENCY')) {
                 <h1 class="mt-4 mb-3">Product Management</h1>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="index.php?page=dashboard">Dashboard</a></li>
                         <li class="breadcrumb-item active" aria-current="page">Products</li>
                     </ol>
                 </nav>
@@ -277,10 +304,39 @@ if (!defined('CURRENCY')) {
                         </div>
                         
                         <!-- Pagination -->
-                        <?php if ($total_pages > 1): ?>
+                        <?php if ($total_pages > 0): ?>
+                        <div class="pagination-info text-center">
+                            Showing <?php echo $start_item; ?> to <?php echo $end_item; ?> of <?php echo $total_rows; ?> products
+                        </div>
                         <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center mt-4">
-                                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                            <ul class="pagination justify-content-center mt-3">
+                                <!-- First Page -->
+                                <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                        echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
+                                        echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
+                                        echo 'page=1';
+                                    ?>" aria-label="First">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <!-- Previous Page -->
+                                <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                        echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
+                                        echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
+                                        echo 'page=' . ($page - 1);
+                                    ?>" aria-label="Previous">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                                <!-- Page Numbers -->
+                                <?php if ($start_page > 1): ?>
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                <?php endif; ?>
+                                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
                                 <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
                                     <a class="page-link" href="/admin/index.php?page=products&<?php 
                                         echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
@@ -289,6 +345,31 @@ if (!defined('CURRENCY')) {
                                     ?>"><?php echo $i; ?></a>
                                 </li>
                                 <?php endfor; ?>
+                                <?php if ($end_page < $total_pages): ?>
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                <?php endif; ?>
+                                <!-- Next Page -->
+                                <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                        echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
+                                        echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
+                                        echo 'page=' . ($page + 1);
+                                    ?>" aria-label="Next">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <!-- Last Page -->
+                                <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                                    <a class="page-link" href="/admin/index.php?page=products&<?php 
+                                        echo (!empty($search)) ? 'search=' . urlencode($search) . '&' : '';
+                                        echo ($category_id > 0) ? 'category_id=' . $category_id . '&' : '';
+                                        echo 'page=' . $total_pages;
+                                    ?>" aria-label="Last">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
                             </ul>
                         </nav>
                         <?php endif; ?>
@@ -299,6 +380,6 @@ if (!defined('CURRENCY')) {
     </div>
 
     <!-- Bootstrap JS and Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
