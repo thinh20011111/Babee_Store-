@@ -16,6 +16,7 @@ require_once '../config/database.php';
 try {
     $db = new Database();
     $conn = $db->getConnection();
+    $conn->exec("SET NAMES utf8mb4");
     $debug_logs[] = "Database connection established successfully.";
 } catch (Exception $e) {
     $error_occurred = true;
@@ -246,7 +247,7 @@ if (!defined('CURRENCY')) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -256,90 +257,111 @@ if (!defined('CURRENCY')) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .sidebar {
+        body {
+            background: linear-gradient(135deg, #f4f6f9 0%, #e9ecef 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .content-wrapper {
+            margin-left: 250px;
+            padding: 20px;
             min-height: 100vh;
-            position: sticky;
-            top: 0;
         }
         .card {
-            transition: transform 0.3s;
+            border: none;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
         }
-        .chart-container {
-            position: relative;
-            height: 400px;
-            background-color: #f8f9fa;
-            border: 2px solid #007bff;
-            border-radius: 0.375rem;
+        .card-header {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            color: #fff;
+            border-radius: 12px 12px 0 0;
+            padding: 15px 20px;
         }
-        .traffic-chart-container {
-            position: relative;
-            height: 350px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
-        }
-        .traffic-chart-container:hover {
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        .traffic-chart-container canvas {
-            border-radius: 8px;
-        }
-        .traffic-chart-header {
-            background-color: #007bff;
-            color: white;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
-            padding: 10px 15px;
-            margin: -15px -15px 15px -15px;
-        }
-        .traffic-chart-header h6 {
+        .card-header h6 {
             margin: 0;
             font-weight: 600;
         }
-        .traffic-chart-footer {
-            text-align: center;
-            margin-top: 10px;
+        .card-body {
+            padding: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-left: 4px solid #007bff;
+        }
+        .stat-card i {
+            font-size: 2.5rem;
+            color: #007bff;
+        }
+        .stat-card h6 {
             font-size: 0.9rem;
             color: #6c757d;
         }
-        .badge {
-            padding: 8px 12px;
+        .stat-card h4 {
+            font-weight: 700;
+            color: #343a40;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        .chart-container:hover {
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        .chart-header {
+            background: #007bff;
+            color: #fff;
+            border-radius: 10px 10px 0 0;
+            padding: 10px 15px;
+            margin: -15px -15px 15px -15px;
+        }
+        .chart-footer {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+        .table {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table thead {
+            background: #343a40;
+            color: #fff;
+        }
+        .table tbody tr {
+            transition: background 0.2s ease;
+        }
+        .table tbody tr:hover {
+            background: #f1f3f5;
         }
         .list-group-item {
             border: none;
-            border-radius: 0.375rem;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            transition: background 0.2s ease;
         }
-        .table img {
-            object-fit: cover;
-            transition: opacity 0.3s ease;
-        }
-        .table img:hover {
-            opacity: 0.9;
-        }
-        .debug-info {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9em;
-            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
-        }
-        .error-message {
-            color: red;
-            margin-top: 10px;
-            font-weight: bold;
+        .list-group-item:hover {
+            background: #e9ecef;
         }
         .bestseller-img {
             width: 60px;
             height: 60px;
-            border-radius: 0.25rem;
+            border-radius: 8px;
             border: 1px solid #dee2e6;
+            object-fit: cover;
         }
         .bestseller-img-placeholder {
             width: 60px;
@@ -347,321 +369,357 @@ if (!defined('CURRENCY')) {
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #f8f9fa;
-            border-radius: 0.25rem;
+            background: #f1f3f5;
+            border-radius: 8px;
             border: 1px solid #dee2e6;
+        }
+        .badge {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+        .progress {
+            height: 15px;
+            border-radius: 8px;
+        }
+        .progress-bar {
+            border-radius: 8px;
+        }
+        .debug-info {
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+            font-size: 0.9rem;
+            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
+        }
+        .error-message {
+            color: #dc3545;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        @media (max-width: 992px) {
+            .content-wrapper {
+                margin-left: 0;
+            }
+            .stat-card {
+                text-align: center;
+            }
+            .stat-card i {
+                margin-bottom: 10px;
+            }
+            .chart-container {
+                height: 300px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="d-flex">
-        <!-- Sidebar -->
-        <?php include 'sidebar.php'; ?>
+    <div class="content-wrapper">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 fw-bold text-primary">Dashboard</h1>
+                <button class="btn btn-primary" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt me-2"></i> Cập nhật Dữ liệu
+                </button>
+            </div>
 
-        <!-- Main Content -->
-        <div class="flex-grow-1 p-4">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="h3 mb-0">Dashboard</h1>
-                    <button class="btn btn-primary" onclick="refreshDashboard()">
-                        <i class="fas fa-sync-alt me-2"></i> Refresh Data
-                    </button>
-                </div>
-
-                <!-- Statistics Cards -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0 rounded">
-                            <div class="card-body d-flex align-items-center">
-                                <i class="fas fa-money-bill-wave fa-3x text-primary me-3"></i>
-                                <div>
-                                    <h6 class="text-uppercase text-muted mb-1">Total Revenue</h6>
-                                    <h4 class="mb-0"><?php echo CURRENCY . number_format($total_revenue); ?></h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0 rounded">
-                            <div class="card-body d-flex align-items-center">
-                                <i class="fas fa-shopping-cart fa-3x text-success me-3"></i>
-                                <div>
-                                    <h6 class="text-uppercase text-muted mb-1">Total Orders</h6>
-                                    <h4 class="mb-0"><?php echo number_format($order_count); ?></h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0 rounded">
-                            <div class="card-body d-flex align-items-center">
-                                <i class="fas fa-box fa-3x text-warning me-3"></i>
-                                <div>
-                                    <h6 class="text-uppercase text-muted mb-1">Total Products</h6>
-                                    <h4 class="mb-0"><?php echo number_format($product_count); ?></h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0 rounded">
-                            <div class="card-body d-flex align-items-center">
-                                <i class="fas fa-users fa-3x text-info me-3"></i>
-                                <div>
-                                    <h6 class="text-uppercase text-muted mb-1">Total Users</h6>
-                                    <h4 class="mb-0"><?php echo number_format($user_count); ?></h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card shadow-sm border-0 rounded">
-                            <div class="card-body d-flex align-items-center">
-                                <i class="fas fa-chart-line fa-3x text-primary me-3"></i>
-                                <div>
-                                    <h6 class="text-uppercase text-muted mb-1">Lượt truy cập</h6>
-                                    <h4 class="mb-0"><?php echo number_format($total_visits); ?></h4>
-                                    <small class="text-muted">Hôm nay: <?php echo number_format($today_visits); ?></small>
-                                </div>
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-money-bill-wave me-3"></i>
+                            <div>
+                                <h6 class="text-uppercase">Tổng Doanh thu</h6>
+                                <h4 class="mb-0"><?php echo CURRENCY . number_format($total_revenue); ?></h4>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Charts -->
-                <div class="row mb-4">
-                    <!-- Website Traffic Chart -->
-                    <div class="col-lg-6">
-                        <div class="traffic-chart-container">
-                            <div class="traffic-chart-header">
-                                <h6><i class="fas fa-chart-line me-2"></i> Lượt truy cập 7 ngày gần đây</h6>
-                            </div>
-                            <div class="position-relative">
-                                <canvas id="trafficChart" height="300"></canvas>
-                            </div>
-                            <div class="traffic-chart-footer">
-                                Dữ liệu cập nhật đến ngày <?php echo date('d/m/Y'); ?>
-                            </div>
-                            <div id="trafficChartError" class="error-message"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Monthly Revenue Chart -->
-                    <div class="col-lg-6">
-                        <div class="card shadow-sm rounded">
-                            <div class="card-header">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-bar me-2"></i> Monthly Revenue</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="monthly-revenue-chart">
-                                    <?php if ($monthly_revenue_labels[0] === 'No Data'): ?>
-                                        <p class="text-center text-muted mt-3">No revenue data available for the last 12 months.</p>
-                                    <?php else: ?>
-                                        <div class="row align-items-end mb-4" style="height: 300px;">
-                                            <?php foreach ($monthly_revenue_data as $index => $value): ?>
-                                                <?php 
-                                                    $month = $monthly_revenue_labels[$index] ?? 'Unknown';
-                                                    $height_percentage = 0;
-                                                    $max_value = max($monthly_revenue_data);
-                                                    if ($max_value > 0) {
-                                                        $height_percentage = ($value / $max_value) * 100;
-                                                    }
-                                                ?>
-                                                <div class="col px-1 text-center">
-                                                    <div class="d-flex flex-column align-items-center">
-                                                        <div class="text-primary fw-bold small mb-1"><?php echo CURRENCY . number_format($value); ?></div>
-                                                        <div class="bg-primary rounded-top" style="height: <?php echo $height_percentage; ?>%; width: 100%; min-height: 5px;"></div>
-                                                        <div class="small text-muted mt-2" style="writing-mode: vertical-rl; transform: rotate(180deg); height: 80px;"><?php echo $month; ?></div>
-                                                    </div>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div id="monthlyRevenueError" class="error-message"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card shadow-sm rounded">
-                            <div class="card-header">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-pie me-2"></i> Order Status</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="order-status-chart">
-                                    <?php
-                                    $status_labels = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-                                    $status_counts = [
-                                        $order->countByStatus('pending'),
-                                        $order->countByStatus('processing'),
-                                        $order->countByStatus('shipped'),
-                                        $order->countByStatus('delivered'),
-                                        $order->countByStatus('cancelled')
-                                    ];
-                                    $status_colors = ['warning', 'info', 'primary', 'success', 'danger'];
-                                    $total_orders = array_sum($status_counts);
-                                    $debug_logs[] = "Order status counts: " . json_encode(array_combine($status_labels, $status_counts));
-                                    ?>
-                                    <?php if ($total_orders == 0): ?>
-                                        <div class="text-center text-muted py-4">No order status data available.</div>
-                                    <?php else: ?>
-                                        <div class="row mb-4">
-                                            <?php foreach ($status_labels as $index => $label): 
-                                                $count = $status_counts[$index];
-                                                $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
-                                                $color = $status_colors[$index];
-                                            ?>
-                                            <div class="col">
-                                                <div class="card border-<?php echo $color; ?> h-100 shadow-sm rounded">
-                                                    <div class="card-body p-2 text-center">
-                                                        <h6 class="text-<?php echo $color; ?>"><?php echo $label; ?></h6>
-                                                        <h3 class="mb-0"><?php echo $count; ?></h3>
-                                                        <div class="progress mt-2" style="height: 10px;">
-                                                            <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
-                                                                style="width: <?php echo $percentage; ?>%" 
-                                                                aria-valuenow="<?php echo $percentage; ?>" 
-                                                                aria-valuemin="0" 
-                                                                aria-valuemax="100">
-                                                            </div>
-                                                        </div>
-                                                        <small class="text-muted"><?php echo $percentage; ?>%</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                        <div class="row justify-content-center">
-                                            <div class="col-md-10">
-                                                <div class="progress" style="height: 25px;">
-                                                    <?php foreach ($status_labels as $index => $label): 
-                                                        $count = $status_counts[$index];
-                                                        $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
-                                                        $color = $status_colors[$index];
-                                                        if ($percentage > 0):
-                                                    ?>
-                                                    <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
-                                                        style="width: <?php echo $percentage; ?>%" 
-                                                        aria-valuenow="<?php echo $percentage; ?>" 
-                                                        aria-valuemin="0" 
-                                                        aria-valuemax="100" 
-                                                        title="<?php echo $label; ?>: <?php echo $count; ?> (<?php echo $percentage; ?>%)">
-                                                        <?php if ($percentage >= 10): ?>
-                                                            <?php echo $label; ?> <?php echo $percentage; ?>%
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <?php endif; ?>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div id="orderStatusError" class="error-message"></div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-shopping-cart me-3"></i>
+                            <div>
+                                <h6 class="text-uppercase">Tổng Đơn hàng</h6>
+                                <h4 class="mb-0"><?php echo number_format($order_count); ?></h4>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Recent Orders & Best Sellers -->
-                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="card shadow-sm rounded">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-shopping-cart me-2"></i> Recent Orders</h6>
-                                <a href="index.php?page=orders" class="btn btn-sm btn-primary">View All</a>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th>Order #</th>
-                                                <th>Customer</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Date</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php if (empty($recent_orders)): ?>
-                                            <tr>
-                                                <td colspan="5" class="text-center">No recent orders found</td>
-                                            </tr>
-                                            <?php else: ?>
-                                            <?php foreach ($recent_orders as $order): ?>
-                                            <tr>
-                                                <td>
-                                                    <a href="index.php?page=orders&action=view&id=<?php echo $order['id']; ?>" class="text-decoration-none">
-                                                        #<?php echo htmlspecialchars($order['order_number']); ?>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <?php echo htmlspecialchars($order['full_name'] ?? ($order['username'] ?? 'Guest')); ?>
-                                                </td>
-                                                <td><?php echo CURRENCY . number_format($order['total_amount']); ?></td>
-                                                <td>
-                                                    <?php
-                                                    $status_class = '';
-                                                    switch($order['status']) {
-                                                        case 'pending': $status_class = 'bg-warning text-dark'; break;
-                                                        case 'processing': $status_class = 'bg-info text-dark'; break;
-                                                        case 'shipped': $status_class = 'bg-primary text-white'; break;
-                                                        case 'delivered': $status_class = 'bg-success text-white'; break;
-                                                        case 'cancelled': $status_class = 'bg-danger text-white'; break;
-                                                        default: $status_class = 'bg-secondary text-white';
-                                                    }
-                                                    ?>
-                                                    <span class="badge <?php echo $status_class; ?> rounded-pill"><?php echo ucfirst($order['status']); ?></span>
-                                                </td>
-                                                <td><?php echo date('d/m/Y', strtotime($order['created_at'])); ?></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-box me-3"></i>
+                            <div>
+                                <h6 class="text-uppercase">Tổng Sản phẩm</h6>
+                                <h4 class="mb-0"><?php echo number_format($product_count); ?></h4>
                             </div>
                         </div>
                     </div>
-
-                    <div class="col-lg-4">
-                        <div class="card shadow-sm rounded">
-                            <div class="card-header">
-                                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-star me-2"></i> Best Sellers</h6>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-users me-3"></i>
+                            <div>
+                                <h6 class="text-uppercase">Tổng Người dùng</h6>
+                                <h4 class="mb-0"><?php echo number_format($user_count); ?></h4>
                             </div>
-                            <div class="card-body">
-                                <div class="list-group list-group-flush">
-                                    <?php if (empty($bestsellers)): ?>
-                                    <div class="list-group-item text-center">No best sellers found</div>
-                                    <?php else: ?>
-                                    <?php foreach ($bestsellers as $product): ?>
-                                    <div class="list-group-item d-flex align-items-center">
-                                        <div class="flex-shrink-0 me-3">
-                                            <?php if (!empty($product['image'])): ?>
-                                            <img src="<?php echo htmlspecialchars($product['image']); ?>" class="bestseller-img img-fluid" alt="<?php echo htmlspecialchars($product['name']); ?>">
-                                            <?php else: ?>
-                                            <div class="bestseller-img-placeholder">
-                                                <i class="fas fa-tshirt fa-2x text-secondary"></i>
-                                            </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-1"><?php echo htmlspecialchars($product['name']); ?></h6>
-                                            <small class="text-muted"><?php echo number_format($product['total_sold']); ?> units sold</small>
-                                        </div>
-                                        <div class="text-end">
-                                            <div class="fw-bold text-success"><?php echo CURRENCY . number_format($product['total_revenue']); ?></div>
-                                            <small class="text-muted"><?php echo CURRENCY . number_format($product['price']); ?>/unit</small>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-chart-line me-3"></i>
+                            <div>
+                                <h6 class="text-uppercase">Lượt truy cập</h6>
+                                <h4 class="mb-0"><?php echo number_format($total_visits); ?></h4>
+                                <small class="text-muted">Hôm nay: <?php echo number_format($today_visits); ?></small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Charts -->
+            <div class="row mb-4">
+                <!-- Website Traffic Chart -->
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h6><i class="fas fa-chart-line me-2"></i> Lượt truy cập 7 ngày gần đây</h6>
+                        </div>
+                        <canvas id="trafficChart"></canvas>
+                        <div class="chart-footer">
+                            Dữ liệu cập nhật đến ngày <?php echo date('d/m/Y'); ?>
+                        </div>
+                        <div id="trafficChartError" class="error-message"></div>
+                    </div>
+                </div>
+                
+                <!-- Monthly Revenue Chart -->
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h6><i class="fas fa-chart-bar me-2"></i> Doanh thu Hàng tháng</h6>
+                        </div>
+                        <canvas id="revenueChart"></canvas>
+                        <div class="chart-footer">
+                            Dữ liệu doanh thu 12 tháng gần nhất
+                        </div>
+                        <div id="revenueChartError" class="error-message"></div>
+                    </div>
+                </div>
+
+                <!-- Order Status Chart -->
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h6><i class="fas fa-chart-pie me-2"></i> Trạng thái Đơn hàng</h6>
+                        </div>
+                        <?php
+                        $status_labels = ['Chờ xử lý', 'Đang xử lý', 'Đã giao', 'Hoàn thành', 'Đã hủy'];
+                        $status_counts = [
+                            $order->countByStatus('pending'),
+                            $order->countByStatus('processing'),
+                            $order->countByStatus('shipped'),
+                            $order->countByStatus('delivered'),
+                            $order->countByStatus('cancelled')
+                        ];
+                        $status_colors = ['warning', 'info', 'primary', 'success', 'danger'];
+                        $total_orders = array_sum($status_counts);
+                        $debug_logs[] = "Order status counts: " . json_encode(array_combine($status_labels, $status_counts));
+                        ?>
+                        <?php if ($total_orders == 0): ?>
+                            <div class="text-center text-muted py-4">Không có dữ liệu trạng thái đơn hàng.</div>
+                        <?php else: ?>
+                            <div class="row mb-4">
+                                <?php foreach ($status_labels as $index => $label): 
+                                    $count = $status_counts[$index];
+                                    $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
+                                    $color = $status_colors[$index];
+                                ?>
+                                <div class="col">
+                                    <div class="card border-<?php echo $color; ?> h-100 shadow-sm rounded">
+                                        <div class="card-body p-2 text-center">
+                                            <h6 class="text-<?php echo $color; ?>"><?php echo $label; ?></h6>
+                                            <h3 class="mb-0"><?php echo $count; ?></h3>
+                                            <div class="progress mt-2">
+                                                <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
+                                                    style="width: <?php echo $percentage; ?>%" 
+                                                    aria-valuenow="<?php echo $percentage; ?>" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted"><?php echo $percentage; ?>%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="col-md-10">
+                                    <div class="progress">
+                                        <?php foreach ($status_labels as $index => $label): 
+                                            $count = $status_counts[$index];
+                                            $percentage = ($total_orders > 0) ? round(($count / $total_orders) * 100) : 0;
+                                            $color = $status_colors[$index];
+                                            if ($percentage > 0):
+                                        ?>
+                                        <div class="progress-bar bg-<?php echo $color; ?>" role="progressbar" 
+                                            style="width: <?php echo $percentage; ?>%" 
+                                            aria-valuenow="<?php echo $percentage; ?>" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100" 
+                                            title="<?php echo $label; ?>: <?php echo $count; ?> (<?php echo $percentage; ?>%)">
+                                            <?php if ($percentage >= 10): ?>
+                                                <?php echo $label; ?> <?php echo $percentage; ?>%
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        <div id="orderStatusError" class="error-message"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Orders & Best Sellers -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6><i class="fas fa-shopping-cart me-2"></i> Đơn hàng Gần đây</h6>
+                            <a href="index.php?page=orders" class="btn btn-sm btn-primary">Xem Tất cả</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã Đơn</th>
+                                            <th>Khách hàng</th>
+                                            <th>Số tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Ngày</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (empty($recent_orders)): ?>
+                                        <tr>
+                                            <td colspan="5" class="text-center">Không tìm thấy đơn hàng gần đây</td>
+                                        </tr>
+                                        <?php else: ?>
+                                        <?php foreach ($recent_orders as $order): ?>
+                                        <tr>
+                                            <td>
+                                                <a href="index.php?page=orders&action=view&id=<?php echo $order['id']; ?>" class="text-decoration-none">
+                                                    #<?php echo htmlspecialchars($order['order_number']); ?>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <?php echo htmlspecialchars($order['full_name'] ?? ($order['username'] ?? 'Khách')); ?>
+                                            </td>
+                                            <td><?php echo CURRENCY . number_format($order['total_amount']); ?></td>
+                                            <td>
+                                                <?php
+                                                $status_class = '';
+                                                $status_text = '';
+                                                switch($order['status']) {
+                                                    case 'pending': 
+                                                        $status_class = 'bg-warning text-dark'; 
+                                                        $status_text = 'Chờ xử lý'; 
+                                                        break;
+                                                    case 'processing': 
+                                                        $status_class = 'bg-info text-dark'; 
+                                                        $status_text = 'Đang xử lý'; 
+                                                        break;
+                                                    case 'shipped': 
+                                                        $status_class = 'bg-primary text-white'; 
+                                                        $status_text = 'Đã giao'; 
+                                                        break;
+                                                    case 'delivered': 
+                                                        $status_class = 'bg-success text-white'; 
+                                                        $status_text = 'Hoàn thành'; 
+                                                        break;
+                                                    case 'cancelled': 
+                                                        $status_class = 'bg-danger text-white'; 
+                                                        $status_text = 'Đã hủy'; 
+                                                        break;
+                                                    default: 
+                                                        $status_class = 'bg-secondary text-white';
+                                                        $status_text = 'Không xác định';
+                                                }
+                                                ?>
+                                                <span class="badge <?php echo $status_class; ?> rounded-pill"><?php echo $status_text; ?></span>
+                                            </td>
+                                            <td><?php echo date('d/m/Y', strtotime($order['created_at'])); ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h6><i class="fas fa-star me-2"></i> Sản phẩm Bán chạy</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                <?php if (empty($bestsellers)): ?>
+                                <div class="list-group-item text-center">Không tìm thấy sản phẩm bán chạy</div>
+                                <?php else: ?>
+                                <?php foreach ($bestsellers as $product): ?>
+                                <div class="list-group-item d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <?php if (!empty($product['image'])): ?>
+                                        <img src="<?php echo htmlspecialchars($product['image']); ?>" class="bestseller-img img-fluid" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                        <?php else: ?>
+                                        <div class="bestseller-img-placeholder">
+                                            <i class="fas fa-tshirt fa-2x text-secondary"></i>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1"><?php echo htmlspecialchars($product['name']); ?></h6>
+                                        <small class="text-muted"><?php echo number_format($product['total_sold']); ?> đơn vị bán</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-success"><?php echo CURRENCY . number_format($product['total_revenue']); ?></div>
+                                        <small class="text-muted"><?php echo CURRENCY . number_format($product['price']); ?>/đơn vị</small>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Info -->
+            <?php if (defined('DEBUG_MODE') && DEBUG_MODE && !empty($debug_logs)): ?>
+            <div class="debug-info">
+                <h6 class="fw-bold text-muted"><i class="fas fa-bug me-2"></i>Thông tin Debug</h6>
+                <ul class="mb-0">
+                    <?php foreach ($debug_logs as $log): ?>
+                    <li><?php echo htmlspecialchars($log); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -675,68 +733,38 @@ if (!defined('CURRENCY')) {
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            console.log("DOM fully loaded. Checking Bootstrap components...");
+            console.log("DOM fully loaded. Initializing charts...");
 
-            const cards = document.querySelectorAll('.card');
-            console.log(`Found ${cards.length} card elements`);
-            if (cards.length === 0) {
-                console.error("No Bootstrap cards found. Check Bootstrap CSS inclusion.");
-            }
-
-            const images = document.querySelectorAll('.bestseller-img');
-            console.log(`Found ${images.length} bestseller images`);
-            images.forEach((img, index) => {
-                if (!img.complete || img.naturalWidth === 0) {
-                    console.warn(`Bestseller image ${index + 1} failed to load: ${img.src}`);
-                }
-            });
-
-            const placeholders = document.querySelectorAll('.bestseller-img-placeholder');
-            console.log(`Found ${placeholders.length} bestseller image placeholders`);
-
+            // Traffic Chart
             const trafficCtx = document.getElementById('trafficChart');
             if (!trafficCtx) {
-                console.error("Traffic chart canvas element not found!");
-                document.getElementById('trafficChartError').innerText = "Error: Traffic chart canvas not found.";
+                console.error("Traffic chart canvas not found!");
+                document.getElementById('trafficChartError').innerText = "Lỗi: Không tìm thấy canvas biểu đồ truy cập.";
                 return;
             }
             const trafficContext = trafficCtx.getContext('2d');
             
             const trafficLabels = <?php echo $traffic_labels_json; ?>;
             const trafficData = <?php echo $traffic_data_json; ?>;
-            console.log("Traffic Labels (raw):", trafficLabels);
-            console.log("Traffic Data (raw):", trafficData);
             
             if (!Array.isArray(trafficLabels) || !Array.isArray(trafficData)) {
-                console.error("Invalid data format - Labels or Data is not an array:", { trafficLabels, trafficData });
-                document.getElementById('trafficChartError').innerText = "Error: Invalid data format for chart.";
+                console.error("Invalid traffic data format:", { trafficLabels, trafficData });
+                document.getElementById('trafficChartError').innerText = "Lỗi: Định dạng dữ liệu không hợp lệ.";
                 return;
             }
             
             if (trafficLabels.length !== trafficData.length) {
-                console.error("Mismatch between labels and data length: Labels=", trafficLabels.length, "Data=", trafficData.length);
-                document.getElementById('trafficChartError').innerText = "Error: Mismatch between labels and data length.";
+                console.error("Mismatch between traffic labels and data:", trafficLabels.length, trafficData.length);
+                document.getElementById('trafficChartError').innerText = "Lỗi: Số lượng nhãn và dữ liệu không khớp.";
                 return;
             }
             
-            // Kiểm tra dữ liệu thưa thớt
-            const nonZeroCount = trafficData.filter(value => value > 0).length;
-            if (nonZeroCount === 0) {
-                console.warn("All traffic data is zero, displaying placeholder.");
-                document.getElementById('trafficChartError').innerText = "No traffic data available (all values are 0).";
-                return;
-            }
-            if (nonZeroCount <= 1) {
-                console.warn("Sparse traffic data, only one non-zero value.");
-                document.getElementById('trafficChartError').innerText = "Sparse data: Only one day has traffic data.";
-            }
-            
-            const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 400);
+            const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 300);
             trafficGradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
             trafficGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
             
             try {
-                const chart = new Chart(trafficContext, {
+                new Chart(trafficContext, {
                     type: 'line',
                     data: {
                         labels: trafficLabels,
@@ -745,7 +773,7 @@ if (!defined('CURRENCY')) {
                             data: trafficData,
                             backgroundColor: trafficGradient,
                             borderColor: 'rgba(78, 115, 223, 1)',
-                            borderWidth: 3, // Tăng độ dày đường
+                            borderWidth: 3,
                             pointBackgroundColor: 'rgba(78, 115, 223, 1)',
                             pointBorderColor: '#fff',
                             pointHoverRadius: 6,
@@ -761,10 +789,10 @@ if (!defined('CURRENCY')) {
                         maintainAspectRatio: false,
                         scales: {
                             y: {
-                                beginAtZero: false, // Tự động điều chỉnh trục Y
+                                beginAtZero: false,
                                 ticks: {
                                     precision: 0,
-                                    stepSize: 1 // Đảm bảo các bước là số nguyên
+                                    stepSize: 1
                                 },
                                 title: {
                                     display: true,
@@ -789,9 +817,6 @@ if (!defined('CURRENCY')) {
                                 titleFont: { size: 14 },
                                 bodyFont: { size: 12 },
                                 callbacks: {
-                                    title: function(tooltipItems) {
-                                        return tooltipItems[0].label;
-                                    },
                                     label: function(context) {
                                         return `Lượt truy cập: ${context.parsed.y.toLocaleString()}`;
                                     }
@@ -811,10 +836,107 @@ if (!defined('CURRENCY')) {
                         }
                     }
                 });
-                console.log("Traffic chart initialized successfully:", chart);
+                console.log("Traffic chart initialized successfully.");
             } catch (error) {
-                console.error("Error initializing traffic chart:", error.stack || error.message);
-                document.getElementById('trafficChartError').innerText = "Error initializing chart: " + (error.message || 'Unknown error');
+                console.error("Error initializing traffic chart:", error);
+                document.getElementById('trafficChartError').innerText = "Lỗi khởi tạo biểu đồ: " + (error.message || 'Không xác định');
+            }
+
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart');
+            if (!revenueCtx) {
+                console.error("Revenue chart canvas not found!");
+                document.getElementById('revenueChartError').innerText = "Lỗi: Không tìm thấy canvas biểu đồ doanh thu.";
+                return;
+            }
+            const revenueContext = revenueCtx.getContext('2d');
+            
+            const revenueLabels = <?php echo $monthly_revenue_labels_json; ?>;
+            const revenueData = <?php echo $monthly_revenue_data_json; ?>;
+            
+            if (!Array.isArray(revenueLabels) || !Array.isArray(revenueData)) {
+                console.error("Invalid revenue data format:", { revenueLabels, revenueData });
+                document.getElementById('revenueChartError').innerText = "Lỗi: Định dạng dữ liệu không hợp lệ.";
+                return;
+            }
+            
+            if (revenueLabels.length !== revenueData.length) {
+                console.error("Mismatch between revenue labels and data:", revenueLabels.length, revenueData.length);
+                document.getElementById('revenueChartError').innerText = "Lỗi: Số lượng nhãn và dữ liệu không khớp.";
+                return;
+            }
+            
+            const revenueGradient = revenueContext.createLinearGradient(0, 0, 0, 300);
+            revenueGradient.addColorStop(0, 'rgba(78, 115, 223, 0.8)');
+            revenueGradient.addColorStop(1, 'rgba(78, 115, 223, 0.1)');
+            
+            try {
+                new Chart(revenueContext, {
+                    type: 'bar', // Use bar chart
+                    data: {
+                        labels: revenueLabels,
+                        datasets: [{
+                            label: 'Doanh thu',
+                            data: revenueData,
+                            backgroundColor: revenueGradient,
+                            borderColor: 'rgba(78, 115, 223, 1)',
+                            borderWidth: 1,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '<?php echo CURRENCY; ?>' + value.toLocaleString();
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Doanh thu',
+                                    font: { size: 14 }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 12 }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Tháng',
+                                    font: { size: 14 }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleFont: { size: 14 },
+                                bodyFont: { size: 12 },
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Doanh thu: <?php echo CURRENCY; ?>${context.parsed.y.toLocaleString()}`;
+                                    }
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: { size: 14 }
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log("Revenue chart initialized successfully.");
+            } catch (error) {
+                console.error("Error initializing revenue chart:", error);
+                document.getElementById('revenueChartError').innerText = "Lỗi khởi tạo biểu đồ: " + (error.message || 'Không xác định');
             }
         });
     </script>
