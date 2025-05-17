@@ -5,6 +5,9 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 // Hàm tạo bảng cho SQLite
 function createLocalTables($conn) {
     try {
+        // Bật hỗ trợ khóa ngoại trong SQLite
+        $conn->exec("PRAGMA foreign_keys = ON;");
+
         // Create users table
         $conn->exec("CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,6 +57,15 @@ function createLocalTables($conn) {
             is_sale INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        // Create product_images table
+        $conn->exec("CREATE TABLE IF NOT EXISTS product_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            image TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         )");
 
         // Create product_variants table
@@ -181,6 +193,19 @@ function createLocalTables($conn) {
             ");
         }
 
+        // Add sample product images if no images exist
+        $check = $conn->query("SELECT COUNT(*) FROM product_images")->fetchColumn();
+        if ($check == 0) {
+            $conn->exec("INSERT INTO product_images (product_id, image) VALUES 
+                (1, '/images/oversized_tee_extra1.jpg'),
+                (1, '/images/oversized_tee_extra2.jpg'),
+                (2, '/images/cargo_pants_extra1.jpg'),
+                (3, '/images/hoodie_extra1.jpg'),
+                (4, '/images/bucket_hat_extra1.jpg'),
+                (5, '/images/sneakers_extra1.jpg')
+            ");
+        }
+
         // Add sample product variants if no variants exist
         $check = $conn->query("SELECT COUNT(*) FROM product_variants")->fetchColumn();
         if ($check == 0) {
@@ -217,6 +242,65 @@ function createLocalTables($conn) {
     }
 }
 
+// Hàm tạo bảng cho MySQL/MariaDB (InfinityFree)
+function createRemoteTables($conn) {
+    try {
+        // Đảm bảo products tồn tại
+        $conn->exec("CREATE TABLE IF NOT EXISTS products (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            price DECIMAL(10,0) NOT NULL,
+            sale_price DECIMAL(10,0),
+            category_id INT,
+            image VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            is_featured TINYINT DEFAULT 0,
+            is_sale TINYINT DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Tạo bảng product_images
+        $conn->exec("CREATE TABLE IF NOT EXISTS product_images (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            product_id INT UNSIGNED NOT NULL,
+            image TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Chèn dữ liệu mẫu cho products nếu chưa có
+        $check = $conn->query("SELECT COUNT(*) FROM products")->fetchColumn();
+        if ($check == 0) {
+            $conn->exec("INSERT INTO products (name, description, price, sale_price, category_id, is_featured, is_sale) VALUES 
+                ('Oversized Logo Tee', 'Áo phông rộng với logo nổi bật, 100% cotton hữu cơ', 450000, 0, 1, 1, 0),
+                ('Cargo Pants', 'Quần túi hộp phong cách đường phố, nhiều túi tiện lợi', 620000, 520000, 2, 1, 1),
+                ('Graphic Hoodie', 'Áo hoodie in họa tiết đồ họa hiện đại', 850000, 0, 1, 1, 0),
+                ('Bucket Hat', 'Mũ bucket dáng rộng với họa tiết táo bạo', 320000, 250000, 4, 0, 1),
+                ('High-top Sneakers', 'Giày thể thao cổ cao phong cách retro', 1200000, 0, 5, 1, 0)
+            ");
+        }
+
+        // Chèn dữ liệu mẫu cho product_images nếu chưa có
+        $check = $conn->query("SELECT COUNT(*) FROM product_images")->fetchColumn();
+        if ($check == 0) {
+            $conn->exec("INSERT INTO product_images (product_id, image) VALUES 
+                (1, '/images/oversized_tee_extra1.jpg'),
+                (1, '/images/oversized_tee_extra2.jpg'),
+                (2, '/images/cargo_pants_extra1.jpg'),
+                (3, '/images/hoodie_extra1.jpg'),
+                (4, '/images/bucket_hat_extra1.jpg'),
+                (5, '/images/sneakers_extra1.jpg')
+            ");
+        }
+
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error creating remote tables: " . $e->getMessage());
+        return false;
+    }
+}
+
 class Database {
     // Database credentials for InfinityFree
     private $host = "sql202.infinityfree.com";
@@ -245,6 +329,8 @@ class Database {
                 $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 // Đặt múi giờ cho phiên MySQL
                 $this->conn->exec("SET SESSION time_zone = '+07:00'");
+                // Tạo bảng cho MySQL/MariaDB
+                $this->createRemoteTables();
             }
         } catch (PDOException $exception) {
             error_log("Connection error: " . $exception->getMessage());
@@ -257,6 +343,11 @@ class Database {
     // Create local database tables for development
     private function createLocalTables() {
         return createLocalTables($this->conn);
+    }
+
+    // Create remote database tables for production
+    private function createRemoteTables() {
+        return createRemoteTables($this->conn);
     }
 }
 ?>
