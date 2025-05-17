@@ -232,19 +232,6 @@ if (!defined('CURRENCY')) {
                 echo "<div class='alert alert-warning'>Trang <strong>" . htmlspecialchars($page) . "</strong> đang được phát triển.</div>";
             }
             ?>
-
-            <!-- Debug Info -->
-            <?php if (DEBUG_MODE && !empty($debug_logs)): ?>
-            <div class="debug-info p-3 bg-light rounded shadow-sm mt-4">
-                <h6 class="fw-bold text-muted"><i class="fas fa-bug me-2"></i>Debug Information</h6>
-                <ul class="mb-0">
-                    <?php foreach ($debug_logs as $log): ?>
-                    <li><?php echo htmlspecialchars($log); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
-
             <?php include_once 'includes/footer.php'; ?>
         </div>
     </div>
