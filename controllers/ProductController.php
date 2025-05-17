@@ -407,13 +407,13 @@ class ProductController {
                 } else {
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm\n", FILE_APPEND);
                     $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm.";
-                    header("Location: index.php?controller=product&action=update&id=$product_id");
+                    header("Location: index.php?controller=product&action=product-edit&id=$product_id");
                     exit;
                 }
             } catch (Exception $e) {
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
                 $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm: " . htmlspecialchars($e->getMessage());
-                header("Location: index.php?controller=product&action=update&id=$product_id");
+                header("Location: index.php?controller=product&action=product-edit&id=$product_id");
                 exit;
             }
         }
