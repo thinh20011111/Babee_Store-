@@ -14,6 +14,14 @@ define('DEBUG_MODE', true); // Set to false in production
 $debug_logs = [];
 $error_occurred = false;
 
+// Track sidebar inclusion
+if (!defined('SIDEBAR_INCLUDED')) {
+    define('SIDEBAR_INCLUDED', true);
+    $debug_logs[] = "Sidebar included in index.php";
+} else {
+    $debug_logs[] = "Warning: Sidebar already included before index.php";
+}
+
 // Include database connection
 require_once '../config/database.php';
 try {
@@ -308,5 +316,54 @@ if (!defined('CURRENCY')) {
         });
     </script>
     <?php endif; ?>
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+            color: #333;
+        }
+        .container-fluid {
+            padding: 30px;
+            max-width: 1400px;
+        }
+        .card {
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        .debug-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.9rem;
+            border: 1px solid #e9ecef;
+            display: <?php echo DEBUG_MODE ? 'block' : 'none'; ?>;
+        }
+        .debug-info ul {
+            list-style: none;
+            padding: 0;
+        }
+        .debug-info li {
+            margin-bottom: 5px;
+            color: #495057;
+        }
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+            }
+        }
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding: 20px;
+            }
+        }
+    </style>
 </body>
 </html>

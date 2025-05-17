@@ -5,6 +5,17 @@ if (!defined('ADMIN_INCLUDED')) {
     exit;
 }
 
+// Prevent multiple sidebar renderings
+if (defined('SIDEBAR_RENDERED')) {
+    return; // Exit if sidebar already rendered
+}
+define('SIDEBAR_RENDERED', true);
+
+// Log sidebar rendering
+if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    $GLOBALS['debug_logs'][] = "Sidebar rendered at " . date('Y-m-d H:i:s');
+}
+
 // Define accessible pages for roles
 $accessible_pages = [
     'admin' => ['dashboard', 'orders', 'products', 'users', 'traffic', 'banners', 'settings', 'promotions'],
