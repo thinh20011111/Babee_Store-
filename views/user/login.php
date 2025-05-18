@@ -41,13 +41,13 @@ include 'views/layouts/header.php';
                 
                 <hr>
                 
-                <div class="social-login text-center">
+                <!-- <div class="social-login text-center">
                     <p class="mb-3">Or login with:</p>
                     <div class="d-flex justify-content-center">
                         <a href="#" class="btn btn-outline-primary me-2"><i class="fab fa-facebook-f"></i> Facebook</a>
                         <a href="#" class="btn btn-outline-danger"><i class="fab fa-google"></i> Google</a>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>

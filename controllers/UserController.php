@@ -37,7 +37,7 @@ class UserController {
 
                         // Redirect based on role
                         $redirect = ($this->user->role === 'admin' || $this->user->role === 'staff')
-                            ? 'admin/dashboard.php'
+                            ? 'admin/index.php?page=dashboard'
                             : (isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'index.php');
                         unset($_SESSION['redirect_after_login']);
                         header("Location: $redirect");
