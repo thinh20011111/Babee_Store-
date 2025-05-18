@@ -289,7 +289,7 @@ endif; ?>
                     <div class="col-6 col-md-3">
                         <div class="feature-item text-center p-3 rounded shadow-sm">
                             <i class="fas fa-undo fs-3 mb-2 text-primary"></i>
-                            <p class="mb-0 small">ĐỔI TRẢ 7 NGÀY</p>
+                            <p class="mb-0 small">ĐỔI TRẢ TRONG VÒNG 7 NGÀY</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
