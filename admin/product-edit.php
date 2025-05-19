@@ -1,4 +1,9 @@
 <?php
+ob_start();
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Product add/edit page
 if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
@@ -9,11 +14,10 @@ require_once '../config/database.php';
 try {
     $db = new Database();
     $conn = $db->getConnection();
-    // Set UTF-8 encoding
     $conn->exec("SET NAMES utf8mb4");
 } catch (PDOException $e) {
-    error_log("Database connection or charset error: " . $e->getMessage());
-    die("Internal Server Error - Check logs for details.");
+    error_log("Database connection error: " . $e->getMessage());
+    die("Lỗi kết nối cơ sở dữ liệu. Vui lòng kiểm tra logs.");
 }
 
 // Load required models
@@ -26,7 +30,7 @@ try {
     $category = new Category($conn);
 } catch (Exception $e) {
     error_log("Model initialization error: " . $e->getMessage());
-    die("Internal Server Error - Check logs for details.");
+    die("Lỗi khởi tạo model. Vui lòng kiểm tra logs.");
 }
 
 // Get categories for dropdown
@@ -49,7 +53,6 @@ if ($product_id > 0) {
     $is_edit = true;
     $product->id = $product_id;
 
-    // Get product data
     try {
         if (!$product->readOne()) {
             header("Location: index.php?page=products");
@@ -61,7 +64,6 @@ if ($product_id > 0) {
         exit;
     }
 
-    // Get variants
     try {
         $variants = $product->getVariants();
     } catch (Exception $e) {
@@ -78,7 +80,6 @@ $success_message = '';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get form data
     $product->name = isset($_POST['name']) ? trim($_POST['name']) : '';
     $product->description = isset($_POST['description']) ? trim($_POST['description']) : '';
     $product->price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
@@ -87,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
     $product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
 
-    // Get variants data
     $variants_data = [];
     if (isset($_POST['variants']) && is_array($_POST['variants'])) {
         foreach ($_POST['variants'] as $index => $variant) {
@@ -100,13 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Xử lý upload ảnh
     $upload_dir = '../uploads/images/';
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0755, true);
     }
 
-    // Ảnh chính
     if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
         $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
         if (move_uploaded_file($_FILES['main_image']['tmp_name'], $main_image_path)) {
@@ -116,9 +114,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     } elseif (!$is_edit) {
         $error_message = "Vui lòng chọn ảnh chính.";
+    } elseif ($is_edit && empty($product->image)) {
+        $query = "SELECT image FROM products WHERE id = :id";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':id', $product_id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $product->image = $row['image'] ?? '';
     }
 
-    // Xử lý upload ảnh bổ sung
     $new_images = [];
     $has_new_images = false;
     $image_count = 0;
@@ -143,7 +147,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Xử lý xóa ảnh bổ sung
     $delete_image_ids = isset($_POST['delete_image_ids']) && is_array($_POST['delete_image_ids']) ? $_POST['delete_image_ids'] : [];
     if ($is_edit && !empty($delete_image_ids)) {
         try {
@@ -152,15 +155,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         } catch (Exception $e) {
             $error_message = "Lỗi khi xóa ảnh bổ sung: " . $e->getMessage();
-            error_log("Delete image error: " . $e->getMessage());
+            error_log("Delete image error: " . $e->getMessage() . "\nStack trace: " . $e->getTraceAsString());
         }
     }
 
-    // Cập nhật $product->images chỉ khi có thay đổi (file mới hoặc xóa ảnh)
     if ($has_new_images) {
         $product->images = $new_images;
     } elseif ($is_edit && !empty($delete_image_ids)) {
-        // Lấy lại ảnh bổ sung còn lại sau khi xóa
         $current_images = [];
         foreach ($product->images as $image) {
             if (!in_array($image['id'], $delete_image_ids)) {
@@ -170,7 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $product->images = $current_images;
     }
 
-    // Validate form data
     if (empty($product->name)) {
         $error_message = "Vui lòng nhập tên sản phẩm.";
     } elseif ($product->price <= 0) {
@@ -182,7 +182,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif (empty($product->image) && !$is_edit) {
         $error_message = "Vui lòng chọn ảnh chính.";
     } else {
-        // Save product
         try {
             if ($is_edit) {
                 if ($product->update()) {
@@ -192,6 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $error_message = "Không thể lưu biến thể: Hàm saveVariants() không tồn tại.";
                     }
                     $success_message = "Cập nhật sản phẩm thành công.";
+                    header("Location: index.php?page=products");
+                    exit;
                 } else {
                     $error_message = "Cập nhật sản phẩm thất bại.";
                 }
@@ -211,17 +212,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         } catch (Exception $e) {
             $error_message = "Lỗi khi lưu sản phẩm: " . $e->getMessage();
-            error_log("Save product error: " . $e->getMessage());
+            error_log("Save product error: " . $e->getMessage() . "\nStack trace: " . $e->getTraceAsString());
         }
     }
 }
 
-// Show success if redirected from create
 if (isset($_GET['success']) && $_GET['success'] == 1) {
     $success_message = "Lưu sản phẩm thành công.";
 }
 
-// Define currency if not defined
 if (!defined('CURRENCY')) {
     define('CURRENCY', 'đ');
 }
@@ -233,31 +232,15 @@ if (!defined('CURRENCY')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $is_edit ? 'Chỉnh sửa' : 'Thêm mới'; ?> sản phẩm</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXfimf2.php" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        .sidebar {
-            min-height: 100vh;
-            position: sticky;
-            top: 0;
-        }
-        .card {
-            transition: transform 0.3s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .img-preview {
-            max-height: 200px;
-            object-fit: contain;
-        }
-        .table-variants th, .table-variants td {
-            vertical-align: middle;
-        }
-        .additional-image {
-            position: relative;
-            display: inline-block;
-        }
+        .sidebar { min-height: 100vh; position: sticky; top: 0; }
+        .card { transition: transform 0.3s; }
+        .card:hover { transform: translateY(-5px); }
+        .img-preview { max-height: 200px; object-fit: contain; }
+        .table-variants th, .table-variants td { vertical-align: middle; }
+        .additional-image { position: relative; display: inline-block; }
         .additional-image .delete-btn {
             position: absolute;
             top: 5px;
@@ -270,19 +253,12 @@ if (!defined('CURRENCY')) {
             height: 24px;
             cursor: pointer;
         }
-        #main-image-preview, .additional-image-preview {
-            min-height: 100px;
-        }
-        .preview-image {
-            max-width: 100px;
-            margin: 5px;
-            object-fit: cover;
-        }
+        #main-image-preview, .additional-image-preview { min-height: 100px; }
+        .preview-image { max-width: 100px; margin: 5px; object-fit: cover; }
     </style>
 </head>
 <body>
 <div class="d-flex">
-    <!-- Sidebar -->
     <?php include 'sidebar.php'; ?>
     
     <div class="flex-grow-1 p-4">
@@ -292,14 +268,14 @@ if (!defined('CURRENCY')) {
             <?php if (!empty($success_message)): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <?php echo $success_message; ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             <?php endif; ?>
 
             <?php if (!empty($error_message)): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <?php echo $error_message; ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             <?php endif; ?>
 
@@ -369,17 +345,14 @@ if (!defined('CURRENCY')) {
                                 <div class="mb-3">
                                     <label class="form-label">Ảnh bổ sung (tối đa 3 ảnh)</label>
                                     <div id="additional-images-container">
-                                        <!-- Input cho ảnh phụ 1 -->
                                         <div class="additional-image-input-group mb-2">
                                             <input type="file" class="form-control" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-1')">
                                             <div id="additional-image-preview-1" class="border p-2 mt-2 text-center additional-image-preview"></div>
                                         </div>
-                                        <!-- Input cho ảnh phụ 2 -->
                                         <div class="additional-image-input-group mb-2">
                                             <input type="file" class="form-control" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-2')">
                                             <div id="additional-image-preview-2" class="border p-2 mt-2 text-center additional-image-preview"></div>
                                         </div>
-                                        <!-- Input cho ảnh phụ 3 -->
                                         <div class="additional-image-input-group mb-2">
                                             <input type="file" class="form-control" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-3')">
                                             <div id="additional-image-preview-3" class="border p-2 mt-2 text-center additional-image-preview"></div>
@@ -416,7 +389,6 @@ if (!defined('CURRENCY')) {
                             <textarea class="form-control" name="description" rows="5"><?php echo htmlspecialchars($product->description); ?></textarea>
                         </div>
 
-                        <!-- Variants Section -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <label class="form-label fw-bold">Biến thể sản phẩm <span class="text-danger">*</span></label>
@@ -465,7 +437,6 @@ if (!defined('CURRENCY')) {
                             </div>
                         </div>
 
-                        <!-- Hidden inputs for delete image IDs -->
                         <div id="delete-image-ids"></div>
                     </form>
                 </div>
@@ -474,7 +445,7 @@ if (!defined('CURRENCY')) {
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     let variantIndex = <?php echo count($variants); ?>;
 
@@ -512,7 +483,6 @@ if (!defined('CURRENCY')) {
         button.closest('tr').remove();
     }
 
-    // Preview ảnh chính
     document.getElementById('main-image-input').addEventListener('change', function(event) {
         const file = event.target.files[0];
         const preview = document.getElementById('main-image-preview');
@@ -531,7 +501,6 @@ if (!defined('CURRENCY')) {
         }
     });
 
-    // Preview ảnh bổ sung
     function previewAdditionalImage(input, previewId) {
         const file = input.files[0];
         const preview = document.getElementById(previewId);
@@ -550,7 +519,6 @@ if (!defined('CURRENCY')) {
         }
     }
 
-    // Xóa ảnh bổ sung hiện tại
     function removeAdditionalImage(imageId) {
         const imageDiv = document.querySelector(`.additional-image[data-image-id="${imageId}"]`);
         if (imageDiv) {
@@ -564,5 +532,6 @@ if (!defined('CURRENCY')) {
         }
     }
 </script>
+<?php ob_end_flush(); ?>
 </body>
 </html>
