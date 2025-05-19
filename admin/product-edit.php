@@ -123,30 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $product->image = $row['image'] ?? '';
     }
 
-    $new_images = [];
-    $has_new_images = false;
-    $image_count = 0;
-
-    if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
-        foreach ($_FILES['additional_images']['name'] as $key => $name) {
-            if ($image_count >= 3) {
-                $error_message = "Chỉ được phép upload tối đa 3 ảnh bổ sung.";
-                break;
-            }
-            if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK && !empty($name)) {
-                $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
-                $image_path = $upload_dir . time() . '_' . basename($name);
-                if (move_uploaded_file($tmp_name, $image_path)) {
-                    $new_images[] = $image_path;
-                    $image_count++;
-                    $has_new_images = true;
-                } else {
-                    $error_message = "Lỗi khi upload ảnh bổ sung: " . htmlspecialchars($name);
-                }
-            }
-        }
-    }
-
     $delete_image_ids = isset($_POST['delete_image_ids']) && is_array($_POST['delete_image_ids']) ? $_POST['delete_image_ids'] : [];
     if ($is_edit && !empty($delete_image_ids)) {
         try {
@@ -159,21 +135,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Fix: Ensure $product->images contains only image paths (strings)
-    if ($has_new_images) {
-        $product->images = $new_images;
-    } elseif ($is_edit) {
-        $current_images = [];
+    // Initialize images array
+    $final_images = [];
+    if ($is_edit) {
+        // Keep existing images that are not deleted
         foreach ($product->images as $image) {
-            // Ensure we only add the 'image' field (path) if it exists and not marked for deletion
             if (isset($image['image']) && !in_array($image['id'], $delete_image_ids)) {
-                $current_images[] = $image['image'];
+                $final_images[] = $image['image'];
             }
         }
-        $product->images = $current_images;
-    } else {
-        $product->images = [];
     }
+
+    // Process new images
+    if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+        foreach ($_FILES['additional_images']['name'] as $key => $name) {
+            if ($key > 2) {
+                $error_message = "Chỉ được phép upload tối đa 3 ảnh bổ sung.";
+                break;
+            }
+            if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK && !empty($name)) {
+                $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
+                $image_path = $upload_dir . time() . '_' . basename($name);
+                if (move_uploaded_file($tmp_name, $image_path)) {
+                    // Replace or add new image at the corresponding index
+                    $final_images[$key] = $image_path;
+                } else {
+                    $error_message = "Lỗi khi upload ảnh bổ sung: " . htmlspecialchars($name);
+                }
+            }
+        }
+    }
+
+    // Ensure no more than 3 images and reindex array
+    $product->images = array_values(array_slice($final_images, 0, 3));
 
     if (empty($product->name)) {
         $error_message = "Vui lòng nhập tên sản phẩm.";
