@@ -244,20 +244,32 @@ if (!defined('CURRENCY')) {
         .card:hover { transform: translateY(-5px); }
         .img-preview { max-height: 200px; object-fit: contain; }
         .table-variants th, .table-variants td { vertical-align: middle; }
-        .additional-image-container {
+        .image-square {
+            width: 120px;
+            height: 120px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
             position: relative;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            text-align: center;
-            min-height: 150px;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            transition: border-color 0.3s;
+            margin-bottom: 10px;
         }
-        .additional-image-container .delete-btn {
+        .image-square:hover {
+            border-color: #007bff;
+        }
+        .image-square.empty::after {
+            content: 'Tải ảnh';
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+        .image-square .delete-btn {
             position: absolute;
             top: 5px;
             right: 5px;
@@ -271,12 +283,11 @@ if (!defined('CURRENCY')) {
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
-        .additional-image-preview {
-            max-width: 100px;
-            max-height: 100px;
-            margin-top: 10px;
-            object-fit: cover;
+        .image-square:hover .delete-btn {
+            opacity: 1;
         }
         #main-image-preview {
             min-height: 100px;
@@ -376,20 +387,22 @@ if (!defined('CURRENCY')) {
                                 <?php endif; ?>
                                 <div class="mb-3">
                                     <label class="form-label">Ảnh bổ sung (tối đa 3 ảnh)</label>
-                                    <div class="row">
+                                    <div class="d-flex gap-3">
                                         <?php for ($i = 0; $i < 3; $i++): ?>
-                                        <div class="col-md-4">
-                                            <div class="additional-image-container" id="additional-image-container-<?php echo $i; ?>">
-                                                <input type="file" class="form-control mb-2" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-<?php echo $i; ?>')">
-                                                <div id="additional-image-preview-<?php echo $i; ?>" class="additional-image-preview">
-                                                    <?php if ($is_edit && isset($product->images[$i])): ?>
-                                                    <img src="<?php echo htmlspecialchars($product->images[$i]['image']); ?>" class="img-fluid additional-image-preview" alt="Additional Image">
-                                                    <button type="button" class="delete-btn" onclick="removeAdditionalImage(<?php echo htmlspecialchars($product->images[$i]['id']); ?>, 'additional-image-preview-<?php echo $i; ?>')">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
+                                        <div class="image-square <?php echo ($is_edit && isset($product->images[$i])) ? '' : 'empty'; ?>"
+                                             id="image-square-<?php echo $i; ?>"
+                                             onclick="document.getElementById('additional-image-input-<?php echo $i; ?>').click()"
+                                             <?php if ($is_edit && isset($product->images[$i])): ?>
+                                             style="background-image: url('<?php echo htmlspecialchars($product->images[$i]['image']); ?>');"
+                                             <?php endif; ?>>
+                                            <input type="file" id="additional-image-input-<?php echo $i; ?>" name="additional_images[]" accept="image/*" hidden
+                                                   onchange="previewAdditionalImage(this, 'image-square-<?php echo $i; ?>')">
+                                            <?php if ($is_edit && isset($product->images[$i])): ?>
+                                            <button type="button" class="delete-btn"
+                                                    onclick="removeAdditionalImage(<?php echo htmlspecialchars($product->images[$i]['id']); ?>, 'image-square-<?php echo $i; ?>', event)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            <?php endif; ?>
                                         </div>
                                         <?php endfor; ?>
                                     </div>
@@ -521,27 +534,35 @@ if (!defined('CURRENCY')) {
         }
     });
 
-    function previewAdditionalImage(input, previewId) {
+    function previewAdditionalImage(input, squareId) {
         const file = input.files[0];
-        const preview = document.getElementById(previewId);
-        preview.innerHTML = '';
+        const square = document.getElementById(squareId);
 
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.className = 'img-fluid additional-image-preview';
-                img.alt = 'Additional Image Preview';
-                preview.appendChild(img);
+                square.style.backgroundImage = `url('${e.target.result}')`;
+                square.classList.remove('empty');
+                // Remove delete button if it exists
+                const existingDeleteBtn = square.querySelector('.delete-btn');
+                if (existingDeleteBtn) {
+                    existingDeleteBtn.remove();
+                }
             };
             reader.readAsDataURL(file);
         }
     }
 
-    function removeAdditionalImage(imageId, previewId) {
-        const preview = document.getElementById(previewId);
-        preview.innerHTML = ''; // Clear the preview
+    function removeAdditionalImage(imageId, squareId, event) {
+        event.stopPropagation(); // Prevent triggering file input
+        const square = document.getElementById(squareId);
+        square.style.backgroundImage = '';
+        square.classList.add('empty');
+        // Remove delete button
+        const deleteBtn = square.querySelector('.delete-btn');
+        if (deleteBtn) {
+            deleteBtn.remove();
+        }
 
         const deleteIdsContainer = document.getElementById('delete-image-ids');
         const input = document.createElement('input');
