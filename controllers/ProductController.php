@@ -23,7 +23,7 @@ class ProductController {
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         
         // Set up variables for pagination
-        $items_per_page = ITEMS_PER_PAGE;
+        $items_per_page = defined('ITEMS_PER_PAGE') ? ITEMS_PER_PAGE : 12;
         $total_rows = 0;
         $products = [];
         
@@ -54,7 +54,7 @@ class ProductController {
             $total_rows = $this->product->countByCategory($category_id);
         } else {
             // Get all products with pagination
-            $stmt = $this->product->read($items_per_page);
+            $stmt = $this->product->read($items_per_page, $page);
             $total_rows = $this->product->countAll();
         }
         
@@ -263,12 +263,20 @@ class ProductController {
                 // Ảnh bổ sung
                 $this->product->images = [];
                 if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+                    $image_count = 0;
                     foreach ($_FILES['additional_images']['name'] as $key => $name) {
-                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
+                        if ($image_count >= 3) {
+                            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Vượt quá giới hạn 3 ảnh bổ sung\n", FILE_APPEND);
+                            $_SESSION['error_message'] = "Chỉ được phép upload tối đa 3 ảnh bổ sung.";
+                            header("Location: index.php?controller=product&action=create");
+                            exit;
+                        }
+                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK && !empty($name)) {
                             $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
                             $image_path = $upload_dir . time() . '_' . basename($name);
                             if (move_uploaded_file($tmp_name, $image_path)) {
                                 $this->product->images[] = $image_path;
+                                $image_count++;
                             } else {
                                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh bổ sung: $name\n", FILE_APPEND);
                             }
@@ -384,12 +392,20 @@ class ProductController {
                 // Ảnh bổ sung
                 $this->product->images = [];
                 if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
+                    $image_count = 0;
                     foreach ($_FILES['additional_images']['name'] as $key => $name) {
-                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK) {
+                        if ($image_count >= 3) {
+                            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Vượt quá giới hạn 3 ảnh bổ sung\n", FILE_APPEND);
+                            $_SESSION['error_message'] = "Chỉ được phép upload tối đa 3 ảnh bổ sung.";
+                            header("Location: index.php?controller=product&action=update&id=$product_id");
+                            exit;
+                        }
+                        if ($_FILES['additional_images']['error'][$key] == UPLOAD_ERR_OK && !empty($name)) {
                             $tmp_name = $_FILES['additional_images']['tmp_name'][$key];
                             $image_path = $upload_dir . time() . '_' . basename($name);
                             if (move_uploaded_file($tmp_name, $image_path)) {
                                 $this->product->images[] = $image_path;
+                                $image_count++;
                             } else {
                                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi upload ảnh bổ sung: $name\n", FILE_APPEND);
                             }
@@ -397,6 +413,14 @@ class ProductController {
                     }
                 }
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Additional images: " . json_encode($this->product->images) . "\n", FILE_APPEND);
+                
+                // Xử lý xóa ảnh bổ sung
+                $delete_image_ids = isset($_POST['delete_image_ids']) && is_array($_POST['delete_image_ids']) ? $_POST['delete_image_ids'] : [];
+                if (!empty($delete_image_ids)) {
+                    foreach ($delete_image_ids as $image_id) {
+                        $this->product->deleteImage($image_id);
+                    }
+                }
                 
                 // Cập nhật sản phẩm
                 if ($this->product->update()) {
@@ -407,13 +431,13 @@ class ProductController {
                 } else {
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm\n", FILE_APPEND);
                     $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm.";
-                    header("Location: index.php?controller=product&action=product-edit&id=$product_id");
+                    header("Location: index.php?controller=product&action=update&id=$product_id");
                     exit;
                 }
             } catch (Exception $e) {
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi cập nhật sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
                 $_SESSION['error_message'] = "Lỗi khi cập nhật sản phẩm: " . htmlspecialchars($e->getMessage());
-                header("Location: index.php?controller=product&action=product-edit&id=$product_id");
+                header("Location: index.php?controller=product&action=update&id=$product_id");
                 exit;
             }
         }
@@ -437,120 +461,149 @@ class ProductController {
         }
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] ProductController::addToCart called\n", FILE_APPEND);
 
-        // Đặt header JSON ngay đầu để tránh HTML
-        header('Content-Type: application/json');
-
-        // Kiểm tra nếu là request AJAX
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            // Get product ID, variant ID, and quantity
-            $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-            $variant_id = isset($_POST['variant_id']) ? intval($_POST['variant_id']) : 0;
-            $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
-            
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Input: product_id=$product_id, variant_id=$variant_id, quantity=$quantity\n", FILE_APPEND);
-            
-            // Kiểm tra dữ liệu đầu vào
-            if ($product_id <= 0 || $quantity <= 0) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Invalid input\n", FILE_APPEND);
-                echo json_encode(['success' => false, 'message' => 'Dữ liệu sản phẩm hoặc số lượng không hợp lệ.']);
-                exit;
-            }
-            
-            // Get product details
-            try {
-                $this->product->id = $product_id;
-                if (!$this->product->readOne()) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product not found: ID $product_id\n", FILE_APPEND);
-                    echo json_encode(['success' => false, 'message' => 'Không tìm thấy sản phẩm.']);
-                    exit;
-                }
-            } catch (Exception $e) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error reading product: " . $e->getMessage() . "\n", FILE_APPEND);
-                echo json_encode(['success' => false, 'message' => 'Lỗi khi đọc dữ liệu sản phẩm: ' . $e->getMessage()]);
-                exit;
-            }
-            
-            // Check variant details and stock availability
-            try {
-                $query = "SELECT stock, price FROM product_variants WHERE id = ? AND product_id = ?";
-                $stmt = $this->conn->prepare($query);
-                $stmt->execute([$variant_id, $product_id]);
-                $variant = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if (!$variant && $variant_id > 0) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Variant not found: ID $variant_id\n", FILE_APPEND);
-                    echo json_encode(['success' => false, 'message' => 'Không tìm thấy biến thể sản phẩm.']);
-                    exit;
-                }
-                
-                if ($variant_id > 0 && $variant['stock'] < $quantity) {
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Not enough stock for variant ID $variant_id: stock={$variant['stock']}, requested=$quantity\n", FILE_APPEND);
-                    echo json_encode(['success' => false, 'message' => 'Không đủ hàng trong kho cho biến thể này.']);
-                    exit;
-                }
-            } catch (Exception $e) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error querying variant: " . $e->getMessage() . "\n", FILE_APPEND);
-                echo json_encode(['success' => false, 'message' => 'Lỗi khi kiểm tra biến thể: ' . $e->getMessage()]);
-                exit;
-            }
-            
-            // Create or get cart
-            $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-            
-            // Prepare product data
-            $product_data = [
-                'name' => $this->product->name,
-                'price' => $variant['price'] ?? $this->product->price,
-                'sale_price' => $this->product->sale_price,
-                'image' => $this->product->image,
-                'variant_id' => $variant_id
-            ];
-            
-            // Create unique key for cart item (product_id + variant_id)
-            $cart_key = $product_id . '_' . ($variant_id > 0 ? $variant_id : '0');
-            
-            // Add or update item in cart
-            if (isset($cart[$cart_key])) {
-                $cart[$cart_key]['quantity'] += $quantity;
-            } else {
-                $cart[$cart_key] = [
-                    'product_id' => $product_id,
-                    'variant_id' => $variant_id,
-                    'quantity' => $quantity,
-                    'data' => $product_data
-                ];
-            }
-            
-            // Update session cart
-            $_SESSION['cart'] = $cart;
-            
-            // Calculate cart totals
-            $cart_count = array_sum(array_column($cart, 'quantity'));
-            $cart_total = array_sum(array_map(function($item) {
-                $price = $item['data']['sale_price'] > 0 ? $item['data']['sale_price'] : $item['data']['price'];
-                return $item['quantity'] * $price;
-            }, $cart));
-            
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cart updated: count=$cart_count, total=$cart_total\n", FILE_APPEND);
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Đã thêm sản phẩm vào giỏ hàng.',
-                'cart_count' => $cart_count,
-                'cart_total' => $cart_total
-            ]);
+        // Kiểm tra yêu cầu AJAX
+        if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không phải yêu cầu AJAX\n", FILE_APPEND);
+            http_response_code(400);
+            echo json_encode(['error' => 'Yêu cầu không hợp lệ']);
             exit;
         }
-        
-        // Nếu không phải AJAX
+
+        // Lấy dữ liệu từ POST
         $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Non-AJAX request: product_id=$product_id\n", FILE_APPEND);
-        
-        if ($product_id <= 0) {
-            header("Location: index.php?controller=product&action=list");
-        } else {
-            header("Location: index.php?controller=product&action=detail&id=" . $product_id);
+        $variant_id = isset($_POST['variant_id']) ? intval($_POST['variant_id']) : 0;
+        $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Add to cart: product_id=$product_id, variant_id=$variant_id, quantity=$quantity\n", FILE_APPEND);
+
+        // Kiểm tra dữ liệu đầu vào
+        if ($product_id <= 0 || $variant_id <= 0 || $quantity <= 0) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
+            http_response_code(400);
+            echo json_encode(['error' => 'Dữ liệu không hợp lệ']);
+            exit;
         }
+
+        // Kiểm tra sản phẩm
+        $this->product->id = $product_id;
+        if (!$this->product->readOne()) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy sản phẩm với ID $product_id\n", FILE_APPEND);
+            http_response_code(404);
+            echo json_encode(['error' => 'Sản phẩm không tồn tại']);
+            exit;
+        }
+
+        // Kiểm tra biến thể
+        $variants = $this->product->getVariants();
+        $variant_exists = false;
+        $selected_variant = null;
+        foreach ($variants as $variant) {
+            if ($variant['id'] == $variant_id) {
+                $variant_exists = true;
+                $selected_variant = $variant;
+                break;
+            }
+        }
+
+        if (!$variant_exists) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy biến thể với ID $variant_id\n", FILE_APPEND);
+            http_response_code(404);
+            echo json_encode(['error' => 'Biến thể không tồn tại']);
+            exit;
+        }
+
+        // Kiểm tra số lượng tồn kho
+        if ($selected_variant['stock'] < $quantity) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Số lượng yêu cầu vượt quá tồn kho\n", FILE_APPEND);
+            http_response_code(400);
+            echo json_encode(['error' => 'Số lượng vượt quá tồn kho']);
+            exit;
+        }
+
+        // Khởi tạo giỏ hàng nếu chưa có
+        if (!isset($_SESSION['cart'])) {
+            $_SESSION['cart'] = [];
+        }
+
+        // Tạo khóa duy nhất cho mục trong giỏ hàng
+        $cart_key = $product_id . '_' . $variant_id;
+
+        // Cập nhật hoặc thêm mới mục trong giỏ hàng
+        if (isset($_SESSION['cart'][$cart_key])) {
+            $_SESSION['cart'][$cart_key]['quantity'] += $quantity;
+        } else {
+            $_SESSION['cart'][$cart_key] = [
+                'product_id' => $product_id,
+                'variant_id' => $variant_id,
+                'quantity' => $quantity,
+                'name' => $this->product->name,
+                'price' => $selected_variant['price'] > 0 ? $selected_variant['price'] : $this->product->price,
+                'color' => $selected_variant['color'],
+                'size' => $selected_variant['size'],
+                'image' => $this->product->image
+            ];
+        }
+
+        // Tính tổng số lượng trong giỏ hàng
+        $total_items = array_sum(array_column($_SESSION['cart'], 'quantity'));
+
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã thêm vào giỏ hàng, total_items=$total_items\n", FILE_APPEND);
+
+        // Trả về phản hồi JSON
+        echo json_encode([
+            'success' => true,
+            'message' => 'Đã thêm sản phẩm vào giỏ hàng',
+            'total_items' => $total_items
+        ]);
+        exit;
+    }
+
+    // Delete product (Admin)
+    public function delete() {
+        // Khởi tạo session
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Khởi tạo file log
+        $log_file = 'logs/debug.log';
+        if (!file_exists(dirname($log_file))) {
+            mkdir(dirname($log_file), 0755, true);
+        }
+
+        // Kiểm tra quyền admin
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không có quyền admin\n", FILE_APPEND);
+            $_SESSION['error_message'] = "Bạn không có quyền xóa sản phẩm.";
+            header("Location: index.php?controller=product&action=list");
+            exit;
+        }
+
+        // Get product ID
+        $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if ($product_id <= 0) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID không hợp lệ\n", FILE_APPEND);
+            $_SESSION['error_message'] = "ID sản phẩm không hợp lệ.";
+            header("Location: index.php?controller=product&action=list");
+            exit;
+        }
+
+        // Xóa sản phẩm
+        $this->product->id = $product_id;
+        try {
+            if ($this->product->delete()) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Xóa sản phẩm thành công, ID: $product_id\n", FILE_APPEND);
+                $_SESSION['success_message'] = "Xóa sản phẩm thành công.";
+            } else {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi xóa sản phẩm\n", FILE_APPEND);
+                $_SESSION['error_message'] = "Lỗi khi xóa sản phẩm.";
+            }
+        } catch (Exception $e) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi xóa sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
+            $_SESSION['error_message'] = "Lỗi khi xóa sản phẩm: " . htmlspecialchars($e->getMessage());
+        }
+
+        header("Location: index.php?controller=product&action=list");
         exit;
     }
 }
