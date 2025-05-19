@@ -159,16 +159,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // Fix: Ensure $product->images contains only image paths (strings)
     if ($has_new_images) {
         $product->images = $new_images;
-    } elseif ($is_edit && !empty($delete_image_ids)) {
+    } elseif ($is_edit) {
         $current_images = [];
         foreach ($product->images as $image) {
-            if (!in_array($image['id'], $delete_image_ids)) {
+            // Extract only the 'image' field (the path) from the associative array
+            if (isset($image['image']) && !in_array($image['id'], $delete_image_ids)) {
                 $current_images[] = $image['image'];
             }
         }
         $product->images = $current_images;
+    } else {
+        $product->images = [];
     }
 
     if (empty($product->name)) {
