@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $error_message = "Không thể lưu biến thể: Hàm saveVariants() không tồn tại.";
                     }
                     $success_message = "Cập nhật sản phẩm thành công.";
-                    header("Location: index.php?page=products");
+                    header("Location: index.php?page=product-edit&id=" . $product_id . "&success=1");
                     exit;
                 } else {
                     $error_message = "Cập nhật sản phẩm thất bại.";
@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 if (isset($_GET['success']) && $_GET['success'] == 1) {
-    $success_message = "Lưu sản phẩm thành công.";
+    $success_message = "Cập nhật sản phẩm thành công.";
 }
 
 if (!defined('CURRENCY')) {
