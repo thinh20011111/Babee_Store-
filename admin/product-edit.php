@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    $upload_dir = '../uploads/images/';
+    $upload_dir = '../Uploads/images/';
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0755, true);
     }
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif ($is_edit) {
         $current_images = [];
         foreach ($product->images as $image) {
-            // Extract only the 'image' field (the path) from the associative array
+            // Ensure we only add the 'image' field (path) if it exists and not marked for deletion
             if (isset($image['image']) && !in_array($image['id'], $delete_image_ids)) {
                 $current_images[] = $image['image'];
             }
@@ -244,8 +244,20 @@ if (!defined('CURRENCY')) {
         .card:hover { transform: translateY(-5px); }
         .img-preview { max-height: 200px; object-fit: contain; }
         .table-variants th, .table-variants td { vertical-align: middle; }
-        .additional-image { position: relative; display: inline-block; }
-        .additional-image .delete-btn {
+        .additional-image-container {
+            position: relative;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .additional-image-container .delete-btn {
             position: absolute;
             top: 5px;
             right: 5px;
@@ -256,9 +268,25 @@ if (!defined('CURRENCY')) {
             width: 24px;
             height: 24px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        #main-image-preview, .additional-image-preview { min-height: 100px; }
-        .preview-image { max-width: 100px; margin: 5px; object-fit: cover; }
+        .additional-image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 10px;
+            object-fit: cover;
+        }
+        #main-image-preview {
+            min-height: 100px;
+            text-align: center;
+        }
+        .preview-image {
+            max-width: 100px;
+            margin: 5px;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -348,36 +376,24 @@ if (!defined('CURRENCY')) {
                                 <?php endif; ?>
                                 <div class="mb-3">
                                     <label class="form-label">Ảnh bổ sung (tối đa 3 ảnh)</label>
-                                    <div id="additional-images-container">
-                                        <div class="additional-image-input-group mb-2">
-                                            <input type="file" class="form-control" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-1')">
-                                            <div id="additional-image-preview-1" class="border p-2 mt-2 text-center additional-image-preview"></div>
+                                    <div class="row">
+                                        <?php for ($i = 0; $i < 3; $i++): ?>
+                                        <div class="col-md-4">
+                                            <div class="additional-image-container" id="additional-image-container-<?php echo $i; ?>">
+                                                <input type="file" class="form-control mb-2" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-<?php echo $i; ?>')">
+                                                <div id="additional-image-preview-<?php echo $i; ?>" class="additional-image-preview">
+                                                    <?php if ($is_edit && isset($product->images[$i])): ?>
+                                                    <img src="<?php echo htmlspecialchars($product->images[$i]['image']); ?>" class="img-fluid additional-image-preview" alt="Additional Image">
+                                                    <button type="button" class="delete-btn" onclick="removeAdditionalImage(<?php echo htmlspecialchars($product->images[$i]['id']); ?>, 'additional-image-preview-<?php echo $i; ?>')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="additional-image-input-group mb-2">
-                                            <input type="file" class="form-control" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-2')">
-                                            <div id="additional-image-preview-2" class="border p-2 mt-2 text-center additional-image-preview"></div>
-                                        </div>
-                                        <div class="additional-image-input-group mb-2">
-                                            <input type="file" class="form-control" name="additional_images[]" accept="image/*" onchange="previewAdditionalImage(this, 'additional-image-preview-3')">
-                                            <div id="additional-image-preview-3" class="border p-2 mt-2 text-center additional-image-preview"></div>
-                                        </div>
+                                        <?php endfor; ?>
                                     </div>
                                 </div>
-                                <?php if (!empty($product->images)): ?>
-                                <div class="mb-3">
-                                    <label class="form-label">Ảnh bổ sung hiện tại</label>
-                                    <div class="d-flex flex-wrap" id="existing-images">
-                                        <?php foreach ($product->images as $index => $image): ?>
-                                        <div class="additional-image me-2 mb-2" data-image-id="<?php echo htmlspecialchars($image['id']); ?>">
-                                            <img src="<?php echo htmlspecialchars($image['image']); ?>" class="img-fluid img-preview" style="max-width: 100px;" alt="Additional Image">
-                                            <button type="button" class="delete-btn" onclick="removeAdditionalImage(<?php echo htmlspecialchars($image['id']); ?>)">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" name="is_featured" <?php echo $product->is_featured ? 'checked' : ''; ?>>
                                     <label class="form-check-label">Sản phẩm nổi bật</label>
@@ -515,7 +531,7 @@ if (!defined('CURRENCY')) {
             reader.onload = function(e) {
                 const img = document.createElement('img');
                 img.src = e.target.result;
-                img.className = 'img-fluid preview-image';
+                img.className = 'img-fluid additional-image-preview';
                 img.alt = 'Additional Image Preview';
                 preview.appendChild(img);
             };
@@ -523,17 +539,16 @@ if (!defined('CURRENCY')) {
         }
     }
 
-    function removeAdditionalImage(imageId) {
-        const imageDiv = document.querySelector(`.additional-image[data-image-id="${imageId}"]`);
-        if (imageDiv) {
-            imageDiv.remove();
-            const deleteIdsContainer = document.getElementById('delete-image-ids');
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'delete_image_ids[]';
-            input.value = imageId;
-            deleteIdsContainer.appendChild(input);
-        }
+    function removeAdditionalImage(imageId, previewId) {
+        const preview = document.getElementById(previewId);
+        preview.innerHTML = ''; // Clear the preview
+
+        const deleteIdsContainer = document.getElementById('delete-image-ids');
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'delete_image_ids[]';
+        input.value = imageId;
+        deleteIdsContainer.appendChild(input);
     }
 </script>
 <?php ob_end_flush(); ?>
