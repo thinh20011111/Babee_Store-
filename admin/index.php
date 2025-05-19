@@ -209,8 +209,6 @@ if (!defined('CURRENCY')) {
     <!-- Main Content -->
     <div class="flex-grow-1 p-4 bg-light">
         <div class="container-fluid">
-            <?php include_once 'includes/header.php'; ?>
-
             <?php
             // Include the requested page
             $page_file = $page . '.php';
@@ -232,7 +230,6 @@ if (!defined('CURRENCY')) {
                 echo "<div class='alert alert-warning'>Trang <strong>" . htmlspecialchars($page) . "</strong> đang được phát triển.</div>";
             }
             ?>
-            <?php include_once 'includes/footer.php'; ?>
         </div>
     </div>
 
