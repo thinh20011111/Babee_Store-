@@ -188,11 +188,6 @@ endif; ?>
                     <a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($product->category_id ?? 0); ?>" class="ms-2 badge bg-light text-dark text-decoration-none py-2 px-3 rounded-pill"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a>
                 </div>
             </div>
-            
-            <!-- Short Description -->
-            <div class="product-description mb-4">
-                <p class="lead"><?php echo nl2br(htmlspecialchars($product->description ?? 'Không có mô tả')); ?></p>
-            </div>
         
             <!-- Add to Cart Form -->
             <?php if ($total_stock > 0): ?>
