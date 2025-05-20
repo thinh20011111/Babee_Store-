@@ -3,6 +3,141 @@ $page_title = isset($category_name) && !empty($category_name) ? $category_name :
 include 'views/layouts/header.php';
 ?>
 
+<!-- CSS tùy chỉnh cho responsive -->
+<style>
+/* Đảm bảo container không quá rộng trên mobile */
+.container {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Sidebar trên mobile */
+@media (max-width: 991.98px) {
+    .filter-card {
+        margin-bottom: 20px;
+    }
+    .filter-card .card-header {
+        cursor: pointer;
+        user-select: none;
+    }
+    .filter-card .card-body {
+        display: none;
+    }
+    .filter-card.active .card-body {
+        display: block;
+    }
+}
+
+/* Product grid */
+.product-card img {
+    width: 100%;
+    height: auto;
+    max-height: 250px;
+    object-fit: cover;
+}
+@media (max-width: 767.98px) {
+    .product-card img {
+        max-height: 200px;
+    }
+    .product-card .card-body {
+        padding: 10px;
+    }
+    .product-card .card-title {
+        font-size: 1rem;
+    }
+    .product-category {
+        font-size: 0.8rem;
+    }
+    .price-block {
+        font-size: 0.9rem;
+    }
+}
+
+/* Product actions */
+.product-actions {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.product-card:hover .product-actions {
+    opacity: 1;
+}
+@media (max-width: 767.98px) {
+    .product-actions {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .product-actions .btn {
+        padding: 5px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Toolbar và select box */
+.products-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+}
+@media (max-width: 767.98px) {
+    .products-toolbar .toolbar-right {
+        width: 100%;
+        margin-top: 10px;
+    }
+    #sort-products {
+        width: 100%;
+    }
+}
+
+/* Form lọc giá */
+.price-filter-form .input-group {
+    flex-wrap: nowrap;
+}
+.price-filter-form .form-control {
+    font-size: 0.9rem;
+}
+.price-filter-form .btn {
+    font-size: 0.9rem;
+    padding: 8px;
+}
+
+/* Phân trang */
+.pagination-modern .page-link {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+@media (max-width: 767.98px) {
+    .pagination-modern .page-link {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Category header */
+.category-header h1 {
+    font-size: 2rem;
+}
+@media (max-width: 767.98px) {
+    .category-header h1 {
+        font-size: 1.5rem;
+    }
+    .category-header-bg {
+        height: 120px;
+    }
+    .breadcrumb {
+        font-size: 0.8rem;
+    }
+}
+
+/* Recently viewed section */
+.recently-viewed-section h3 {
+    font-size: 1.25rem;
+}
+@media (max-width: 767.98px) {
+    .recently-viewed-section h3 {
+        font-size: 1rem;
+    }
+}
+</style>
+
 <!-- Page Header Banner -->
 <div class="category-header position-relative mb-5">
     <div class="category-header-bg" style="background-color: var(--light-bg-color); height: 180px; position: relative; overflow: hidden;">
@@ -30,10 +165,10 @@ include 'views/layouts/header.php';
             <!-- Category Filter -->
             <div class="filter-card mb-4 hover-lift">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-dark text-white py-3">
+                    <div class="card-header bg-dark text-white py-3" data-bs-toggle="collapse" data-bs-target="#category-filter-body">
                         <h5 class="mb-0 fw-bold">BỘ LỌC</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body collapse show" id="category-filter-body">
                         <h6 class="text-uppercase fw-bold mb-3 border-bottom pb-2">Danh mục</h6>
                         <ul class="list-unstyled category-filter">
                             <li class="mb-2">
@@ -64,7 +199,10 @@ include 'views/layouts/header.php';
             <!-- Price Filter -->
             <div class="filter-card hover-lift">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-body">
+                    <div class="card-header bg-dark text-white py-3" data-bs-toggle="collapse" data-bs-target="#price-filter-body">
+                        <h5 class="mb-0 fw-bold">KHOẢNG GIÁ</h5>
+                    </div>
+                    <div class="card-body collapse show" id="price-filter-body">
                         <h6 class="text-uppercase fw-bold mb-3 border-bottom pb-2">Khoảng giá</h6>
                         <form action="index.php" method="GET" class="price-filter-form">
                             <input type="hidden" name="controller" value="product">
@@ -109,7 +247,7 @@ include 'views/layouts/header.php';
                 </div>
                 <div class="toolbar-right d-flex align-items-center">
                     <span class="me-2 text-nowrap">Sắp xếp:</span>
-                    <select class="form-select form-select-sm border-0 bg-light px-3 py-2" id="sort-products" style="width: auto; min-width: 200px;">
+                    <select class="form-select form-select-sm border-0 bg-light px-3 py-2" id="sort-products">
                         <option value="default" selected>Mặc định</option>
                         <option value="price-low">Giá: Thấp đến cao</option>
                         <option value="price-high">Giá: Cao đến thấp</option>
@@ -140,8 +278,8 @@ include 'views/layouts/header.php';
                                 <?php if(!empty($product['image'])): ?>
                                 <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
                                 <?php else: ?>
-                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 320px;">
-                                    <i class="fas fa-tshirt fa-4x text-secondary"></i>
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="fas fa-tshirt fa-3x text-secondary"></i>
                                 </div>
                                 <?php endif; ?>
                             </a>
@@ -221,14 +359,15 @@ include 'views/layouts/header.php';
     </div>
 </section>
 
-<!-- JavaScript for Filtering and Sorting -->
+<!-- JavaScript for Filtering, Sorting, and Mobile Toggle -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const sortSelect = document.getElementById('sort-products');
     const productContainer = document.getElementById('product-container');
     const priceFilterForm = document.querySelector('.price-filter-form');
     const productCountDisplay = document.getElementById('product-count');
-    
+    const filterCards = document.querySelectorAll('.filter-card .card-header');
+
     // Lấy tất cả các sản phẩm
     let products = Array.from(document.querySelectorAll('.product-item'));
 
@@ -243,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
         filteredProducts.forEach(product => {
             productContainer.appendChild(product);
         });
-        updateProductCount(filteredProducts.length); // Cập nhật số lượng sản phẩm
+        updateProductCount(filteredProducts.length);
     }
 
     // Hàm lọc theo khoảng giá
@@ -276,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'oldest':
                     return dateA - dateB;
                 default:
-                    return 0; // Mặc định giữ nguyên thứ tự
+                    return 0;
             }
         });
     }
@@ -285,17 +424,11 @@ document.addEventListener('DOMContentLoaded', function() {
     sortSelect.addEventListener('change', function() {
         let filteredProducts = [...products];
         
-        // Lấy giá trị min/max từ form
         const minPrice = document.getElementById('min_price').value;
         const maxPrice = document.getElementById('max_price').value;
 
-        // Lọc theo giá
         filteredProducts = filterByPrice(filteredProducts, minPrice, maxPrice);
-
-        // Sắp xếp
         filteredProducts = sortProducts(filteredProducts, this.value);
-
-        // Hiển thị lại sản phẩm
         renderProducts(filteredProducts);
     });
 
@@ -304,19 +437,21 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         let filteredProducts = [...products];
 
-        // Lấy giá trị min/max
         const minPrice = document.getElementById('min_price').value;
         const maxPrice = document.getElementById('max_price').value;
 
-        // Lọc theo giá
         filteredProducts = filterByPrice(filteredProducts, minPrice, maxPrice);
-
-        // Áp dụng sắp xếp hiện tại
         const sortType = sortSelect.value;
         filteredProducts = sortProducts(filteredProducts, sortType);
-
-        // Hiển thị lại sản phẩm
         renderProducts(filteredProducts);
+    });
+
+    // Xử lý toggle cho bộ lọc trên mobile
+    filterCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const parent = this.closest('.filter-card');
+            parent.classList.toggle('active');
+        });
     });
 });
 </script>
