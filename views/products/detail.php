@@ -129,9 +129,9 @@ endif; ?>
             
             <!-- Product Thumbnails -->
             <div class="product-thumbnails mt-3">
-                <div class="row g-2">
+                <div class="row g-2 flex-wrap">
                     <!-- Main Image Thumbnail -->
-                    <div class="col-3">
+                    <div class="col-3 col-sm-2">
                         <div class="thumbnail-item border rounded p-1 <?php echo !empty($product->image) ? 'active' : ''; ?>" data-image="<?php echo htmlspecialchars($product->image ?? ''); ?>">
                             <?php if (!empty($product->image)): ?>
                             <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Main Image Thumbnail">
@@ -144,7 +144,7 @@ endif; ?>
                     </div>
                     <!-- Additional Images Thumbnails -->
                     <?php foreach ($product->images as $index => $image): ?>
-                    <div class="col-3">
+                    <div class="col-3 col-sm-2">
                         <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($image['image']); ?>">
                             <img src="<?php echo htmlspecialchars($image['image']); ?>" class="img-fluid rounded" alt="Additional Image Thumbnail <?php echo $index + 1; ?>">
                         </div>
@@ -200,7 +200,7 @@ endif; ?>
                     <label class="fw-bold d-block mb-2">Biến thể:</label>
                     <div class="row g-3">
                         <!-- Size Selector -->
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label class="fw-bold d-block mb-2">Kích cỡ:</label>
                             <select class="form-select rounded-pill" name="size" id="variant-size" required>
                                 <option value="" disabled selected>Chọn kích cỡ</option>
@@ -224,7 +224,7 @@ endif; ?>
                         </div>
                         <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
                         <?php if ($has_multiple_colors): ?>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label class="fw-bold d-block mb-2">Màu sắc:</label>
                             <select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
                                 <option value="" disabled selected>Chọn màu sắc</option>
@@ -333,36 +333,38 @@ endif; ?>
                     </div>
                     <div class="tab-pane fade" id="sizing" role="tabpanel">
                         <h5 class="fw-bold mb-3">Bảng kích cỡ áo</h5>
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Size</th>
-                                    <th>Chiều cao (cm)</th>
-                                    <th>Cân nặng (kg)</th>
-                                    <th>Tuổi (tháng)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>59-66</td>
-                                    <td>3-5</td>
-                                    <td>1-3</td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>66-72</td>
-                                    <td>6.5-9</td>
-                                    <td>6-9</td>
-                                </tr>
-                                <tr>
-                                    <td>3</td>
-                                    <td>72-80</td>
-                                    <td>8.5-10</td>
-                                    <td>9-12</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Size</th>
+                                        <th>Chiều cao (cm)</th>
+                                        <th>Cân nặng (kg)</th>
+                                        <th>Tuổi (tháng)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>59-66</td>
+                                        <td>3-5</td>
+                                        <td>1-3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>66-72</td>
+                                        <td>6.5-9</td>
+                                        <td>6-9</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>72-80</td>
+                                        <td>8.5-10</td>
+                                        <td>9-12</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -389,7 +391,7 @@ endif; ?>
     <h3 class="mb-4">Sản phẩm liên quan</h3>
     <div class="row">
         <?php foreach ($related_products as $related_product): ?>
-        <div class="col-6 col-md-3 mb-4">
+        <div class="col-12 col-sm-6 col-md-3 mb-4">
             <div class="product-card h-100">
                 <div class="card border-0 shadow-sm h-100 rounded">
                     <div class="position-relative">
@@ -446,7 +448,16 @@ endif; ?>
 /* Import Google Fonts for related products button */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
 
-/* Scoped styles for product detail form (original styles) */
+/* General styles */
+* {
+    box-sizing: border-box;
+}
+.container {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Scoped styles for product detail form */
 .product-detail-form .input-group .btn {
     background-color: #fff;
     border-color: #007bff;
@@ -488,7 +499,7 @@ endif; ?>
     transform: scale(1.05);
 }
 
-/* General styles for product detail page (original styles) */
+/* General styles for product detail page */
 .thumbnail-item {
     transition: all 0.3s ease;
     cursor: pointer;
@@ -507,18 +518,279 @@ endif; ?>
 .product-image-container img:hover {
     opacity: 0.9;
 }
+.product-image-container .badge {
+    z-index: 10;
+}
+.category-header {
+    margin-bottom: 2rem !important;
+}
+.product-title {
+    font-size: 1.8rem;
+}
+.product-price {
+    margin-bottom: 1.5rem;
+}
+.product-availability {
+    margin-bottom: 1.5rem;
+}
+.product-variants {
+    margin-bottom: 1.5rem;
+}
+.product-features {
+    margin-bottom: 1.5rem;
+}
+.product-info {
+    margin-bottom: 1.5rem;
+}
+.product-share {
+    margin-bottom: 1.5rem;
+}
 
-/* Responsive adjustments for related products button */
+/* Responsive adjustments */
 @media (max-width: 768px) {
+    /* General container */
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* Category header */
+    .category-header-bg {
+        height: 100px;
+    }
+    .breadcrumb {
+        font-size: 0.9rem;
+        flex-wrap: wrap;
+    }
+
+    /* Product images */
+    .product-image-container img,
+    .product-placeholder {
+        max-height: 350px;
+    }
+    .product-thumbnails .col-sm-2 {
+        flex: 0 0 20%;
+        max-width: 20%;
+    }
+    .thumbnail-item img,
+    .thumbnail-placeholder {
+        height: 60px;
+        object-fit: cover;
+    }
+
+    /* Product details */
+    .product-title {
+        font-size: 1.5rem;
+    }
+    .product-price .fs-3 {
+        font-size: 1.4rem !important;
+    }
+    .product-price .fs-5 {
+        font-size: 1rem !important;
+    }
+    .product-variants .form-select {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+    .product-detail-form .input-group {
+        flex-wrap: nowrap;
+    }
+    .product-detail-form .input-group .btn {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .product-detail-form .input-group .form-control {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+    .product-detail-form .btn-primary,
+    .product-detail-form .btn-outline-secondary {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+
+    /* Product features */
+    .product-features .feature-item {
+        padding: 1rem;
+    }
+    .product-features .fs-3 {
+        font-size: 1.5rem !important;
+    }
+    .product-features .small {
+        font-size: 0.8rem;
+    }
+
+    /* Product info tabs */
+    .product-info .nav-tabs .nav-link {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+    .product-info .tab-content {
+        padding: 1rem;
+    }
+    .product-info h5 {
+        font-size: 1.2rem;
+    }
+    .product-info p,
+    .product-info ul li {
+        font-size: 0.9rem;
+    }
+    .table-responsive table {
+        font-size: 0.85rem;
+    }
+
+    /* Social sharing */
+    .product-share .social-icon {
+        font-size: 1rem;
+    }
+
+    /* Related products */
     .related-products .btn-primary {
         font-size: 1rem;
         padding: 8px 16px;
     }
+    .related-products .card-img-top,
+    .related-products .card-img-top div {
+        height: 150px;
+    }
+    .related-products .card-title {
+        font-size: 1rem;
+    }
+    .related-products .price-block {
+        font-size: 0.9rem;
+    }
 }
+
 @media (max-width: 576px) {
+    /* General container */
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    /* Category header */
+    .category-header-bg {
+        height: 80px;
+    }
+    .breadcrumb {
+        font-size: 0.8rem;
+    }
+
+    /* Product images */
+    .product-image-container img,
+    .product-placeholder {
+        max-height: 300px;
+    }
+    .product-thumbnails .col-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+    .thumbnail-item img,
+    .thumbnail-placeholder {
+        height: 50px;
+    }
+
+    /* Product details */
+    .product-title {
+        font-size: 1.3rem;
+    }
+    .product-price .fs-3 {
+        font-size: 1.2rem !important;
+    }
+    .product-price .fs-5 {
+        font-size: 0.9rem !important;
+    }
+    .product-variants .form-select {
+        font-size: 0.85rem;
+        padding: 0.4rem;
+    }
+    .product-detail-form .row {
+        flex-direction: column;
+    }
+    .product-detail-form .col-12 {
+        margin-bottom: 0.5rem;
+    }
+    .product-detail-form .input-group .btn {
+        padding: 0.4rem;
+        font-size: 0.85rem;
+    }
+    .product-detail-form .input-group .form-control {
+        font-size: 0.85rem;
+        padding: 0.4rem;
+    }
+    .product-detail-form .btn-primary,
+    .product-detail-form .btn-outline-secondary {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+    .product-out-of-stock .form-control,
+    .product-out-of-stock .btn {
+        font-size: 0.85rem;
+        padding: 0.4rem;
+    }
+
+    /* Product features */
+    .product-features .col-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    .product-features .feature-item {
+        padding: 0.8rem;
+    }
+    .product-features .fs-3 {
+        font-size: 1.2rem !important;
+    }
+    .product-features .small {
+        font-size: 0.75rem;
+    }
+
+    /* Product info tabs */
+    .product-info .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .product-info .nav-tabs .nav-link {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+    .product-info .tab-content {
+        padding: 0.8rem;
+    }
+    .product-info h5 {
+        font-size: 1.1rem;
+    }
+    .product-info p,
+    .product-info ul li {
+        font-size: 0.85rem;
+    }
+    .table-responsive table {
+        font-size: 0.8rem;
+    }
+
+    /* Social sharing */
+    .product-share .social-icon {
+        font-size: 0.9rem;
+    }
+
+    /* Related products */
+    .related-products .col-sm-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
     .related-products .btn-primary {
         font-size: 0.9rem;
         padding: 6px 12px;
+    }
+    .related-products .card-img-top,
+    .related-products .card-img-top div {
+        height: 120px;
+    }
+    .related-products .card-title {
+        font-size: 0.9rem;
+    }
+    .related-products .price-block {
+        font-size: 0.85rem;
     }
 }
 </style>
