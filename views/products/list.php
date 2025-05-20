@@ -1,6 +1,6 @@
-<?php 
+<?php
 $page_title = isset($category_name) && !empty($category_name) ? $category_name : (isset($_GET['search']) ? 'Kết quả tìm kiếm cho "' . htmlspecialchars($_GET['search']) . '"' : 'Tất cả sản phẩm');
-include 'views/layouts/header.php'; 
+include 'views/layouts/header.php';
 ?>
 
 <!-- Page Header Banner -->
@@ -114,6 +114,7 @@ include 'views/layouts/header.php';
                         <option value="price-low">Giá: Thấp đến cao</option>
                         <option value="price-high">Giá: Cao đến thấp</option>
                         <option value="newest">Mới nhất</option>
+                        <option value="oldest">Cũ nhất</option>
                     </select>
                 </div>
             </div>
@@ -206,6 +207,7 @@ include 'views/layouts/header.php';
             </nav>
             <?php endif; ?>
             <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -213,11 +215,103 @@ include 'views/layouts/header.php';
 <section class="recently-viewed-section mt-5">
     <h3 class="mb-3">Đã xem gần đây</h3>
     <div class="row">
-        <!-- This section would be populated with JavaScript based on browser storage -->
         <div class="col-12">
             <p class="text-muted">Bắt đầu duyệt các sản phẩm để xem các mục đã xem gần đây tại đây.</p>
         </div>
     </div>
 </section>
+
+<!-- JavaScript for Filtering and Sorting -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sortSelect = document.getElementById('sort-products');
+    const productContainer = document.getElementById('product-container');
+    const priceFilterForm = document.querySelector('.price-filter-form');
+    
+    // Lấy tất cả các sản phẩm
+    let products = Array.from(document.querySelectorAll('.product-item'));
+
+    // Hàm để sắp xếp và hiển thị sản phẩm
+    function renderProducts(filteredProducts) {
+        productContainer.innerHTML = '';
+        filteredProducts.forEach(product => {
+            productContainer.appendChild(product);
+        });
+    }
+
+    // Hàm lọc theo khoảng giá
+    function filterByPrice(products, minPrice, maxPrice) {
+        if (!minPrice && !maxPrice) return products;
+        
+        return products.filter(product => {
+            const price = parseFloat(product.dataset.price);
+            const min = minPrice ? parseFloat(minPrice) : 0;
+            const max = maxPrice ? parseFloat(maxPrice) : Infinity;
+            return price >= min && price <= max;
+        });
+    }
+
+    // Hàm sắp xếp sản phẩm
+    function sortProducts(products, sortType) {
+        return products.sort((a, b) => {
+            const priceA = parseFloat(a.dataset.price);
+            const priceB = parseFloat(b.dataset.price);
+            const dateA = parseInt(a.dataset.date);
+            const dateB = parseInt(b.dataset.date);
+
+            switch (sortType) {
+                case 'price-low':
+                    return priceA - priceB;
+                case 'price-high':
+                    return priceB - priceA;
+                case 'newest':
+                    return dateB - dateA;
+                case 'oldest':
+                    return dateA - dateB;
+                default:
+                    return 0; // Mặc định giữ nguyên thứ tự
+            }
+        });
+    }
+
+    // Xử lý sự kiện thay đổi sắp xếp
+    sortSelect.addEventListener('change', function() {
+        let filteredProducts = [...products];
+        
+        // Lấy giá trị min/max từ form
+        const minPrice = document.getElementById('min_price').value;
+        const maxPrice = document.getElementById('max_price').value;
+
+        // Lọc theo giá
+        filteredProducts = filterByPrice(filteredProducts, minPrice, maxPrice);
+
+        // Sắp xếp
+        filteredProducts = sortProducts(filteredProducts, this.value);
+
+        // Hiển thị lại sản phẩm
+        renderProducts(filteredProducts);
+    });
+
+    // Xử lý sự kiện submit form lọc giá
+    priceFilterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        let filteredProducts = [...products];
+
+        // Lấy giá trị min/max
+        const minPrice = document.getElementById('min_price').value;
+        const maxPrice = document.getElementById('max_price').value;
+
+        // Lọc theo giá
+        filteredProducts = filterByPrice(filteredProducts, minPrice, maxPrice);
+
+        // Áp dụng sắp xếp hiện tại
+        const sortType = sortSelect.value;
+        filteredProducts = sortProducts(filteredProducts, sortType);
+
+        // Hiển thị lại sản phẩm
+        renderProducts(filteredProducts);
+    });
+});
+</script>
 
 <?php include 'views/layouts/footer.php'; ?>
