@@ -4,11 +4,21 @@ include 'views/layouts/header.php';
 ?>
 
 <style>
+/* General styles */
+* {
+    box-sizing: border-box;
+}
+.container {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Checkout steps */
 .checkout-steps {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 .checkout-steps .step {
     width: 150px;
@@ -40,6 +50,8 @@ include 'views/layouts/header.php';
     color: #6c757d;
     line-height: 100px;
 }
+
+/* Card styles */
 .card {
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -47,7 +59,13 @@ include 'views/layouts/header.php';
 .card-header {
     padding: 15px;
     border-radius: 10px 10px 0 0;
+    z-index: 10;
 }
+.card-body {
+    padding: 20px;
+}
+
+/* Form styles */
 .form-control, .form-check-input {
     border-radius: 5px;
 }
@@ -60,6 +78,11 @@ include 'views/layouts/header.php';
     color: #dc3545;
     margin-top: 5px;
 }
+.form-check-label {
+    font-size: 1rem;
+}
+
+/* Button styles */
 .btn-primary {
     background: #0d6efd;
     border: none;
@@ -72,7 +95,10 @@ include 'views/layouts/header.php';
 }
 .btn-outline-secondary {
     border-radius: 5px;
+    padding: 10px 20px;
 }
+
+/* Alert and other styles */
 .alert {
     border-radius: 5px;
     padding: 15px;
@@ -86,18 +112,104 @@ include 'views/layouts/header.php';
     padding: 15px;
     border-radius: 5px;
 }
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
+    /* General container */
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* Checkout steps */
     .checkout-steps {
         flex-direction: column;
         align-items: center;
+        margin-bottom: 20px;
     }
     .checkout-steps .step {
-        width: 100px;
+        width: 120px;
         height: 80px;
-        margin: 10px 0;
+        margin: 8px 0;
+        padding: 8px;
     }
     .checkout-steps .arrow {
         display: none;
+    }
+    .checkout-steps .step-icon {
+        font-size: 1.3rem;
+    }
+    .checkout-steps .step-label {
+        font-size: 0.85rem;
+    }
+
+    /* Card and header */
+    .card-header h5 {
+        font-size: 1.2rem;
+    }
+    .card-body {
+        padding: 15px;
+    }
+
+    /* Form */
+    .form-control, .btn {
+        font-size: 0.95rem;
+        padding: 8px;
+    }
+    .form-check-label {
+        font-size: 0.95rem;
+    }
+    .form-label {
+        font-size: 0.95rem;
+    }
+    .mb-3 {
+        margin-bottom: 0.75rem !important;
+    }
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    .row > div {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Order summary */
+    .order-item img, .order-item .bg-light {
+        width: 35px;
+        height: 35px;
+    }
+    .order-item .small {
+        font-size: 0.9rem;
+    }
+    .order-item .x-small {
+        font-size: 0.8rem;
+    }
+    .order-items .text-end {
+        font-size: 0.9rem;
+    }
+    .secure-checkout .small {
+        font-size: 0.85rem;
+    }
+    .shipping-info .small {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* General container */
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    /* Checkout steps */
+    .checkout-steps {
+        margin-bottom: 15px;
+    }
+    .checkout-steps .step {
+        width: 100px;
+        height: 70px;
+        margin: 6px 0;
+        padding: 6px;
     }
     .checkout-steps .step-icon {
         font-size: 1.2rem;
@@ -105,15 +217,65 @@ include 'views/layouts/header.php';
     .checkout-steps .step-label {
         font-size: 0.8rem;
     }
+
+    /* Card and header */
     .card-header h5 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
+    .card-body {
+        padding: 12px;
+    }
+
+    /* Form */
     .form-control, .btn {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+        padding: 6px;
     }
+    .form-check-label {
+        font-size: 0.9rem;
+    }
+    .form-label {
+        font-size: 0.9rem;
+    }
+    .invalid-feedback {
+        font-size: 0.85rem;
+    }
+    .row > div {
+        margin-bottom: 0.4rem;
+    }
+
+    /* Order summary */
     .order-item img, .order-item .bg-light {
         width: 30px;
         height: 30px;
+    }
+    .order-item .small {
+        font-size: 0.85rem;
+    }
+    .order-item .x-small {
+        font-size: 0.75rem;
+    }
+    .order-items .text-end {
+        font-size: 0.85rem;
+    }
+    .secure-checkout .fa-2x {
+        font-size: 1.5rem;
+    }
+    .secure-checkout .small {
+        font-size: 0.8rem;
+    }
+    .shipping-info .small {
+        font-size: 0.8rem;
+    }
+
+    /* Buttons */
+    .text-end .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    .text-end .me-2 {
+        margin-right: 0 !important;
     }
 }
 </style>
@@ -184,12 +346,12 @@ if (!empty($_SESSION['order_message'])): ?>
             <div class="card-body">
                 <form action="index.php?controller=order&action=create" method="POST" id="checkout-form">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 col-md-6 mb-3">
                             <label for="shipping_name" class="form-label">Người nhận <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="shipping_name" name="shipping_name" required value="<?php echo isset($user_data['full_name']) ? htmlspecialchars($user_data['full_name']) : ''; ?>">
                             <div id="shipping_name-error" class="invalid-feedback">Vui lòng nhập tên người nhận (không chỉ chứa khoảng trắng).</div>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 col-md-6 mb-3">
                             <label for="customer_email" class="form-label">Email <span class="text-danger">*</span></label>
                             <input type="email" class="form-control" id="customer_email" name="customer_email" required value="<?php echo isset($user_data['email']) ? htmlspecialchars($user_data['email']) : ''; ?>">
                             <div id="customer_email-error" class="invalid-feedback">Vui lòng nhập email hợp lệ.</div>
@@ -197,12 +359,12 @@ if (!empty($_SESSION['order_message'])): ?>
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 col-md-6 mb-3">
                             <label for="shipping_phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
                             <input type="tel" class="form-control" id="shipping_phone" name="shipping_phone" required value="<?php echo isset($user_data['phone']) ? htmlspecialchars($user_data['phone']) : ''; ?>">
                             <div id="shipping_phone-error" class="invalid-feedback">Vui lòng nhập số điện thoại.</div>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 col-md-6 mb-3">
                             <label for="shipping_city" class="form-label">Thành phố <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="shipping_city" name="shipping_city" required value="<?php echo isset($user_data['city']) ? htmlspecialchars($user_data['city']) : ''; ?>">
                             <div id="shipping_city-error" class="invalid-feedback">Vui lòng nhập thành phố.</div>
