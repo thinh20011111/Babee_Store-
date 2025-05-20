@@ -58,27 +58,58 @@ try {
             color: red;
         }
 
-        /* Cart item styles */
-        .cart-item img {
-            max-width: 70px;
+        /* Cart item card */
+        .cart-item-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #fff;
+            transition: box-shadow 0.3s;
         }
-        .input-group-sm {
-            width: 100px;
+        .cart-item-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .table-responsive table {
+        .cart-item-card img {
+            max-width: 80px;
+            border-radius: 5px;
+        }
+        .cart-item-card .no-image {
+            width: 80px;
+            height: 80px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+        .cart-item-card .item-details {
+            flex-grow: 1;
+        }
+        .cart-item-card .item-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        .cart-item-card .item-price,
+        .cart-item-card .item-total {
             font-size: 1rem;
+            color: #343a40;
         }
-        .table th, .table td {
-            padding: 12px;
-            vertical-align: middle;
+        .cart-item-card .input-group {
+            width: 120px;
         }
-        .item-qty {
+        .cart-item-card .item-qty {
             font-size: 0.95rem;
+            text-align: center;
         }
-        .decrease-qty-btn, .increase-qty-btn {
+        .cart-item-card .decrease-qty-btn,
+        .cart-item-card .increase-qty-btn {
             padding: 0.5rem;
+            font-size: 0.9rem;
         }
-        .remove-item-btn {
+        .cart-item-card .remove-item-btn {
+            font-size: 0.9rem;
             padding: 0.25rem 0.5rem;
         }
 
@@ -134,32 +165,37 @@ try {
                 margin-bottom: 1rem;
             }
 
-            /* Table */
-            .table-responsive table {
+            /* Cart item card */
+            .cart-item-card {
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+            .cart-item-card img,
+            .cart-item-card .no-image {
+                max-width: 70px;
+                height: 70px;
+            }
+            .cart-item-card .item-name {
+                font-size: 1rem;
+            }
+            .cart-item-card .item-price,
+            .cart-item-card .item-total {
                 font-size: 0.95rem;
             }
-            .table th, .table td {
-                padding: 8px;
+            .cart-item-card .input-group {
+                width: 100px;
             }
-            .cart-item img {
-                max-width: 60px;
-            }
-            .input-group-sm {
-                width: 90px;
-            }
-            .item-qty {
+            .cart-item-card .item-qty {
                 font-size: 0.9rem;
             }
-            .decrease-qty-btn, .increase-qty-btn {
+            .cart-item-card .decrease-qty-btn,
+            .cart-item-card .increase-qty-btn {
                 padding: 0.4rem;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
             }
-            .remove-item-btn {
+            .cart-item-card .remove-item-btn {
+                font-size: 0.85rem;
                 padding: 0.2rem 0.4rem;
-                font-size: 0.9rem;
-            }
-            .table thead {
-                font-size: 0.9rem;
             }
 
             /* Card */
@@ -203,35 +239,37 @@ try {
                 padding-right: 8px;
             }
 
-            /* Table */
-            .table-responsive table {
+            /* Cart item card */
+            .cart-item-card {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            .cart-item-card img,
+            .cart-item-card .no-image {
+                max-width: 60px;
+                height: 60px;
+            }
+            .cart-item-card .item-name {
+                font-size: 0.95rem;
+            }
+            .cart-item-card .item-price,
+            .cart-item-card .item-total {
                 font-size: 0.9rem;
             }
-            .table th, .table td {
-                padding: 6px;
+            .cart-item-card .input-group {
+                width: 90px;
             }
-            .cart-item img {
-                max-width: 50px;
-            }
-            .input-group-sm {
-                width: 80px;
-            }
-            .item-qty {
+            .cart-item-card .item-qty {
                 font-size: 0.85rem;
             }
-            .decrease-qty-btn, .increase-qty-btn {
+            .cart-item-card .decrease-qty-btn,
+            .cart-item-card .increase-qty-btn {
                 padding: 0.3rem;
-                font-size: 0.85rem;
+                font-size: 0.8rem;
             }
-            .remove-item-btn {
+            .cart-item-card .remove-item-btn {
+                font-size: 0.8rem;
                 padding: 0.15rem 0.3rem;
-                font-size: 0.85rem;
-            }
-            .table thead {
-                font-size: 0.85rem;
-            }
-            .item-total {
-                font-size: 0.9rem;
             }
 
             /* Card */
@@ -304,63 +342,62 @@ try {
                                 <a href="index.php?controller=product&action=list" class="btn btn-primary mt-3">Tiếp tục mua sắm</a>
                             </div>
                         <?php else: ?>
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th colspan="2">Sản phẩm</th>
-                                            <th>Giá</th>
-                                            <th>Số lượng</th>
-                                            <th class="text-end">Tổng tiền</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($cart_items as $key => $item): ?>
-                                            <tr data-product-id="<?php echo htmlspecialchars($item['product_id']); ?>" data-variant-id="<?php echo htmlspecialchars($item['variant_id']); ?>">
-                                                <td width="80">
-                                                    <?php if (!empty($item['data']['image'])): ?>
-                                                        <img src="<?php echo htmlspecialchars($item['data']['image']); ?>" class="img-fluid rounded cart-item" alt="<?php echo htmlspecialchars($item['data']['name']); ?>">
-                                                    <?php else: ?>
-                                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-                                                            <i class="fas fa-tshirt fa-2x text-secondary"></i>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <h6 class="mb-1"><?php echo htmlspecialchars($item['data']['name'] ?? 'Không xác định'); ?></h6>
-                                                </td>
-                                                <td>
-                                                    <?php 
-                                                    $price = (!empty($item['data']['sale_price']) && $item['data']['sale_price'] > 0) ? $item['data']['sale_price'] : ($item['data']['price'] ?? 0);
-                                                    echo $currency . number_format($price, 0, ',', '.');
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <div class="input-group input-group-sm">
-                                                        <button type="button" class="btn btn-outline-secondary decrease-qty-btn"><i class="fas fa-minus"></i></button>
-                                                        <input type="number" class="form-control text-center item-qty" 
-                                                               data-product-id="<?php echo htmlspecialchars($item['product_id']); ?>" 
-                                                               data-variant-id="<?php echo htmlspecialchars($item['variant_id']); ?>" 
-                                                               value="<?php echo htmlspecialchars($item['quantity']); ?>" 
-                                                               min="1" 
-                                                               max="<?php echo isset($item['data']['stock']) ? htmlspecialchars($item['data']['stock']) : 10; ?>">
-                                                        <button type="button" class="btn btn-outline-secondary increase-qty-btn"><i class="fas fa-plus"></i></button>
+                            <div class="cart-items">
+                                <?php foreach ($cart_items as $key => $item): ?>
+                                    <div class="cart-item-card" 
+                                         data-product-id="<?php echo htmlspecialchars($item['product_id']); ?>" 
+                                         data-variant-id="<?php echo htmlspecialchars($item['variant_id']); ?>">
+                                        <div class="row align-items-center">
+                                            <!-- Product Image -->
+                                            <div class="col-3 col-md-2">
+                                                <?php if (!empty($item['data']['image'])): ?>
+                                                    <img src="<?php echo htmlspecialchars($item['data']['image']); ?>" 
+                                                         class="img-fluid" 
+                                                         alt="<?php echo htmlspecialchars($item['data']['name']); ?>">
+                                                <?php else: ?>
+                                                    <div class="no-image">
+                                                        <i class="fas fa-tshirt fa-2x text-secondary"></i>
                                                     </div>
-                                                </td>
-                                                <td class="text-end item-total">
-                                                    <?php echo $currency . number_format($price * $item['quantity'], 0, ',', '.'); ?>
-                                                </td>
-                                                <td class="text-end">
+                                                <?php endif; ?>
+                                            </div>
+                                            <!-- Product Details -->
+                                            <div class="col-9 col-md-10 item-details">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <h6 class="item-name"><?php echo htmlspecialchars($item['data']['name'] ?? 'Không xác định'); ?></h6>
+                                                        <p class="item-price mb-2">
+                                                            <?php 
+                                                            $price = (!empty($item['data']['sale_price']) && $item['data']['sale_price'] > 0) ? $item['data']['sale_price'] : ($item['data']['price'] ?? 0);
+                                                            echo $currency . number_format($price, 0, ',', '.');
+                                                            ?>
+                                                        </p>
+                                                        <div class="input-group input-group-sm mb-2">
+                                                            <button type="button" class="btn btn-outline-secondary decrease-qty-btn">
+                                                                <i class="fas fa-minus"></i>
+                                                            </button>
+                                                            <input type="number" class="form-control item-qty" 
+                                                                   data-product-id="<?php echo htmlspecialchars($item['product_id']); ?>" 
+                                                                   data-variant-id="<?php echo htmlspecialchars($item['variant_id']); ?>" 
+                                                                   value="<?php echo htmlspecialchars($item['quantity']); ?>" 
+                                                                   min="1" 
+                                                                   max="<?php echo isset($item['data']['stock']) ? htmlspecialchars($item['data']['stock']) : 10; ?>">
+                                                            <button type="button" class="btn btn-outline-secondary increase-qty-btn">
+                                                                <i class="fas fa-plus"></i>
+                                                            </button>
+                                                        </div>
+                                                        <p class="item-total mb-0">
+                                                            Tổng: <?php echo $currency . number_format($price * $item['quantity'], 0, ',', '.'); ?>
+                                                        </p>
+                                                    </div>
                                                     <a href="index.php?controller=cart&action=remove&product_id=<?php echo htmlspecialchars($item['product_id']); ?>&variant_id=<?php echo htmlspecialchars($item['variant_id']); ?>" 
                                                        class="btn btn-sm btn-outline-danger remove-item-btn">
                                                         <i class="fas fa-trash-alt"></i>
                                                     </a>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                             <div class="mt-3 d-flex justify-content-between">
                                 <a href="index.php?controller=product&action=list" class="btn btn-outline-primary">
@@ -514,11 +551,11 @@ try {
             .then(data => {
                 if (data.success) {
                     // Update item total
-                    const productRow = input.closest('tr');
-                    if (productRow) {
-                        const itemTotal = productRow.querySelector('.item-total');
+                    const card = input.closest('.cart-item-card');
+                    if (card) {
+                        const itemTotal = card.querySelector('.item-total');
                         if (itemTotal) {
-                            itemTotal.textContent = new Intl.NumberFormat('vi-VN', { 
+                            itemTotal.textContent = 'Tổng: ' + new Intl.NumberFormat('vi-VN', { 
                                 style: 'currency', 
                                 currency: 'VND',
                                 maximumFractionDigits: 0
@@ -608,10 +645,10 @@ try {
                     })
                     .then(data => {
                         if (data.success) {
-                            // Remove row from table
-                            const row = this.closest('tr');
-                            if (row) {
-                                row.remove();
+                            // Remove card from list
+                            const card = this.closest('.cart-item-card');
+                            if (card) {
+                                card.remove();
                             }
                             
                             // Update cart count in header
