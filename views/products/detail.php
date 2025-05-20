@@ -205,19 +205,21 @@ endif; ?>
                             <select class="form-select rounded-pill" name="size" id="variant-size" required>
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
-                                $sizes = !empty($variants) ? array_unique(array_filter(array_column($variants, 'size'), function($size) use ($variants) {
-                                    foreach ($variants as $v) {
-                                        if ($v['size'] === $size && $v['stock'] > 0) {
-                                            return true;
-                                        }
-                                    }
-                                    return false;
-                                })) : [];
-                                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Sizes available: " . json_encode($sizes) . "\n", FILE_APPEND);
+                                // Lấy danh sách kích cỡ và kiểm tra stock
+                                $sizes = !empty($variants) ? array_unique(array_column($variants, 'size')) : [];
                                 foreach ($sizes as $size):
+                                    // Kiểm tra tổng stock của kích cỡ này
+                                    $size_stock = array_sum(array_map(function($v) use ($size) {
+                                        return $v['size'] === $size ? $v['stock'] : 0;
+                                    }, $variants));
+                                    $disabled = $size_stock == 0 ? 'disabled' : '';
                                 ?>
-                                <option value="<?php echo htmlspecialchars($size); ?>"><?php echo htmlspecialchars($size); ?></option>
-                                <?php endforeach; ?>
+                                <option value="<?php echo htmlspecialchars($size); ?>" <?php echo $disabled; ?>>
+                                    <?php echo htmlspecialchars($size); ?><?php echo $size_stock == 0 ? ' (Hết hàng)' : ''; ?>
+                                </option>
+                                <?php
+                                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Size: $size, Stock: $size_stock, Disabled: $disabled\n", FILE_APPEND);
+                                endforeach; ?>
                             </select>
                         </div>
                         <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
@@ -578,23 +580,28 @@ document.addEventListener('DOMContentLoaded', function() {
             if (colorSelect) {
                 colorSelect.innerHTML = '<option value="" disabled selected>Chọn màu sắc</option>';
                 const availableColors = variants
-                    .filter(v => v.size === selectedSize && v.stock > 0)
-                    .map(v => v.color)
-                    .filter(color => color);
-                const uniqueColors = [...new Set(availableColors)];
+                    .filter(v => v.size === selectedSize && v.color)
+                    .map(v => ({ color: v.color, stock: v.stock }));
+                const uniqueColors = [...new Set(availableColors.map(c => c.color))];
                 
                 uniqueColors.forEach(color => {
+                    const colorStock = availableColors.find(c => c.color === color)?.stock || 0;
                     const option = document.createElement('option');
                     option.value = color;
-                    option.textContent = color;
+                    option.textContent = color + (colorStock === 0 ? ' (Hết hàng)' : '');
+                    if (colorStock === 0) {
+                        option.disabled = true;
+                    }
                     colorSelect.appendChild(option);
                 });
                 
-                colorSelect.disabled = uniqueColors.length === 0;
-                if (uniqueColors.length > 0) {
-                    colorSelect.disabled = false;
+                colorSelect.disabled = uniqueColors.length === 0 || uniqueColors.every(color => {
+                    return availableColors.find(c => c.color === color)?.stock === 0;
+                });
+                if (!colorSelect.disabled) {
                     colorSelect.focus();
                 }
+                console.log('Updated colors:', uniqueColors, 'Disabled:', colorSelect.disabled);
             }
             updateVariant();
         });
