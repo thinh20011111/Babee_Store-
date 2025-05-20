@@ -312,7 +312,7 @@ endif; ?>
                 <div class="tab-content p-4 border border-top-0 rounded-bottom shadow-sm" id="productTabContent">
                     <div class="tab-pane fade show active" id="description" role="tabpanel">
                         <h5 class="fw-bold mb-3">Thông tin chi tiết sản phẩm</h5>
-                        <p><?php echo nl2br(htmlspecialchars($product->description ?? 'Không có mô tả')); ?></p>
+                        <p class="fade-in"><?php echo nl2br(htmlspecialchars($product->description ?? 'Không có mô tả')); ?></p>
                         <ul class="mb-0">
                             <li>Chất liệu: 100% Cotton</li>
                             <li>Sản xuất tại Việt Nam</li>
@@ -322,7 +322,7 @@ endif; ?>
                     </div>
                     <div class="tab-pane fade" id="shipping" role="tabpanel">
                         <h5 class="fw-bold mb-3">Thông tin vận chuyển</h5>
-                        <p>Miễn phí vận chuyển cho đơn hàng trên <?php echo CURRENCY; ?>500.000.</p>
+                        <p class="fade-in">Miễn phí vận chuyển cho đơn hàng trên <?php echo CURRENCY; ?>500.000.</p>
                         <ul>
                             <li>Giao hàng tiêu chuẩn: 2-3 ngày làm việc</li>
                             <li>Giao hàng nhanh: 1-2 ngày làm việc (phí bổ sung)</li>
@@ -384,7 +384,10 @@ endif; ?>
 <!-- Related Products -->
 <?php if (!empty($related_products)): ?>
 <section class="related-products mt-5">
-    <h3 class="mb-4">Sản phẩm liên quan</h3>
+    <div class="section-title text-center mb-4">
+        <h2>Sản phẩm liên quan</h2>
+        <p class="text-muted">Khám phá thêm các sản phẩm tương tự</p>
+    </div>
     <div class="row">
         <?php foreach ($related_products as $related_product): ?>
         <div class="col-6 col-md-3 mb-4">
@@ -434,41 +437,65 @@ endif; ?>
 
 <!-- Customer Reviews Section -->
 <section class="customer-reviews mt-5 mb-5">
-    <h3 class="mb-4">Đánh giá của khách hàng</h3>
+    <div class="section-title text-center mb-4">
+        <h2>Đánh giá của khách hàng</h2>
+        <p class="text-muted">Hãy để lại nhận xét về sản phẩm này</p>
+    </div>
     <div class="alert alert-info rounded shadow-sm">
         <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
     </div>
 </section>
 
 <style>
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
+/* General styles */
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
 /* Scoped styles for product detail form */
 .product-detail-form .input-group .btn {
-    background-color: #fff;
-    border-color: #007bff;
-    color: #007bff;
-    transition: all 0.2s ease;
+    font-family: 'Poppins', sans-serif;
+    padding: 10px 25px;
+    font-weight: 500;
+    background-color: #f8f9fa;
+    color: #212529;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 .product-detail-form .input-group .btn:hover {
-    background-color: #007bff;
-    color: #fff;
+    background-color: #dee2e6;
+    transform: scale(1.05);
 }
 .product-detail-form .input-group .form-control {
+    font-family: 'Poppins', sans-serif;
     border-color: #007bff;
 }
 .product-detail-form .btn-primary,
 .product-detail-form .btn-outline-secondary {
-    transition: all 0.2s ease;
+    font-family: 'Poppins', sans-serif;
+    padding: 10px 25px;
+    font-weight: 500;
+    background-color: #f8f9fa;
+    color: #212529;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
-.product-detail-form .btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
+.product-detail-form .btn-primary:hover,
 .product-detail-form .btn-outline-secondary:hover {
-    background-color: #6c757d;
-    color: #fff;
+    background-color: #dee2e6;
+    transform: scale(1.05);
 }
 
-/* General styles for product detail page */
+/* Product image and thumbnails */
+.product-image-container img, .product-placeholder {
+    transition: opacity 0.3s ease;
+}
+.product-image-container img:hover {
+    opacity: 0.9;
+}
 .thumbnail-item {
     transition: all 0.3s ease;
     cursor: pointer;
@@ -481,11 +508,107 @@ endif; ?>
     border-color: #0d6efd;
     border-width: 2px;
 }
-.product-image-container img, .product-placeholder {
-    transition: opacity 0.3s ease;
+
+/* Product title and category */
+.product-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 2.5rem;
 }
-.product-image-container img:hover {
-    opacity: 0.9;
+.product-category {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+/* Section title */
+.section-title h2 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 2rem;
+}
+.section-title p.text-muted {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+}
+
+/* Product features */
+.feature-item {
+    font-family: 'Poppins', sans-serif;
+    transition: transform 0.2s ease;
+}
+.feature-item:hover {
+    transform: scale(1.05);
+}
+
+/* Product info tabs */
+.nav-tabs .nav-link {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+}
+.tab-content h5 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+}
+.tab-content p, .tab-content ul li {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+}
+.tab-content p.fade-in {
+    animation: fadeIn 1s ease-in-out;
+}
+
+/* Related products */
+.product-card .card {
+    transition: transform 0.2s ease;
+}
+.product-card .card:hover {
+    transform: scale(1.02);
+}
+.product-card .card-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+}
+.product-card .price-block {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .product-detail-form .input-group .btn,
+    .product-detail-form .btn-primary,
+    .product-detail-form .btn-outline-secondary {
+        font-size: 1rem;
+        padding: 8px 16px;
+    }
+    .product-title {
+        font-size: 2rem;
+    }
+    .section-title h2 {
+        font-size: 1.5rem;
+    }
+}
+@media (max-width: 576px) {
+    .product-detail-form .input-group .btn,
+    .product-detail-form .btn-primary,
+    .product-detail-form .btn-outline-secondary {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+    }
+    .product-title {
+        font-size: 1.5rem;
+    }
+    .section-title h2 {
+        font-size: 1.2rem;
+    }
 }
 </style>
 
