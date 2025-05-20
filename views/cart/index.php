@@ -46,21 +46,251 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* General styles */
+        * {
+            box-sizing: border-box;
+        }
+        .container {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        .error {
+            color: red;
+        }
+
+        /* Cart item styles */
         .cart-item img {
             max-width: 70px;
         }
         .input-group-sm {
             width: 100px;
         }
-        .error {
-            color: red;
+        .table-responsive table {
+            font-size: 1rem;
+        }
+        .table th, .table td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+        .item-qty {
+            font-size: 0.95rem;
+        }
+        .decrease-qty-btn, .increase-qty-btn {
+            padding: 0.5rem;
+        }
+        .remove-item-btn {
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Card styles */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            z-index: 10;
+        }
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Button styles */
+        .btn-primary, .btn-outline-primary, .btn-outline-danger {
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .btn-primary:hover {
+            background: #0a58ca;
+            transform: scale(1.05);
+        }
+        .btn-outline-primary:hover, .btn-outline-danger:hover {
+            transform: scale(1.05);
+        }
+
+        /* Promotion input */
+        .input-group .form-control {
+            border-radius: 5px 0 0 5px;
+        }
+        .input-group .btn {
+            border-radius: 0 5px 5px 0;
+        }
+        .form-text {
+            font-size: 0.9rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            /* General container */
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            /* Layout */
+            .row > div {
+                margin-bottom: 1rem;
+            }
+
+            /* Table */
+            .table-responsive table {
+                font-size: 0.95rem;
+            }
+            .table th, .table td {
+                padding: 8px;
+            }
+            .cart-item img {
+                max-width: 60px;
+            }
+            .input-group-sm {
+                width: 90px;
+            }
+            .item-qty {
+                font-size: 0.9rem;
+            }
+            .decrease-qty-btn, .increase-qty-btn {
+                padding: 0.4rem;
+                font-size: 0.9rem;
+            }
+            .remove-item-btn {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.9rem;
+            }
+            .table thead {
+                font-size: 0.9rem;
+            }
+
+            /* Card */
+            .card-body {
+                padding: 15px;
+            }
+            .card-header h5 {
+                font-size: 1.2rem;
+            }
+
+            /* Buttons */
+            .btn-primary, .btn-outline-primary, .btn-outline-danger {
+                font-size: 0.95rem;
+                padding: 6px 12px;
+            }
+
+            /* Promotion input */
+            .input-group .form-control, .input-group .btn {
+                font-size: 0.95rem;
+            }
+            .form-text {
+                font-size: 0.85rem;
+            }
+
+            /* Empty cart message */
+            .text-center h4 {
+                font-size: 1.5rem;
+            }
+            .text-center p {
+                font-size: 0.95rem;
+            }
+            .text-center .fa-4x {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            /* General container */
+            .container {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+
+            /* Table */
+            .table-responsive table {
+                font-size: 0.9rem;
+            }
+            .table th, .table td {
+                padding: 6px;
+            }
+            .cart-item img {
+                max-width: 50px;
+            }
+            .input-group-sm {
+                width: 80px;
+            }
+            .item-qty {
+                font-size: 0.85rem;
+            }
+            .decrease-qty-btn, .increase-qty-btn {
+                padding: 0.3rem;
+                font-size: 0.85rem;
+            }
+            .remove-item-btn {
+                padding: 0.15rem 0.3rem;
+                font-size: 0.85rem;
+            }
+            .table thead {
+                font-size: 0.85rem;
+            }
+            .item-total {
+                font-size: 0.9rem;
+            }
+
+            /* Card */
+            .card-body {
+                padding: 12px;
+            }
+            .card-header h5 {
+                font-size: 1.1rem;
+            }
+
+            /* Buttons */
+            .btn-primary, .btn-outline-primary, .btn-outline-danger {
+                font-size: 0.9rem;
+                padding: 5px 10px;
+            }
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .d-flex.justify-content-between .btn {
+                width: 100%;
+            }
+
+            /* Promotion input */
+            .input-group .form-control, .input-group .btn {
+                font-size: 0.9rem;
+            }
+            .form-text {
+                font-size: 0.8rem;
+            }
+            .cart-subtotal, .cart-total, #discount-amount {
+                font-size: 0.95rem;
+            }
+
+            /* Empty cart message */
+            .text-center h4 {
+                font-size: 1.3rem;
+            }
+            .text-center p {
+                font-size: 0.9rem;
+            }
+            .text-center .fa-4x {
+                font-size: 2.5rem;
+            }
+
+            /* Help card */
+            .card-body h6 {
+                font-size: 1rem;
+            }
+            .card-body .small {
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container mt-5 mb-5">
         <div class="row">
-            <div class="col-lg-8">
+            <div class="col-12 col-lg-8">
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white border-bottom-0 py-3">
                         <h5 class="mb-0">Giỏ hàng của bạn</h5>
@@ -90,7 +320,7 @@ try {
                                             <tr data-product-id="<?php echo htmlspecialchars($item['product_id']); ?>" data-variant-id="<?php echo htmlspecialchars($item['variant_id']); ?>">
                                                 <td width="80">
                                                     <?php if (!empty($item['data']['image'])): ?>
-                                                        <img src="<?php echo htmlspecialchars($item['data']['image']); ?>" class="img-fluid rounded" alt="<?php echo htmlspecialchars($item['data']['name']); ?>" style="max-width: 70px;">
+                                                        <img src="<?php echo htmlspecialchars($item['data']['image']); ?>" class="img-fluid rounded cart-item" alt="<?php echo htmlspecialchars($item['data']['name']); ?>">
                                                     <?php else: ?>
                                                         <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
                                                             <i class="fas fa-tshirt fa-2x text-secondary"></i>
@@ -107,7 +337,7 @@ try {
                                                     ?>
                                                 </td>
                                                 <td>
-                                                    <div class="input-group input-group-sm" style="width: 100px;">
+                                                    <div class="input-group input-group-sm">
                                                         <button type="button" class="btn btn-outline-secondary decrease-qty-btn"><i class="fas fa-minus"></i></button>
                                                         <input type="number" class="form-control text-center item-qty" 
                                                                data-product-id="<?php echo htmlspecialchars($item['product_id']); ?>" 
@@ -145,7 +375,7 @@ try {
                 </div>
             </div>
             
-            <div class="col-lg-4">
+            <div class="col-12 col-lg-4">
                 <?php if (!empty($cart_items)): ?>
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white border-bottom-0 py-3">
