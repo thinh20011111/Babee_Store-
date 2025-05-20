@@ -105,7 +105,7 @@ include 'views/layouts/header.php';
             <!-- Sort Options -->
             <div class="products-toolbar d-flex flex-wrap justify-content-between align-items-center mb-4 py-2 border-bottom">
                 <div class="toolbar-left">
-                    <span class="text-muted">Hiển thị <?php echo count($products); ?> sản phẩm</span>
+                    <span class="text-muted" id="product-count">Hiển thị <?php echo count($products); ?> sản phẩm</span>
                 </div>
                 <div class="toolbar-right d-flex align-items-center">
                     <span class="me-2 text-nowrap">Sắp xếp:</span>
@@ -227,9 +227,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const sortSelect = document.getElementById('sort-products');
     const productContainer = document.getElementById('product-container');
     const priceFilterForm = document.querySelector('.price-filter-form');
+    const productCountDisplay = document.getElementById('product-count');
     
     // Lấy tất cả các sản phẩm
     let products = Array.from(document.querySelectorAll('.product-item'));
+
+    // Hàm để cập nhật số lượng sản phẩm hiển thị
+    function updateProductCount(count) {
+        productCountDisplay.textContent = `Hiển thị ${count} sản phẩm`;
+    }
 
     // Hàm để sắp xếp và hiển thị sản phẩm
     function renderProducts(filteredProducts) {
@@ -237,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
         filteredProducts.forEach(product => {
             productContainer.appendChild(product);
         });
+        updateProductCount(filteredProducts.length); // Cập nhật số lượng sản phẩm
     }
 
     // Hàm lọc theo khoảng giá
