@@ -240,18 +240,6 @@ if (!defined('CURRENCY')) {
             }
             ?>
         </div>
-
-        <!-- Debug Information -->
-        <?php if (DEBUG_MODE && !empty($debug_logs)): ?>
-        <div class="debug-info mt-4">
-            <h5>Thông tin gỡ lỗi</h5>
-            <ul>
-                <?php foreach ($debug_logs as $log): ?>
-                <li><?php echo htmlspecialchars($log); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
