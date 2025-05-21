@@ -299,43 +299,43 @@ include 'views/layouts/header.php';
         <h2>Follow Us on Tiktok</h2>
         <p class="text-muted">@babee_studio</p>
     </div>
-    <div class="row g-2">
-        <div class="col-4 col-md-2">
-            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light">
-                    <img src="https://i.pinimg.com/736x/d9/61/a8/d961a897b5097f6fb1fcb0eb523339c1.jpg" alt="fl_tiktok">
+    <div class="row g-2 justify-content-center">
+        <div class="col-6 col-md-3 col-lg-2">
+            <a href="https://www.tiktok.com/@babee_studio" class="card instagram-item text-decoration-none">
+                <div class="ratio ratio-1x1">
+                    <img src="https://i.pinimg.com/736x/d9/61/a8/d961a897b5097f6fb1fcb0eb523339c1.jpg" class="card-img-top object-fit-cover" alt="fl_tiktok">
                 </div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
+                <div class="instagram-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
-        <div class="col-4 col-md-2">
-            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light">
-                  <img src="https://i.pinimg.com/736x/95/d0/eb/95d0eb7b392e0610f0fdc578e734e322.jpg" alt="fl_tiktok">
+        <div class="col-6 col-md-3 col-lg-2">
+            <a href="https://www.tiktok.com/@babee_studio" class="card instagram-item text-decoration-none">
+                <div class="ratio ratio-1x1">
+                    <img src="https://i.pinimg.com/736x/95/d0/eb/95d0eb7b392e0610f0fdc578e734e322.jpg" class="card-img-top object-fit-cover" alt="fl_tiktok">
                 </div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
+                <div class="instagram-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
-        <div class="col-4 col-md-2">
-            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light">
-                    <img src="https://i.pinimg.com/736x/e7/87/2f/e7872f0b8617788f433b62d9de0cef48.jpg" alt="fl_tiktok">
+        <div class="col-6 col-md-3 col-lg-2">
+            <a href="https://www.tiktok.com/@babee_studio" class="card instagram-item text-decoration-none">
+                <div class="ratio ratio-1x1">
+                    <img src="https://i.pinimg.com/736x/e7/87/2f/e7872f0b8617788f433b62d9de0cef48.jpg" class="card-img-top object-fit-cover" alt="fl_tiktok">
                 </div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
+                <div class="instagram-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
-        <div class="col-4 col-md-2">
-            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light">
-                    <img src="https://i.pinimg.com/736x/a3/da/fe/a3dafeaae082215313e7324dec9d9b83.jpg" alt="fl_tiktok">
+        <div class="col-6 col-md-3 col-lg-2">
+            <a href="https://www.tiktok.com/@babee_studio" class="card instagram-item text-decoration-none">
+                <div class="ratio ratio-1x1">
+                    <img src="https://i.pinimg.com/736x/a3/da/fe/a3dafeaae082215313e7324dec9d9b83.jpg" class="card-img-top object-fit-cover" alt="fl_tiktok">
                 </div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
+                <div class="instagram-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
@@ -370,6 +370,30 @@ include 'views/layouts/header.php';
     /* General Font Styling */
     body, h1, h2, h3, h4, h5, h6, p, a, button, input, .card-title, .card-text {
         font-family: 'Quicksand', sans-serif !important;
+    }
+
+    .instagram-item {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    }
+
+    .instagram-item:hover {
+        transform: scale(1.05);
+    }
+
+    .instagram-overlay {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .instagram-item:hover .instagram-overlay {
+        opacity: 1;
+    }
+
+    .card-img-top {
+        width: 100%;
+        height: 100%;
     }
 
     /* Banner Carousel Styling */

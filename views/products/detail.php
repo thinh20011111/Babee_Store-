@@ -1066,17 +1066,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(text);
                     console.log('AJAX data:', data);
                     if (data.success) {
-                        // Update cart count
-                        const cartBadge = document.querySelector('.cart-count-badge');
-                        if (cartBadge) {
-                            cartBadge.textContent = data.cart_count || 0;
-                            cartBadge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
-                            // Add bounce animation to cart badge
-                            cartBadge.classList.add('animate__animated', 'animate__bounce');
+                        // Update all cart count badges (header and detail page)
+                        const cartBadges = document.querySelectorAll('.cart-count-badge');
+                        cartBadges.forEach(badge => {
+                            badge.textContent = data.cart_count || 0;
+                            badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
+                            // Add bounce animation to badge
+                            badge.classList.add('animate__animated', 'animate__bounce');
                             setTimeout(() => {
-                                cartBadge.classList.remove('animate__animated', 'animate__bounce');
+                                badge.classList.remove('animate__animated', 'animate__bounce');
                             }, 1000);
-                        }
+                        });
                         
                         // Show success notification
                         showNotification('Đã thêm vào giỏ hàng!', 'success');
