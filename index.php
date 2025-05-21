@@ -1,9 +1,9 @@
 <?php
 // Cấu hình ứng dụng
-define('SITE_NAME', 'StreetStyle');
+define('SITE_NAME', 'Babee - Thời trang cho bé');
 define('SITE_DESCRIPTION', 'Thời trang đường phố dành cho giới trẻ - Bold & Colorful');
 define('CURRENCY', '₫');
-define('ADMIN_EMAIL', 'contact@streetstyle.com');
+define('ADMIN_EMAIL', 'babeemoonstore@gmail.com');
 
 // Load cấu hình
 require_once 'config/config.php';

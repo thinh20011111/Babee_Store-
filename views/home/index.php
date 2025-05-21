@@ -302,7 +302,9 @@ include 'views/layouts/header.php';
     <div class="row g-2">
         <div class="col-4 col-md-2">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
+                <div class="ratio ratio-1x1 bg-light">
+                    <img src="" alt="">
+                </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
