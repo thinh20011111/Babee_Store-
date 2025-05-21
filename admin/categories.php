@@ -4,13 +4,33 @@ if (!defined('ADMIN_INCLUDED')) {
     define('ADMIN_INCLUDED', true);
 }
 
+// Định nghĩa đường dẫn log
+$log_file = __DIR__ . '/../logs/debug.log';
+$log_dir = dirname($log_file);
+
+// Tạo thư mục logs nếu chưa tồn tại
+if (!is_dir($log_dir)) {
+    if (!mkdir($log_dir, 0755, true)) {
+        die("Không thể tạo thư mục logs: $log_dir");
+    }
+}
+
+// Đảm bảo tệp log có thể ghi
+if (!file_exists($log_file)) {
+    touch($log_file);
+}
+if (!is_writable($log_file)) {
+    chmod($log_file, 0644);
+}
+
 require_once '../config/database.php';
 try {
     $db = new Database();
     $conn = $db->getConnection();
     $conn->exec("SET NAMES utf8mb4");
 } catch (PDOException $e) {
-    error_log("Lỗi kết nối CSDL: " . $e->getMessage());
+    $error_msg = "Lỗi kết nối CSDL: " . $e->getMessage() . " tại " . __FILE__ . " dòng " . __LINE__;
+    error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
     die("Lỗi hệ thống");
 }
 
@@ -24,7 +44,8 @@ require_once '../models/Category.php';
 try {
     $category = new Category($conn);
 } catch (Exception $e) {
-    error_log("Lỗi khởi tạo Category: " . $e->getMessage());
+    $error_msg = "Lỗi khởi tạo Category: " . $e->getMessage() . " tại " . __FILE__ . " dòng " . __LINE__;
+    error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
     die("Lỗi hệ thống");
 }
 
@@ -39,13 +60,15 @@ if ($action == 'delete' && isset($_GET['id'])) {
         if ($category->countProducts() > 0) {
             $error_message = "Không thể xóa vì danh mục có sản phẩm.";
         } elseif ($category->delete()) {
-            $success_message = "Xóa thành công.";
+            $success_message = "Xóa danh mục thành công.";
+            error_log(date('[Y-m-d H:i:s] ') . "Xóa danh mục ID {$category->id} thành công" . PHP_EOL, 3, $log_file);
         } else {
-            $error_message = "Xóa thất bại.";
+            $error_message = "Xóa danh mục thất bại.";
+            error_log(date('[Y-m-d H:i:s] ') . "Xóa danh mục ID {$category->id} thất bại" . PHP_EOL, 3, $log_file);
         }
     } catch (Exception $e) {
         $error_message = "Lỗi khi xóa: " . $e->getMessage();
-        error_log($error_message);
+        error_log(date('[Y-m-d H:i:s] ') . $error_message . " tại " . __FILE__ . " dòng " . __LINE__ . PHP_EOL, 3, $log_file);
     }
 }
 
@@ -55,12 +78,14 @@ if ($action == 'edit' && isset($_GET['id'])) {
     try {
         if ($category->readOne()) {
             $edit_category = $category;
+            error_log(date('[Y-m-d H:i:s] ') . "Tải danh mục ID {$category->id} thành công" . PHP_EOL, 3, $log_file);
         } else {
             $error_message = "Không tìm thấy danh mục.";
+            error_log(date('[Y-m-d H:i:s] ') . "Không tìm thấy danh mục ID {$category->id}" . PHP_EOL, 3, $log_file);
         }
     } catch (Exception $e) {
         $error_message = "Lỗi tải danh mục: " . $e->getMessage();
-        error_log($error_message);
+        error_log(date('[Y-m-d H:i:s] ') . $error_message . " tại " . __FILE__ . " dòng " . __LINE__ . PHP_EOL, 3, $log_file);
     }
 }
 
@@ -70,38 +95,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $category->description = trim($_POST['description'] ?? '');
         $category->image = $edit_category ? $edit_category->image : ''; // Giữ ảnh cũ nếu đang sửa
 
-        $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/categories/';
+        // Sử dụng đường dẫn tương đối để tránh vấn đề với $_SERVER['DOCUMENT_ROOT']
+        $upload_dir = __DIR__ . '/../uploads/categories/';
+        $relative_path = 'uploads/categories/';
         $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
         $max_size = 5 * 1024 * 1024; // 5MB
 
+        // Ghi log cấu hình upload
+        error_log(date('[Y-m-d H:i:s] ') . "Bắt đầu xử lý POST, upload_dir: $upload_dir, DOCUMENT_ROOT: " . ($_SERVER['DOCUMENT_ROOT'] ?? 'undefined') . PHP_EOL, 3, $log_file);
+
         // Xử lý tải ảnh
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            error_log(date('[Y-m-d H:i:s] ') . "Nhận được tệp ảnh: name={$file['name']}, tmp_name={$file['tmp_name']}, size={$file['size']}" . PHP_EOL, 3, $log_file);
+
             // Kiểm tra và tạo thư mục
             if (!is_dir($upload_dir)) {
                 if (!mkdir($upload_dir, 0755, true)) {
                     throw new Exception("Không thể tạo thư mục: $upload_dir");
                 }
+                error_log(date('[Y-m-d H:i:s] ') . "Tạo thư mục uploads: $upload_dir" . PHP_EOL, 3, $log_file);
             }
 
             // Kiểm tra quyền ghi
             if (!is_writable($upload_dir)) {
                 throw new Exception("Thư mục không có quyền ghi: $upload_dir");
             }
+            error_log(date('[Y-m-d H:i:s] ') . "Thư mục $upload_dir có quyền ghi" . PHP_EOL, 3, $log_file);
 
             $file = $_FILES['image'];
-            // Kiểm tra tệp tạm thời tồn tại
+            // Kiểm tra tệp tạm thời
             if (!file_exists($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
                 throw new Exception("Tệp tạm thời không hợp lệ: " . $file['tmp_name']);
             }
+            error_log(date('[Y-m-d H:i:s] ') . "Tệp tạm thời hợp lệ: {$file['tmp_name']}" . PHP_EOL, 3, $log_file);
 
             // Kiểm tra loại tệp
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if (!$finfo) {
+                throw new Exception("Không thể khởi tạo finfo");
+            }
             $mime_type = finfo_file($finfo, $file['tmp_name']);
             finfo_close($finfo);
 
             if (!in_array($mime_type, $allowed_types)) {
                 throw new Exception("Định dạng ảnh không hợp lệ: $mime_type");
             }
+            error_log(date('[Y-m-d H:i:s] ') . "Loại tệp hợp lệ: $mime_type" . PHP_EOL, 3, $log_file);
 
             // Kiểm tra kích thước tệp
             if ($file['size'] > $max_size) {
@@ -109,29 +148,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Tạo tên tệp duy nhất
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $filename = 'category_' . time() . '_' . uniqid() . '.' . $ext;
             $destination = $upload_dir . $filename;
 
+            // Kiểm tra quyền ghi tệp đích
+            $test_write = @file_put_contents($upload_dir . 'test.txt', 'test');
+            if ($test_write === false) {
+                throw new Exception("Không thể ghi vào thư mục: $upload_dir");
+            }
+            unlink($upload_dir . 'test.txt');
+            error_log(date('[Y-m-d H:i:s] ') . "Kiểm tra ghi tệp thành công cho $upload_dir" . PHP_EOL, 3, $log_file);
+
             // Di chuyển tệp
             if (!move_uploaded_file($file['tmp_name'], $destination)) {
-                error_log("Không thể di chuyển tệp: tmp={$file['tmp_name']}, dest=$destination, error=" . print_r(error_get_last(), true));
+                $error = error_get_last();
+                $error_msg = "Không thể di chuyển tệp: tmp={$file['tmp_name']}, dest=$destination, error=" . print_r($error, true);
+                error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
                 throw new Exception("Không thể lưu ảnh lên server.");
             }
+            error_log(date('[Y-m-d H:i:s] ') . "Di chuyển tệp thành công: $destination" . PHP_EOL, 3, $log_file);
 
             // Chỉ cập nhật đường dẫn nếu tải lên thành công
-            $category->image = 'uploads/categories/' . $filename;
+            $category->image = $relative_path . $filename;
 
             // Xóa ảnh cũ nếu đang cập nhật
-            if ($edit_category && $edit_category->image && file_exists($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image)) {
-                if (!unlink($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image)) {
-                    error_log("Không thể xóa ảnh cũ: " . $_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image);
+            if ($edit_category && $edit_category->image && file_exists(__DIR__ . '/../' . $edit_category->image)) {
+                if (!unlink(__DIR__ . '/../' . $edit_category->image)) {
+                    error_log(date('[Y-m-d H:i:s] ') . "Không thể xóa ảnh cũ: " . __DIR__ . '/../' . $edit_category->image . PHP_EOL, 3, $log_file);
+                } else {
+                    error_log(date('[Y-m-d H:i:s] ') . "Xóa ảnh cũ thành công: " . __DIR__ . '/../' . $edit_category->image . PHP_EOL, 3, $log_file);
                 }
             }
         } elseif (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
-            // Ghi log lỗi upload khác
-            error_log("Lỗi upload ảnh: mã lỗi=" . $_FILES['image']['error']);
+            $error_msg = "Lỗi upload ảnh: mã lỗi=" . $_FILES['image']['error'];
+            error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
             throw new Exception("Lỗi upload ảnh: mã lỗi " . $_FILES['image']['error']);
+        } else {
+            error_log(date('[Y-m-d H:i:s] ') . "Không có tệp ảnh mới được tải lên" . PHP_EOL, 3, $log_file);
         }
 
         // Kiểm tra tên danh mục
@@ -144,25 +198,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $category->id = intval($_POST['edit_id']);
             if ($category->update()) {
                 $success_message = "Cập nhật danh mục thành công.";
+                error_log(date('[Y-m-d H:i:s] ') . "Cập nhật danh mục ID {$category->id} thành công, image: {$category->image}" . PHP_EOL, 3, $log_file);
                 $category->readOne();
                 $edit_category = $category;
             } else {
-                throw new Exception("Cập nhật danh mục thất bại.");
+                $error_msg = "Cập nhật danh mục thất bại.";
+                error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
+                throw new Exception($error_msg);
             }
         } else {
             if ($category->create()) {
                 $success_message = "Tạo mới danh mục thành công.";
+                error_log(date('[Y-m-d H:i:s] ') . "Tạo mới danh mục thành công, image: {$category->image}" . PHP_EOL, 3, $log_file);
                 $category = new Category($conn); // Reset đối tượng category
             } else {
-                throw new Exception("Tạo mới danh mục thất bại.");
+                $error_msg = "Tạo mới danh mục thất bại.";
+                error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
+                throw new Exception($error_msg);
             }
         }
     } catch (Exception $e) {
         $error_message = "Lỗi: " . $e->getMessage();
-        error_log("Lỗi lưu danh mục: " . $e->getMessage() . " tại " . __FILE__ . " dòng " . __LINE__);
+        error_log(date('[Y-m-d H:i:s] ') . $error_message . " tại " . __FILE__ . " dòng " . __LINE__ . PHP_EOL, 3, $log_file);
     }
 }
-
 
 $categories = [];
 try {
@@ -170,12 +229,12 @@ try {
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $categories[] = $row;
     }
+    error_log(date('[Y-m-d H:i:s] ') . "Tải danh sách danh mục thành công, số lượng: " . count($categories) . PHP_EOL, 3, $log_file);
 } catch (Exception $e) {
     $error_message = "Lỗi khi tải danh mục: " . $e->getMessage();
-    error_log($error_message);
+    error_log(date('[Y-m-d H:i:s] ') . $error_message . " tại " . __FILE__ . " dòng " . __LINE__ . PHP_EOL, 3, $log_file);
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="vi">
