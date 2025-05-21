@@ -303,7 +303,7 @@ include 'views/layouts/header.php';
         <div class="col-4 col-md-2">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light">
-                    <img src="" alt="">
+                    <img src="https://i.pinimg.com/736x/d9/61/a8/d961a897b5097f6fb1fcb0eb523339c1.jpg" alt="fl_tiktok">
                 </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
@@ -312,7 +312,9 @@ include 'views/layouts/header.php';
         </div>
         <div class="col-4 col-md-2">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
+                <div class="ratio ratio-1x1 bg-light">
+                  <img src="https://i.pinimg.com/736x/95/d0/eb/95d0eb7b392e0610f0fdc578e734e322.jpg" alt="fl_tiktok">
+                </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
@@ -320,7 +322,9 @@ include 'views/layouts/header.php';
         </div>
         <div class="col-4 col-md-2">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
+                <div class="ratio ratio-1x1 bg-light">
+                    <img src="https://i.pinimg.com/736x/e7/87/2f/e7872f0b8617788f433b62d9de0cef48.jpg" alt="fl_tiktok">
+                </div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
@@ -328,23 +332,9 @@ include 'views/layouts/header.php';
         </div>
         <div class="col-4 col-md-2">
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-tiktok text-white fa-2x"></i>
+                <div class="ratio ratio-1x1 bg-light">
+                    <img src="https://i.pinimg.com/736x/a3/da/fe/a3dafeaae082215313e7324dec9d9b83.jpg" alt="fl_tiktok">
                 </div>
-            </a>
-        </div>
-        <div class="col-4 col-md-2">
-            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
-                <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-tiktok text-white fa-2x"></i>
-                </div>
-            </a>
-        </div>
-        <div class="col-4 col-md-2">
-            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
-                <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
                     <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
