@@ -68,88 +68,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $category->name = trim($_POST['name'] ?? '');
         $category->description = trim($_POST['description'] ?? '');
-        $category->image = $edit_category ? $edit_category->image : '';
+        $category->image = $edit_category ? $edit_category->image : ''; // Giữ ảnh cũ nếu đang sửa
 
         $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/categories/';
         $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
         $max_size = 5 * 1024 * 1024; // 5MB
 
+        // Xử lý tải ảnh
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            try {
-                if (!is_dir($upload_dir)) {
-                    if (!mkdir($upload_dir, 0755, true)) {
-                        $last_error = error_get_last();
-                        throw new Exception("Không thể tạo thư mục: " . ($last_error['message'] ?? 'Không rõ lỗi'));
-                    }
+            // Kiểm tra và tạo thư mục
+            if (!is_dir($upload_dir)) {
+                if (!mkdir($upload_dir, 0755, true)) {
+                    throw new Exception("Không thể tạo thư mục: $upload_dir");
                 }
-
-                if (!is_writable($upload_dir)) {
-                    throw new Exception("Thư mục không có quyền ghi.");
-                }
-
-                $file = $_FILES['image'];
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mime_type = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
-
-                if (!in_array($mime_type, $allowed_types)) {
-                    throw new Exception("Định dạng ảnh không hợp lệ: " . $mime_type);
-                }
-
-                if ($file['size'] > $max_size) {
-                    throw new Exception("Kích thước ảnh vượt quá 5MB.");
-                }
-
-                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filename = 'category_' . time() . '_' . uniqid() . '.' . $ext;
-                $destination = $upload_dir . $filename;
-
-                if (!move_uploaded_file($file['tmp_name'], $destination)) {
-                    error_log("Không thể move file: tmp=" . $file['tmp_name'] . " dest=" . $destination);
-                    throw new Exception("Không thể lưu ảnh.");
-                }
-
-                $category->image = 'uploads/categories/' . $filename;
-
-                if ($edit_category && $edit_category->image && file_exists($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image)) {
-                    unlink($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image);
-                }
-            } catch (Exception $e) {
-                $error_message = "Lỗi tải ảnh: " . $e->getMessage();
-                error_log($error_message);
             }
-        } else {
-            // Không upload ảnh mới => giữ ảnh cũ nếu đang sửa
-            if ($edit_category) {
-                $category->image = $edit_category->image ?? '';
+
+            // Kiểm tra quyền ghi
+            if (!is_writable($upload_dir)) {
+                throw new Exception("Thư mục không có quyền ghi: $upload_dir");
             }
+
+            $file = $_FILES['image'];
+            // Kiểm tra tệp tạm thời tồn tại
+            if (!file_exists($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+                throw new Exception("Tệp tạm thời không hợp lệ: " . $file['tmp_name']);
+            }
+
+            // Kiểm tra loại tệp
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime_type = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mime_type, $allowed_types)) {
+                throw new Exception("Định dạng ảnh không hợp lệ: $mime_type");
+            }
+
+            // Kiểm tra kích thước tệp
+            if ($file['size'] > $max_size) {
+                throw new Exception("Kích thước ảnh vượt quá 5MB.");
+            }
+
+            // Tạo tên tệp duy nhất
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'category_' . time() . '_' . uniqid() . '.' . $ext;
+            $destination = $upload_dir . $filename;
+
+            // Di chuyển tệp
+            if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                error_log("Không thể di chuyển tệp: tmp={$file['tmp_name']}, dest=$destination, error=" . print_r(error_get_last(), true));
+                throw new Exception("Không thể lưu ảnh lên server.");
+            }
+
+            // Chỉ cập nhật đường dẫn nếu tải lên thành công
+            $category->image = 'uploads/categories/' . $filename;
+
+            // Xóa ảnh cũ nếu đang cập nhật
+            if ($edit_category && $edit_category->image && file_exists($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image)) {
+                if (!unlink($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image)) {
+                    error_log("Không thể xóa ảnh cũ: " . $_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image);
+                }
+            }
+        } elseif (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+            // Ghi log lỗi upload khác
+            error_log("Lỗi upload ảnh: mã lỗi=" . $_FILES['image']['error']);
+            throw new Exception("Lỗi upload ảnh: mã lỗi " . $_FILES['image']['error']);
         }
 
+        // Kiểm tra tên danh mục
         if (empty($category->name)) {
             throw new Exception("Tên danh mục là bắt buộc.");
         }
 
+        // Lưu vào database
         if (isset($_POST['edit_id'])) {
             $category->id = intval($_POST['edit_id']);
-
             if ($category->update()) {
                 $success_message = "Cập nhật danh mục thành công.";
                 $category->readOne();
                 $edit_category = $category;
             } else {
-                $error_message = "Cập nhật danh mục thất bại.";
+                throw new Exception("Cập nhật danh mục thất bại.");
             }
         } else {
             if ($category->create()) {
-                $success_message = "Tạo mới thành công.";
-                $category = new Category($conn);
+                $success_message = "Tạo mới danh mục thành công.";
+                $category = new Category($conn); // Reset đối tượng category
             } else {
-                $error_message = "Tạo mới thất bại.";
+                throw new Exception("Tạo mới danh mục thất bại.");
             }
         }
     } catch (Exception $e) {
-        $error_message = $e->getMessage();
-        error_log("Lỗi lưu danh mục: " . $e->getMessage());
+        $error_message = "Lỗi: " . $e->getMessage();
+        error_log("Lỗi lưu danh mục: " . $e->getMessage() . " tại " . __FILE__ . " dòng " . __LINE__);
     }
 }
 
