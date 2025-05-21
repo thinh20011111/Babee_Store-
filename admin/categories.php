@@ -95,9 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $category->description = trim($_POST['description'] ?? '');
         $category->image = $edit_category ? $edit_category->image : ''; // Giữ ảnh cũ nếu đang sửa
 
-        // Sử dụng đường dẫn tương đối để tránh vấn đề với $_SERVER['DOCUMENT_ROOT']
-        $upload_dir = __DIR__ . '/../uploads/categories/';
-        $relative_path = 'uploads/categories/';
+        // Sử dụng đường dẫn tương đối
+        $upload_dir = __DIR__ . '/../Uploads/categories/';
+        $relative_path = 'Uploads/categories/';
         $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
         $max_size = 5 * 1024 * 1024; // 5MB
 
@@ -106,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Xử lý tải ảnh
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['image'];
             error_log(date('[Y-m-d H:i:s] ') . "Nhận được tệp ảnh: name={$file['name']}, tmp_name={$file['tmp_name']}, size={$file['size']}" . PHP_EOL, 3, $log_file);
 
             // Kiểm tra và tạo thư mục
@@ -122,7 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             error_log(date('[Y-m-d H:i:s] ') . "Thư mục $upload_dir có quyền ghi" . PHP_EOL, 3, $log_file);
 
-            $file = $_FILES['image'];
             // Kiểm tra tệp tạm thời
             if (!file_exists($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
                 throw new Exception("Tệp tạm thời không hợp lệ: " . $file['tmp_name']);
@@ -147,11 +147,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception("Kích thước ảnh vượt quá 5MB.");
             }
 
-            // Tạo tên tệp duy nhất
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $filename = 'category_' . time() . '_' . uniqid() . '.' . $ext;
-            $destination = $upload_dir . $filename;
-
             // Kiểm tra quyền ghi tệp đích
             $test_write = @file_put_contents($upload_dir . 'test.txt', 'test');
             if ($test_write === false) {
@@ -160,6 +155,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unlink($upload_dir . 'test.txt');
             error_log(date('[Y-m-d H:i:s] ') . "Kiểm tra ghi tệp thành công cho $upload_dir" . PHP_EOL, 3, $log_file);
 
+            // Tạo tên tệp duy nhất
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $filename = 'category_' . time() . '_' . uniqid() . '.' . $ext;
+            $destination = $upload_dir . $filename;
+            $new_image_path = $relative_path . $filename;
+
             // Di chuyển tệp
             if (!move_uploaded_file($file['tmp_name'], $destination)) {
                 $error = error_get_last();
@@ -167,12 +168,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
                 throw new Exception("Không thể lưu ảnh lên server.");
             }
+
+            // Kiểm tra tệp đã được di chuyển thành công
+            if (!file_exists($destination)) {
+                $error_msg = "Tệp không tồn tại sau khi di chuyển: $destination";
+                error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
+                throw new Exception("Tệp không được lưu vào server.");
+            }
             error_log(date('[Y-m-d H:i:s] ') . "Di chuyển tệp thành công: $destination" . PHP_EOL, 3, $log_file);
 
-            // Chỉ cập nhật đường dẫn nếu tải lên thành công
-            $category->image = $relative_path . $filename;
-
-            // Xóa ảnh cũ nếu đang cập nhật
+            // Xóa ảnh cũ trước khi cập nhật đường dẫn mới
             if ($edit_category && $edit_category->image && file_exists(__DIR__ . '/../' . $edit_category->image)) {
                 if (!unlink(__DIR__ . '/../' . $edit_category->image)) {
                     error_log(date('[Y-m-d H:i:s] ') . "Không thể xóa ảnh cũ: " . __DIR__ . '/../' . $edit_category->image . PHP_EOL, 3, $log_file);
@@ -180,6 +185,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     error_log(date('[Y-m-d H:i:s] ') . "Xóa ảnh cũ thành công: " . __DIR__ . '/../' . $edit_category->image . PHP_EOL, 3, $log_file);
                 }
             }
+
+            // Chỉ cập nhật đường dẫn nếu tải lên thành công
+            $category->image = $new_image_path;
         } elseif (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
             $error_msg = "Lỗi upload ảnh: mã lỗi=" . $_FILES['image']['error'];
             error_log(date('[Y-m-d H:i:s] ') . $error_msg . PHP_EOL, 3, $log_file);
