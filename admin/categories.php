@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/categories/';
         $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-        $max_size = 5 * 1024 * 1024;
+        $max_size = 5 * 1024 * 1024; // 5MB
 
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             try {
@@ -118,6 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error_message = "Lỗi tải ảnh: " . $e->getMessage();
                 error_log($error_message);
             }
+        } else {
+            // Không upload ảnh mới => giữ ảnh cũ nếu đang sửa
+            if ($edit_category) {
+                $category->image = $edit_category->image ?? '';
+            }
         }
 
         if (empty($category->name)) {
@@ -126,12 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (isset($_POST['edit_id'])) {
             $category->id = intval($_POST['edit_id']);
-        
-            // Nếu không upload ảnh mới => giữ ảnh cũ
-            if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-                $category->image = $edit_category->image ?? '';
-            }
-        
+
             if ($category->update()) {
                 $success_message = "Cập nhật danh mục thành công.";
                 $category->readOne();
@@ -152,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         error_log("Lỗi lưu danh mục: " . $e->getMessage());
     }
 }
+
 
 $categories = [];
 try {
