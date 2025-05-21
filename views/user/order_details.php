@@ -17,19 +17,21 @@ include 'views/layouts/header.php';
                 <div class="card-header bg-primary text-white rounded-top">
                     <h5 class="mb-0">Tài khoản của tôi</h5>
                 </div>
-                <div class="list-group list-group-flush">
-                    <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action rounded py-3">
-                        <i class="fas fa-user fa-lg me-2"></i> Hồ sơ cá nhân
-                    </a>
-                    <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action active rounded py-3">
-                        <i class="fas fa-shopping-bag fa-lg me-2"></i> Đơn hàng của tôi
-                    </a>
-                    <a href="index.php?controller=user&action=changePassword" class="list-group-item list-group-item-action rounded py-3">
-                        <i class="fas fa-key fa-lg me-2"></i> Đổi mật khẩu
-                    </a>
-                    <a href="index.php?controller=user&action=logout" class="list-group-item list-group-item-action text-danger rounded py-3">
-                        <i class="fas fa-sign-out-alt fa-lg me-2"></i> Đăng xuất
-                    </a>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action rounded py-3 px-4 mb-1">
+                            <i class="fas fa-user fa-lg me-2"></i> Hồ sơ cá nhân
+                        </a>
+                        <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action active rounded py-3 px-4 mb-1">
+                            <i class="fas fa-shopping-bag fa-lg me-2"></i> Đơn hàng của tôi
+                        </a>
+                        <a href="index.php?controller=user&action=changePassword" class="list-group-item list-group-item-action rounded py-3 px-4 mb-1">
+                            <i class="fas fa-key fa-lg me-2"></i> Đổi mật khẩu
+                        </a>
+                        <a href="index.php?controller=user&action=logout" class="list-group-item list-group-item-action text-danger rounded py-3 px-4 mb-1">
+                            <i class="fas fa-sign-out-alt fa-lg me-2"></i> Đăng xuất
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -172,7 +174,7 @@ include 'views/layouts/header.php';
                     <div class="order-timeline">
                         <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.05s;">
                             <div class="timeline-icon <?php echo in_array($order->status, ['pending', 'processing', 'shipped', 'delivered']) ? 'active' : ''; ?>">
-                                <i class="fas fa-shopping-cart fa-2x"></i>
+                                <i class="fas fa-shopping-cart fa-lg"></i>
                             </div>
                             <div class="timeline-content">
                                 <h6>Đã đặt hàng</h6>
@@ -181,7 +183,7 @@ include 'views/layouts/header.php';
                         </div>
                         <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.10s;">
                             <div class="timeline-icon <?php echo in_array($order->status, ['processing', 'shipped', 'delivered']) ? 'active' : ''; ?>">
-                                <i class="fas fa-cogs fa-2x"></i>
+                                <i class="fas fa-cogs fa-lg"></i>
                             </div>
                             <div class="timeline-content">
                                 <h6>Đang xử lý</h6>
@@ -190,7 +192,7 @@ include 'views/layouts/header.php';
                         </div>
                         <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.15s;">
                             <div class="timeline-icon <?php echo in_array($order->status, ['shipped', 'delivered']) ? 'active' : ''; ?>">
-                                <i class="fas fa-truck fa-2x"></i>
+                                <i class="fas fa-truck fa-lg"></i>
                             </div>
                             <div class="timeline-content">
                                 <h6>Đã giao hàng</h6>
@@ -199,7 +201,7 @@ include 'views/layouts/header.php';
                         </div>
                         <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.20s;">
                             <div class="timeline-icon <?php echo $order->status == 'delivered' ? 'active' : ''; ?>">
-                                <i class="fas fa-check-circle fa-2x"></i>
+                                <i class="fas fa-check-circle fa-lg"></i>
                             </div>
                             <div class="timeline-content">
                                 <h6>Hoàn thành</h6>
@@ -246,6 +248,9 @@ body {
 }
 
 /* Sidebar styles */
+.card .card-body {
+    padding: 0.5rem;
+}
 .list-group-item {
     display: flex;
     align-items: center;
@@ -255,6 +260,7 @@ body {
     padding: 0.75rem 1.25rem;
     border-radius: 10px;
     min-height: 48px;
+    margin-bottom: 0.25rem;
 }
 .list-group-item i {
     min-width: 24px;
@@ -408,8 +414,11 @@ body {
     background: #007bff;
     color: #fff;
 }
+.timeline-icon i {
+    font-size: 1.1rem;
+}
 .timeline-content {
-    padding-left: 30px;
+    padding-left: 40px;
 }
 .timeline-content h6 {
     margin-bottom: 5px;
@@ -431,6 +440,11 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     animation: slideInRight 0.3s ease-in-out;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    min-width: 300px;
 }
 @keyframes slideInRight {
     from {
@@ -473,7 +487,7 @@ body {
         left: -38px;
     }
     .timeline-icon i {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
     .order-timeline {
         padding-left: 38px;
@@ -534,7 +548,7 @@ body {
         left: -36px;
     }
     .timeline-icon i {
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
     .order-timeline {
         padding-left: 36px;
@@ -565,11 +579,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function showNotification(message, type, title = '') {
         const notification = document.createElement('div');
         notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show notification`;
-        notification.style.position = 'fixed';
-        notification.style.top = '20px';
-        notification.style.right = '20px';
-        notification.style.zIndex = '2000';
-        notification.style.minWidth = '300px';
         notification.innerHTML = `
             ${title ? `<strong>${title}</strong><br>` : ''}
             ${message}
