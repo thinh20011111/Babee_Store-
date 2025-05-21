@@ -1025,12 +1025,9 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 console.log('AJAX response received', { status: response.status, ok: response.ok });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.text();
+                return response.text().then(text => ({ response, text }));
             })
-            .then(text => {
+            .then(({ response, text }) => {
                 console.log('Raw response:', text);
                 try {
                     const data = JSON.parse(text);
@@ -1086,21 +1083,41 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         console.error('Lỗi từ server:', data.message);
                         // Check if error is related to stock
-                        const isStockError = data.message.includes('vượt quá tồn kho');
+                        const isStockError = data.message && data.message.includes('vượt quá tồn kho');
                         showNotification(
                             data.message || 'Không thể thêm vào giỏ hàng.',
                             'error',
-                            isStockError ? 'Không đủ tồn kho' : 'Lỗi thêm vào giỏ hàng'
+                            isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi thêm vào giỏ hàng'
                         );
                     }
                 } catch (e) {
                     console.error('Lỗi phân tích JSON:', e, 'Response text:', text);
-                    showNotification('Lỗi server: Không nhận được dữ liệu hợp lệ.', 'error', 'Lỗi server');
+                    // Check if error is HTTP 400 and related to stock
+                    const isStockError = response.status === 400 && (
+                        text.includes('vượt quá tồn kho') || 
+                        text.includes('stock') || 
+                        text.includes('tồn kho')
+                    );
+                    showNotification(
+                        text || 'Lỗi server: Không nhận được dữ liệu hợp lệ.',
+                        'error',
+                        isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi hệ thống'
+                    );
                 }
             })
             .catch(error => {
                 console.error('Lỗi AJAX:', error);
-                showNotification('Đã xảy ra lỗi: ' + error.message, 'error', 'Lỗi hệ thống');
+                // Check if error message indicates stock issue
+                const isStockError = error.message && (
+                    error.message.includes('vượt quá tồn kho') || 
+                    error.message.includes('stock') || 
+                    error.message.includes('tồn kho')
+                );
+                showNotification(
+                    'Đã xảy ra lỗi: ' + error.message,
+                    'error',
+                    isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi hệ thống'
+                );
             })
             .finally(() => {
                 // Restore button state
