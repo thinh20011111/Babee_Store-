@@ -1,3 +1,4 @@
+```php
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -12,8 +13,8 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Google Fonts - Modern, bold fonts for streetwear fashion -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Updated to Roboto for Vietnamese support -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
@@ -33,6 +34,11 @@
             --danger-color: <?php echo isset($site_colors['danger_color']) ? $site_colors['danger_color'] : '#FF3547'; ?>;
         }
 
+        /* General Font Styling */
+        body, h1, h2, h3, h4, h5, h6, p, a, button, input {
+            font-family: 'Roboto', sans-serif !important;
+        }
+
         /* Tùy chỉnh header */
         .main-header {
             padding: 10px 0;
@@ -44,7 +50,7 @@
         }
 
         .logo-text {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Roboto', sans-serif;
         }
 
         .search-form .search-input {
@@ -63,12 +69,12 @@
         }
 
         .top-bar .admin-link {
-            color: var(--accent-color); /* Màu nổi bật cho liên kết admin */
+            color: var(--accent-color);
             transition: color 0.3s ease;
         }
 
         .top-bar .admin-link:hover {
-            color: #FFD700; /* Màu hover sáng hơn */
+            color: #FFD700;
             text-decoration: none;
         }
 
@@ -132,13 +138,6 @@
             echo "<div class='alert alert-danger'>Lỗi: Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình.</div>";
         }
     }
-
-    // Debug session (bỏ bình luận nếu cần kiểm tra)
-    /*
-    echo "<pre>Session Data: ";
-    print_r($_SESSION);
-    echo "</pre>";
-    */
     ?>
 
     <!-- Top Bar - Simple with high contrast -->
@@ -298,3 +297,4 @@
     <!-- Main Content -->
     <main class="main-content py-4">
         <div class="container">
+```

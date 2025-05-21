@@ -1,3 +1,4 @@
+```php
 <?php 
 $page_title = "Trang chủ";
 include 'views/layouts/header.php'; 
@@ -59,15 +60,17 @@ include 'views/layouts/header.php';
         <div class="col-6 col-md-4 col-lg-3 mb-4">
             <div class="category-card text-center">
                 <a href="index.php?controller=product&action=list&category_id=<?php echo $category['id']; ?>" class="text-decoration-none">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100 border-0 shadow-sm d-flex flex-column">
                         <?php if(!empty($category['image'])): ?>
-                        <img src="<?php echo htmlspecialchars($category['image']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                        <div class="category-image-wrapper">
+                            <img src="<?php echo htmlspecialchars($category['image']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                        </div>
                         <?php else: ?>
-                        <div class="card-img-top bg-light p-4 d-flex align-items-center justify-content-center" style="height: 180px;">
+                        <div class="card-img-top bg-light p-4 d-flex align-items-center justify-content-center category-image-wrapper">
                             <i class="fas fa-tshirt fa-4x text-primary"></i>
                         </div>
                         <?php endif; ?>
-                        <div class="card-body">
+                        <div class="card-body flex-grow-1 d-flex align-items-center justify-content-center">
                             <h5 class="card-title"><?php echo htmlspecialchars($category['name']); ?></h5>
                         </div>
                     </div>
@@ -302,7 +305,7 @@ include 'views/layouts/header.php';
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                    <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
@@ -310,7 +313,7 @@ include 'views/layouts/header.php';
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                    <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
@@ -318,33 +321,51 @@ include 'views/layouts/header.php';
             <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                    <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
         <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
+            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                    <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
         <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
+            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                    <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
         </div>
         <div class="col-4 col-md-2">
-            <a href="#" class="instagram-item d-block position-relative">
+            <a href="https://www.tiktok.com/@babee_studio" class="instagram-item d-block position-relative">
                 <div class="ratio ratio-1x1 bg-light"></div>
                 <div class="instagram-overlay d-flex align-items-center justify-content-center">
-                    <i class="fab fa-instagram text-white fa-2x"></i>
+                    <i class="fab fa-tiktok text-white fa-2x"></i>
                 </div>
             </a>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="newsletter-section py-5" style="background-color: var(--primary-color, #0d6efd);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <h3 class="text-white fw-bold mb-3 newsletter-heading">STAY IN THE LOOP</h3>
+                <p class="text-white mb-4">Đăng ký nhận tin để cập nhật về hàng mới, thông tin khuyến mãi và mã giảm giá độc quyền.</p>
+                <form action="#" method="POST" class="newsletter-form">
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control form-control-lg rounded-start" placeholder="Email của bạn" required>
+                        <button class="btn btn-dark btn-lg rounded-end px-4" type="submit">ĐĂNG KÝ</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </section>
@@ -352,8 +373,13 @@ include 'views/layouts/header.php';
 <?php include 'views/layouts/footer.php'; ?>
 
 <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+    /* Import Google Fonts - Updated to Roboto for Vietnamese support */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+    /* General Font Styling */
+    body, h1, h2, h3, h4, h5, h6, p, a, button, input, .card-title, .card-text {
+        font-family: 'Roboto', sans-serif !important;
+    }
 
     /* Banner Carousel Styling */
     .banner-carousel {
@@ -374,49 +400,46 @@ include 'views/layouts/header.php';
         transform: translate(-50%, -50%);
         text-align: center;
         color: white;
-        padding: 60px 40px 0; /* Tăng padding-top để bao trùm text, giảm padding-bottom để cắt qua nút */
+        padding: 60px 40px 0;
         background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
         max-width: 600px;
         width: 70%;
-        margin-top: 20px; /* Giữ margin-top để căn chỉnh tổng thể */
+        margin-top: 20px;
     }
 
     .banner-carousel .carousel-caption h2 {
-        font-family: 'Poppins', sans-serif;
         font-size: 2.5rem;
         font-weight: 700;
-        margin: 20px 0 15px; /* Giữ margin-top cho h2 */
+        margin: 20px 0 15px;
         line-height: 1.2;
         color: #f8f9fa;
     }
 
     .banner-carousel .carousel-caption p {
-        font-family: 'Poppins', sans-serif;
         font-size: 1.2rem;
         font-weight: 400;
-        margin: 15px 0 20px; /* Giữ margin-top cho p */
+        margin: 15px 0 20px;
         line-height: 1.5;
         color: #e9ecef;
     }
 
     .banner-carousel .carousel-caption .btn {
-        font-family: 'Poppins', sans-serif;
         padding: 10px 25px;
         font-weight: 500;
         background-color: #f8f9fa;
         color: #212529;
         border: none;
-        margin: 0; /* Xóa margin-top/bottom để nút nằm sát background */
-        transform: translateY(50%); /* Dịch nút xuống để bị cắt bởi background */
-        position: relative; /* Đảm bảo nút nổi lên */
-        z-index: 1; /* Đặt z-index để nút ở trên background */
+        margin: 0;
+        transform: translateY(50%);
+        position: relative;
+        z-index: 1;
         transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
     .banner-carousel .carousel-caption .btn:hover {
         background-color: #dee2e6;
-        transform: translateY(48%); /* Hiệu ứng hover nhẹ */
+        transform: translateY(48%);
     }
 
     .banner-carousel .fade-in {
@@ -440,27 +463,54 @@ include 'views/layouts/header.php';
 
     .hero-banner .hero-banner-image .position-absolute {
         transform: translate(-50%, -50%);
-        padding: 50px 20px 0; /* Tăng padding-top để bao trùm text, giảm padding-bottom để cắt qua nút */
+        padding: 50px 20px 0;
         background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
         max-width: 600px;
         width: 70%;
-        margin-top: 20px; /* Giữ margin-top để căn chỉnh tổng thể */
+        margin-top: 20px;
     }
 
     .hero-banner .hero-banner-image .position-absolute h1 {
-        margin-top: 20px; /* Giữ margin-top cho h1 */
+        margin-top: 20px;
     }
 
     .hero-banner .hero-banner-image .position-absolute p {
-        margin-top: 15px; /* Giữ margin-top cho p */
+        margin-top: 15px;
     }
 
     .hero-banner .hero-banner-image .position-absolute a {
-        margin: 0; /* Xóa margin-top/bottom để nút nằm sát background */
-        transform: translateY(50%); /* Dịch nút xuống để bị cắt bởi background */
-        position: relative; /* Đảm bảo nút nổi lên */
-        z-index: 1; /* Đặt z-index để nút ở trên background */
+        margin: 0;
+        transform: translateY(50%);
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Category Card Styling - Updated for uniform height */
+    .category-card .card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .category-image-wrapper {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 1 / 1; /* Fixed aspect ratio for consistent image size */
+        height: 180px; /* Fixed height for images */
+    }
+
+    .category-image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Ensures images cover the area without distortion */
+    }
+
+    .category-card .card-body {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     /* Responsive Adjustments */
@@ -473,38 +523,42 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 80%;
-            padding: 50px 30px 0; /* Giữ padding-top, giảm padding-bottom */
-            margin-top: 15px; /* Giảm margin-top */
+            padding: 50px 30px 0;
+            margin-top: 15px;
         }
 
         .banner-carousel .carousel-caption h2 {
             font-size: 1.5rem;
-            margin: 15px 0 10px; /* Giảm margin-top */
+            margin: 15px 0 10px;
         }
 
         .banner-carousel .carousel-caption p {
             font-size: 1rem;
-            margin: 10px 0 15px; /* Giảm margin-top */
+            margin: 10px 0 15px;
         }
 
         .banner-carousel .carousel-caption .btn {
             font-size: 1rem;
             padding: 8px 16px;
-            margin: 0; /* Giữ margin 0 */
-            transform: translateY(50%); /* Giữ hiệu ứng cắt */
+            margin: 0;
+            transform: translateY(50%);
         }
 
         .hero-banner .hero-banner-image .position-absolute h1 {
-            margin-top: 15px; /* Giảm margin-top */
+            margin-top: 15px;
         }
 
         .hero-banner .hero-banner-image .position-absolute p {
-            margin-top: 10px; /* Giảm margin-top */
+            margin-top: 10px;
         }
 
         .hero-banner .hero-banner-image .position-absolute a {
-            margin: 0; /* Giữ margin 0 */
-            transform: translateY(50%); /* Giữ hiệu ứng cắt */
+            margin: 0;
+            transform: translateY(50%);
+        }
+
+        .category-image-wrapper {
+            height: 150px; /* Slightly smaller for mobile */
         }
     }
 
@@ -517,38 +571,43 @@ include 'views/layouts/header.php';
         .banner-carousel .carousel-caption,
         .hero-banner .hero-banner-image .position-absolute {
             width: 90%;
-            padding: 40px 20px 0; /* Giữ padding-top, giảm padding-bottom */
-            margin-top: 10px; /* Giảm margin-top */
+            padding: 40px 20px 0;
+            margin-top: 10px;
         }
 
         .banner-carousel .carousel-caption h2 {
             font-size: 1.2rem;
-            margin: 10px 0 10px; /* Giảm margin-top */
+            margin: 10px 0 10px;
         }
 
         .banner-carousel .carousel-caption p {
             font-size: 0.9rem;
-            margin: 8px 0 12px; /* Giảm margin-top */
+            margin: 8px 0 12px;
         }
 
         .banner-carousel .carousel-caption .btn {
             font-size: 0.9rem;
             padding: 6px 12px;
-            margin: 0; /* Giữ margin 0 */
-            transform: translateY(50%); /* Giữ hiệu ứng cắt */
+            margin: 0;
+            transform: translateY(50%);
         }
 
         .hero-banner .hero-banner-image .position-absolute h1 {
-            margin-top: 10px; /* Giảm margin-top */
+            margin-top: 10px;
         }
 
         .hero-banner .hero-banner-image .position-absolute p {
-            margin-top: 8px; /* Giảm margin-top */
+            margin-top: 8px;
         }
 
         .hero-banner .hero-banner-image .position-absolute a {
-            margin: 0; /* Giữ margin 0 */
-            transform: translateY(50%); /* Giữ hiệu ứng cắt */
+            margin: 0;
+            transform: translateY(50%);
+        }
+
+        .category-image-wrapper {
+            height: 120px; /* Smaller for smaller screens */
         }
     }
 </style>
+```
