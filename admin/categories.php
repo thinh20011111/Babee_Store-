@@ -78,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         $category->name = trim($_POST['name'] ?? '');
         $category->description = trim($_POST['description'] ?? '');
-        $category->parent_id = !empty($_POST['parent_id']) ? intval($_POST['parent_id']) : null;
 
         // Xử lý tải ảnh lên
         $category->image = $edit_category ? $edit_category->image : '';
@@ -169,16 +168,6 @@ try {
     error_log("Lỗi lấy danh mục: " . $e->getMessage());
 }
 
-// Lấy tất cả danh mục cho danh sách thả xuống parent_id
-$parent_categories = [];
-try {
-    $stmt = $category->read();
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $parent_categories[] = $row;
-    }
-} catch (Exception $e) {
-    error_log("Lỗi lấy danh mục cha: " . $e->getMessage());
-}
 ?>
 
 <!DOCTYPE html>
@@ -244,21 +233,6 @@ try {
                                     </div>
 
                                     <div class="mb-3">
-                                        <label for="parent_id" class="form-label">Danh mục cha</label>
-                                        <select class="form-select" id="parent_id" name="parent_id">
-                                            <option value="">Không có</option>
-                                            <?php foreach ($parent_categories as $parent): ?>
-                                                <?php if (!$edit_category || $parent['id'] != $edit_category->id): ?>
-                                                <option value="<?php echo $parent['id']; ?>" <?php echo ($edit_category && isset($edit_category->parent_id) && $edit_category->parent_id == $parent['id']) ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($parent['name']); ?>
-                                                </option>
-                                                <?php endif; ?>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div class="form-text">Chọn danh mục cha (không bắt buộc)</div>
-                                    </div>
-
-                                    <div class="mb-3">
                                         <label for="image" class="form-label">Hình ảnh danh mục</label>
                                         <input type="file" class="form-control" id="image" name="image" accept="image/jpeg,image/png,image/gif">
                                         <div class="form-text">Định dạng được chấp nhận: JPEG, PNG, GIF. Kích thước tối đa: 5MB</div>
@@ -311,7 +285,6 @@ try {
                                             <tr>
                                                 <td><?php echo htmlspecialchars($cat['name']); ?></td>
                                                 <td><?php echo htmlspecialchars($cat['description'] ? substr($cat['description'], 0, 50) . '...' : ''); ?></td>
-                                                <td><?php echo $cat['parent_id'] ? htmlspecialchars($category->getNameById($cat['parent_id'])) : 'Không có'; ?></td>
                                                 <td>
                                                     <?php if ($cat['image']): ?>
                                                     <img src="/<?php echo htmlspecialchars($cat['image']); ?>" alt="Hình ảnh danh mục" class="img-thumbnail" style="max-width: 50px;">
