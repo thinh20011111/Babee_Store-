@@ -8,6 +8,7 @@ class Category {
     public $id;
     public $name;
     public $description;
+    public $parent_id;
     public $image;
     public $created_at;
     public $updated_at;
@@ -20,7 +21,7 @@ class Category {
     // Read all categories
     public function read() {
         if (!$this->conn) {
-            error_log("Error in Category::read: Database connection is null");
+            error_log("Lỗi trong Category::read: Kết nối cơ sở dữ liệu là null");
             return false;
         }
         
@@ -30,7 +31,7 @@ class Category {
             $stmt->execute();
             return $stmt;
         } catch(PDOException $e) {
-            error_log("Database error in Category::read: " . $e->getMessage());
+            error_log("Lỗi cơ sở dữ liệu trong Category::read: " . $e->getMessage());
             return false;
         }
     }
@@ -38,7 +39,7 @@ class Category {
     // Read single category
     public function readOne() {
         if (!$this->conn) {
-            error_log("Error in Category::readOne: Database connection is null");
+            error_log("Lỗi trong Category::readOne: Kết nối cơ sở dữ liệu là null");
             return false;
         }
 
@@ -51,9 +52,11 @@ class Category {
         if($row) {
             $this->name = $row['name'];
             $this->description = $row['description'];
+            $this->parent_id = $row['parent_id'];
             $this->image = $row['image'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
+            error_log("Category readOne: parent_id = " . ($this->parent_id ?? 'null')); // Debug
             return true;
         }
         
@@ -63,7 +66,7 @@ class Category {
     // Create category
     public function create() {
         if (!$this->conn) {
-            error_log("Error in Category::create: Database connection is null");
+            error_log("Lỗi trong Category::create: Kết nối cơ sở dữ liệu là null");
             return false;
         }
 
@@ -71,6 +74,7 @@ class Category {
                 SET 
                     name = :name, 
                     description = :description, 
+                    parent_id = :parent_id, 
                     image = :image, 
                     created_at = :created_at, 
                     updated_at = :updated_at";
@@ -80,6 +84,7 @@ class Category {
         // Sanitize inputs
         $this->name = htmlspecialchars(strip_tags($this->name));
         $this->description = htmlspecialchars(strip_tags($this->description));
+        $this->parent_id = $this->parent_id !== null ? intval($this->parent_id) : null;
         $this->image = htmlspecialchars(strip_tags($this->image));
         $this->created_at = date('Y-m-d H:i:s');
         $this->updated_at = date('Y-m-d H:i:s');
@@ -87,6 +92,7 @@ class Category {
         // Bind parameters
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':parent_id', $this->parent_id); // Removed PDO::PARAM_NULLABLE
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':created_at', $this->created_at);
         $stmt->bindParam(':updated_at', $this->updated_at);
@@ -102,7 +108,7 @@ class Category {
     // Update category
     public function update() {
         if (!$this->conn) {
-            error_log("Error in Category::update: Database connection is null");
+            error_log("Lỗi trong Category::update: Kết nối cơ sở dữ liệu là null");
             return false;
         }
 
@@ -110,6 +116,7 @@ class Category {
                 SET 
                     name = :name, 
                     description = :description, 
+                    parent_id = :parent_id, 
                     image = :image, 
                     updated_at = :updated_at 
                 WHERE 
@@ -120,12 +127,14 @@ class Category {
         // Sanitize inputs
         $this->name = htmlspecialchars(strip_tags($this->name));
         $this->description = htmlspecialchars(strip_tags($this->description));
+        $this->parent_id = $this->parent_id !== null ? intval($this->parent_id) : null;
         $this->image = htmlspecialchars(strip_tags($this->image));
         $this->updated_at = date('Y-m-d H:i:s');
         
         // Bind parameters
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':parent_id', $this->parent_id); // Removed PDO::PARAM_NULLABLE
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
@@ -141,7 +150,7 @@ class Category {
     // Delete category
     public function delete() {
         if (!$this->conn) {
-            error_log("Error in Category::delete: Database connection is null");
+            error_log("Lỗi trong Category::delete: Kết nối cơ sở dữ liệu là null");
             return false;
         }
 
@@ -159,7 +168,7 @@ class Category {
     // Get category name by ID
     public function getNameById($id) {
         if (!$this->conn) {
-            error_log("Error in Category::getNameById: Database connection is null");
+            error_log("Lỗi trong Category::getNameById: Kết nối cơ sở dữ liệu là null");
             return "";
         }
 
@@ -176,7 +185,7 @@ class Category {
     // Count products in category
     public function countProducts() {
         if (!$this->conn) {
-            error_log("Error in Category::countProducts: Database connection is null");
+            error_log("Lỗi trong Category::countProducts: Kết nối cơ sở dữ liệu là null");
             return 0;
         }
 
@@ -192,7 +201,7 @@ class Category {
     // Count all categories
     public function countAll() {
         if (!$this->conn) {
-            error_log("Error in Category::countAll: Database connection is null");
+            error_log("Lỗi trong Category::countAll: Kết nối cơ sở dữ liệu là null");
             return 0;
         }
 
