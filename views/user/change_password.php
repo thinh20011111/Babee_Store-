@@ -1,5 +1,5 @@
 <?php 
-$page_title = "Change Password";
+$page_title = "Đổi mật khẩu";
 include 'views/layouts/header.php'; 
 ?>
 
@@ -15,21 +15,21 @@ include 'views/layouts/header.php';
         <div class="col-md-3 mb-4">
             <div class="card border-0 shadow-sm rounded">
                 <div class="card-header bg-primary text-white rounded-top">
-                    <h5 class="mb-0">My Account</h5>
+                    <h5 class="mb-0">Tài khoản của tôi</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action rounded py-3 px-4 mb-1">
-                            <i class="fas fa-user fa-lg me-2"></i> My Profile
+                            <i class="fas fa-user fa-lg me-2"></i> Hồ sơ cá nhân
                         </a>
                         <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action rounded py-3 px-4 mb-1">
-                            <i class="fas fa-shopping-bag fa-lg me-2"></i> My Orders
+                            <i class="fas fa-shopping-bag fa-lg me-2"></i> Đơn hàng của tôi
                         </a>
                         <a href="index.php?controller=user&action=changePassword" class="list-group-item list-group-item-action active rounded py-3 px-4 mb-1">
-                            <i class="fas fa-key fa-lg me-2"></i> Change Password
+                            <i class="fas fa-key fa-lg me-2"></i> Đổi mật khẩu
                         </a>
                         <a href="index.php?controller=user&action=logout" class="list-group-item list-group-item-action text-danger rounded py-3 px-4 mb-1">
-                            <i class="fas fa-sign-out-alt fa-lg me-2"></i> Logout
+                            <i class="fas fa-sign-out-alt fa-lg me-2"></i> Đăng xuất
                         </a>
                     </div>
                 </div>
@@ -40,7 +40,7 @@ include 'views/layouts/header.php';
         <div class="col-md-9">
             <div class="card border-0 shadow-sm rounded">
                 <div class="card-header bg-primary text-white rounded-top">
-                    <h5 class="mb-0">Change Password</h5>
+                    <h5 class="mb-0">Đổi mật khẩu</h5>
                 </div>
                 <div class="card-body p-4">
                     <?php if (!empty($error)): ?>
@@ -57,22 +57,22 @@ include 'views/layouts/header.php';
                     
                     <form action="index.php?controller=user&action=changePassword" method="POST" id="changePasswordForm">
                         <div class="mb-4 position-relative">
-                            <label for="current_password" class="form-label">Current Password</label>
+                            <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
                             <input type="password" class="form-control" id="current_password" name="current_password" required>
                             <i class="fas fa-eye toggle-password position-absolute" style="right: 15px; top: 70%; transform: translateY(-50%); cursor: pointer;"></i>
                         </div>
                         <div class="mb-4 position-relative">
-                            <label for="new_password" class="form-label">New Password</label>
+                            <label for="new_password" class="form-label">Mật khẩu mới</label>
                             <input type="password" class="form-control" id="new_password" name="new_password" required>
                             <i class="fas fa-eye toggle-password position-absolute" style="right: 15px; top: 70%; transform: translateY(-50%); cursor: pointer;"></i>
                         </div>
                         <div class="mb-4 position-relative">
-                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <label for="confirm_password" class="form-label">Xác nhận mật khẩu mới</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                             <i class="fas fa-eye toggle-password position-absolute" style="right: 15px; top: 70%; transform: translateY(-50%); cursor: pointer;"></i>
                         </div>
                         <div class="text-end">
-                            <button type="submit" class="btn btn-primary rounded-pill px-4">Change Password</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">Đổi mật khẩu</button>
                         </div>
                     </form>
                 </div>
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const errorDiv = document.createElement('div');
             errorDiv.className = 'alert alert-danger animate__animated animate__fadeIn rounded';
-            errorDiv.textContent = 'New password and confirm password do not match.';
+            errorDiv.textContent = 'Mật khẩu mới và xác nhận mật khẩu không khớp.';
             const existingAlert = form.querySelector('.alert');
             if (existingAlert) existingAlert.remove();
             form.insertBefore(errorDiv, form.firstChild);

@@ -1,5 +1,5 @@
 <?php 
-$page_title = "My Profile";
+$page_title = "Hồ sơ cá nhân";
 include 'views/layouts/header.php'; 
 ?>
 
@@ -21,7 +21,7 @@ include 'views/layouts/header.php';
                     <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action active rounded py-3">
                         <i class="fas fa-user fa-lg me-2"></i> Hồ sơ cá nhân
                     </a>
-                    <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action  rounded py-3">
+                    <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action rounded py-3">
                         <i class="fas fa-shopping-bag fa-lg me-2"></i> Đơn hàng của tôi
                     </a>
                     <a href="index.php?controller=user&action=changePassword" class="list-group-item list-group-item-action rounded py-3">
@@ -38,43 +38,43 @@ include 'views/layouts/header.php';
         <div class="col-md-9">
             <div class="card border-0 shadow-sm rounded">
                 <div class="card-header bg-primary text-white rounded-top">
-                    <h5 class="mb-0">Edit Profile</h5>
+                    <h5 class="mb-0">Chỉnh sửa hồ sơ</h5>
                 </div>
                 <div class="card-body p-4">
                     <form action="index.php?controller=user&action=profile" method="POST" id="profile-form" novalidate>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="username" class="form-label fw-bold">Username</label>
-                                <input type="text" class="form-control rounded-pill" id="username" name="username" value="<?php echo htmlspecialchars($this->user->username); ?>" required pattern="[a-zA-Z0-9]{3,20}" data-error="Username must be 3-20 characters, letters and numbers only.">
+                                <label for="username" class="form-label fw-bold">Tên người dùng</label>
+                                <input type="text" class="form-control rounded-pill" id="username" name="username" value="<?php echo htmlspecialchars($this->user->username); ?>" required pattern="[a-zA-Z0-9]{3,20}" data-error="Tên người dùng phải có 3-20 ký tự, chỉ bao gồm chữ cái và số.">
                                 <div class="invalid-feedback"></div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label fw-bold">Email Address</label>
-                                <input type="email" class="form-control rounded-pill" id="email" name="email" value="<?php echo htmlspecialchars($this->user->email); ?>" required data-error="Please enter a valid email address.">
+                                <label for="email" class="form-label fw-bold">Địa chỉ Email</label>
+                                <input type="email" class="form-control rounded-pill" id="email" name="email" value="<?php echo htmlspecialchars($this->user->email); ?>" required data-error="Vui lòng nhập địa chỉ email hợp lệ.">
                                 <div class="invalid-feedback"></div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="full_name" class="form-label fw-bold">Full Name</label>
+                            <label for="full_name" class="form-label fw-bold">Họ và tên</label>
                             <input type="text" class="form-control rounded-pill" id="full_name" name="full_name" value="<?php echo htmlspecialchars($this->user->full_name); ?>">
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label fw-bold">Phone Number</label>
-                                <input type="tel" class="form-control rounded-pill" id="phone" name="phone" value="<?php echo htmlspecialchars($this->user->phone); ?>" pattern="[0-9]{10,15}" data-error="Phone number must be 10-15 digits.">
+                                <label for="phone" class="form-label fw-bold">Số điện thoại</label>
+                                <input type="tel" class="form-control rounded-pill" id="phone" name="phone" value="<?php echo htmlspecialchars($this->user->phone); ?>" pattern="[0-9]{10,15}" data-error="Số điện thoại phải có 10-15 chữ số.">
                                 <div class="invalid-feedback"></div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="address" class="form-label fw-bold">Address</label>
+                                <label for="address" class="form-label fw-bold">Địa chỉ</label>
                                 <input type="text" class="form-control rounded-pill" id="address" name="address" value="<?php echo htmlspecialchars($this->user->address); ?>">
                             </div>
                         </div>
                         
                         <div class="text-end">
                             <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm" id="submit-btn">
-                                <i class="fas fa-save me-1"></i> Update Profile
+                                <i class="fas fa-save me-1"></i> Cập nhật hồ sơ
                             </button>
                         </div>
                     </form>
@@ -84,17 +84,17 @@ include 'views/layouts/header.php';
             <!-- Account Info -->
             <div class="card border-0 shadow-sm mt-4 rounded">
                 <div class="card-header bg-light rounded-top">
-                    <h5 class="mb-0">Account Information</h5>
+                    <h5 class="mb-0">Thông tin tài khoản</h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <p><i class="fas fa-calendar-alt me-2 text-primary"></i><strong>Account Created:</strong> <?php echo date('F d, Y', strtotime($this->user->created_at)); ?></p>
-                            <p><i class="fas fa-calendar-check me-2 text-primary"></i><strong>Last Updated:</strong> <?php echo date('F d, Y', strtotime($this->user->updated_at)); ?></p>
+                            <p><i class="fas fa-calendar-alt me-2 text-primary"></i><strong>Tài khoản được tạo:</strong> <?php echo date('d/m/Y', strtotime($this->user->created_at)); ?></p>
+                            <p><i class="fas fa-calendar-check me-2 text-primary"></i><strong>Cập nhật lần cuối:</strong> <?php echo date('d/m/Y', strtotime($this->user->updated_at)); ?></p>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <p><i class="fas fa-user-tag me-2 text-primary"></i><strong>Account Type:</strong> <?php echo ucfirst($this->user->role); ?></p>
-                            <p><i class="fas fa-check-circle me-2 text-primary"></i><strong>Account Status:</strong> <span class="badge bg-success rounded-pill py-2 px-3">Active</span></p>
+                            <p><i class="fas fa-user-tag me-2 text-primary"></i><strong>Loại tài khoản:</strong> <?php echo ucfirst($this->user->role == 'user' ? 'Người dùng' : ($this->user->role == 'admin' ? 'Quản trị viên' : $this->user->role)); ?></p>
+                            <p><i class="fas fa-check-circle me-2 text-primary"></i><strong>Trạng thái tài khoản:</strong> <span class="badge bg-success rounded-pill py-2 px-3">Hoạt động</span></p>
                         </div>
                     </div>
                 </div>
@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
             input.addEventListener('input', function() {
                 if (!this.checkValidity()) {
                     this.classList.add('is-invalid');
-                    this.nextElementSibling.textContent = this.dataset.error || 'Invalid input.';
+                    this.nextElementSibling.textContent = this.dataset.error || 'Dữ liệu không hợp lệ.';
                 } else {
                     this.classList.remove('is-invalid');
                 }
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.querySelectorAll('input').forEach(input => {
                     if (!input.checkValidity()) {
                         input.classList.add('is-invalid');
-                        input.nextElementSibling.textContent = input.dataset.error || 'Invalid input.';
+                        input.nextElementSibling.textContent = this.dataset.error || 'Dữ liệu không hợp lệ.';
                     }
                 });
                 return;
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Disable button and show loading state
             submitBtn.disabled = true;
             const originalBtnText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Updating...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang cập nhật...';
 
             // Collect form data
             const formData = new FormData(form);
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(text);
                     console.log('AJAX data:', data);
                     if (data.success) {
-                        showNotification(data.message || 'Profile updated successfully!', 'success', 'Cập nhật thành công');
+                        showNotification(data.message || 'Hồ sơ đã được cập nhật thành công!', 'success', 'Cập nhật thành công');
                     } else {
                         // Check if error is related to stock (unlikely in profile, but included for consistency)
                         const isStockError = data.message && (
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             data.message.includes('tồn kho')
                         );
                         showNotification(
-                            data.message || 'Failed to update profile.',
+                            data.message || 'Không thể cập nhật hồ sơ.',
                             'error',
                             isStockError ? 'Tồn kho không đủ' : 'Lỗi cập nhật hồ sơ'
                         );
@@ -417,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         text.includes('tồn kho')
                     );
                     showNotification(
-                        text || 'Server error: Invalid response.',
+                        text || 'Lỗi máy chủ: Phản hồi không hợp lệ.',
                         'error',
                         isStockError ? 'Tồn kho không đủ' : 'Lỗi hệ thống'
                     );
@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     error.message.includes('tồn kho')
                 );
                 showNotification(
-                    'An error occurred: ' + error.message,
+                    'Đã xảy ra lỗi: ' + error.message,
                     'error',
                     isStockError ? 'Tồn kho không đủ' : 'Lỗi hệ thống'
                 );
