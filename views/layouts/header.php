@@ -18,7 +18,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
     
-    <link rel="icon" href="https://drive.google.com/file/d/1ViN_1h6L_ykM4syXhelheIDOSYJ4gr8V/view" type="image/jpg">
+    <link rel="icon" href="https://i.pinimg.com/736x/54/61/79/546179c1886e7675a0c887e381f0e176.jpg" type="image/jpg">
     <style>
         :root {
             --primary-color: <?php echo isset($site_colors['primary_color']) ? $site_colors['primary_color'] : '#FF2D55'; ?>;
