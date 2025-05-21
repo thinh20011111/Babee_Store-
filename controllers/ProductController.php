@@ -498,6 +498,11 @@ class ProductController {
             $_SESSION['cart'] = [];
         }
 
+        // Tạo khóa duy nhất cho mục trong giỏ hàng
+        $cart_key = $product_id . '_' . $variant_id;
+        // Lấy số lượng hiện tại trong giỏ hàng (nếu có)
+        $current_quantity = isset($_SESSION['cart'][$cart_key]) ? $_SESSION['cart'][$cart_key]['quantity'] : 0;
+
         if ($variant_id > 0) {
             // Xử lý khi có biến thể
             $variants = $this->product->getVariants();
@@ -518,20 +523,21 @@ class ProductController {
                 exit;
             }
 
-            // Kiểm tra số lượng tồn kho của biến thể
-            if ($selected_variant['stock'] < $quantity) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Số lượng yêu cầu vượt quá tồn kho\n", FILE_APPEND);
+            // Kiểm tra tổng số lượng so với tồn kho của biến thể
+            $total_quantity = $current_quantity + $quantity;
+            if ($selected_variant['stock'] < $total_quantity) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Tổng số lượng ($total_quantity) vượt quá tồn kho biến thể ({$selected_variant['stock']})\n", FILE_APPEND);
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Số lượng vượt quá tồn kho']);
+                echo json_encode([
+                    'success' => false,
+                    'message' => "Số lượng yêu cầu vượt quá tồn kho còn lại ({$selected_variant['stock']} sản phẩm)."
+                ]);
                 exit;
             }
 
-            // Tạo khóa duy nhất cho mục trong giỏ hàng
-            $cart_key = $product_id . '_' . $variant_id;
-
             // Cập nhật hoặc thêm mới mục trong giỏ hàng
             if (isset($_SESSION['cart'][$cart_key])) {
-                $_SESSION['cart'][$cart_key]['quantity'] += $quantity;
+                $_SESSION['cart'][$cart_key]['quantity'] = $total_quantity;
             } else {
                 $_SESSION['cart'][$cart_key] = [
                     'product_id' => $product_id,
@@ -548,19 +554,20 @@ class ProductController {
             // Xử lý khi không có biến thể
             // Giả sử sản phẩm có thuộc tính stock tổng quát
             $product_stock = $this->product->getTotalStock();
-            if ($product_stock < $quantity) {
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Số lượng yêu cầu vượt quá tồn kho sản phẩm\n", FILE_APPEND);
+            $total_quantity = $current_quantity + $quantity;
+            if ($product_stock < $total_quantity) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Tổng số lượng ($total_quantity) vượt quá tồn kho sản phẩm ($product_stock)\n", FILE_APPEND);
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Số lượng vượt quá tồn kho']);
+                echo json_encode([
+                    'success' => false,
+                    'message' => "Số lượng yêu cầu vượt quá tồn kho còn lại ($product_stock sản phẩm)."
+                ]);
                 exit;
             }
 
-            // Tạo khóa duy nhất cho sản phẩm không có biến thể
-            $cart_key = $product_id . '_0';
-
             // Cập nhật hoặc thêm mới mục trong giỏ hàng
             if (isset($_SESSION['cart'][$cart_key])) {
-                $_SESSION['cart'][$cart_key]['quantity'] += $quantity;
+                $_SESSION['cart'][$cart_key]['quantity'] = $total_quantity;
             } else {
                 $_SESSION['cart'][$cart_key] = [
                     'product_id' => $product_id,
