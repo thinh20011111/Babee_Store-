@@ -206,10 +206,8 @@ endif; ?>
                             <select class="form-select rounded-pill" name="size" id="variant-size" required>
                                 <option value="" disabled selected>Chọn kích cỡ</option>
                                 <?php
-                                // Lấy danh sách kích cỡ và kiểm tra stock
                                 $sizes = !empty($variants) ? array_unique(array_column($variants, 'size')) : [];
                                 foreach ($sizes as $size):
-                                    // Kiểm tra tổng stock của kích cỡ này
                                     $size_stock = array_sum(array_map(function($v) use ($size) {
                                         return $v['size'] === $size ? $v['stock'] : 0;
                                     }, $variants));
@@ -531,10 +529,12 @@ endif; ?>
     text-align: center;
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #dc3545;
+    background-color: var(--primary-color, #FF2D55);
     color: white;
     border-radius: 10px;
-    margin-left: 5px;
+    position: absolute;
+    top: -5px;
+    right: -10px;
     transition: transform 0.2s ease;
 }
 .notification {
@@ -1077,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             }, 1000);
                         });
 
-                        // Dispatch custom event for other pages
+                        // Dispatch custom event for header and other pages
                         const cartUpdatedEvent = new CustomEvent('cartUpdated', {
                             detail: { cart_count: data.cart_count }
                         });

@@ -6,6 +6,7 @@ class CartController {
     public function __construct($db) {
         $this->conn = $db;
         if (!$db) {
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController: Database connection failed\n", 3, 'logs/debug.log');
             die("Database connection failed");
         }
         
@@ -14,6 +15,7 @@ class CartController {
             try {
                 $this->cart->loadProductsData($db);
             } catch (Exception $e) {
+                error_log("[" . date('Y-m-d H:i:s') . "] CartController: Failed to load products data: " . $e->getMessage() . "\n", 3, 'logs/debug.log');
                 $items = $this->cart->getItems();
                 foreach ($items as &$item) {
                     $item['data']['stock'] = 10;
@@ -21,6 +23,7 @@ class CartController {
                 $this->cart->setItems($items);
             }
         } catch (Exception $e) {
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController: Constructor error: " . $e->getMessage() . "\n", 3, 'logs/debug.log');
             die("Constructor error: " . htmlspecialchars($e->getMessage()));
         }
     }
@@ -32,10 +35,12 @@ class CartController {
             
             $view_path = 'views/cart/index.php';
             if (!file_exists($view_path)) {
+                error_log("[" . date('Y-m-d H:i:s') . "] CartController: View file not found: $view_path\n", 3, 'logs/debug.log');
                 die("View file not found");
             }
             include $view_path;
         } catch (Exception $e) {
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController: Index error: " . $e->getMessage() . "\n", 3, 'logs/debug.log');
             die("Index error: " . htmlspecialchars($e->getMessage()));
         }
     }
@@ -45,6 +50,8 @@ class CartController {
             $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
             $variant_id = isset($_POST['variant_id']) ? intval($_POST['variant_id']) : 0;
             $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+            
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController::update: product_id=$product_id, variant_id=$variant_id, quantity=$quantity\n", 3, 'logs/debug.log');
             
             if ($product_id <= 0 || $variant_id <= 0 || $quantity <= 0) {
                 echo json_encode(['success' => false, 'message' => 'Invalid product, variant, or quantity.']);
@@ -80,7 +87,9 @@ class CartController {
         $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;
         $variant_id = isset($_GET['variant_id']) ? intval($_GET['variant_id']) : 0;
         
-        if ($product_id > 0 && $variant_id > 0) {
+        error_log("[" . date('Y-m-d H:i:s') . "] CartController::remove: product_id=$product_id, variant_id=$variant_id\n", 3, 'logs/debug.log');
+        
+        if ($product_id > 0 && $variant_id >= 0) {
             $this->cart->removeItem($product_id, $variant_id);
         }
         
@@ -100,8 +109,13 @@ class CartController {
     public function clear() {
         $this->cart->clear();
         
+        error_log("[" . date('Y-m-d H:i:s') . "] CartController::clear: Cart cleared\n", 3, 'logs/debug.log');
+        
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            echo json_encode(['success' => true]);
+            echo json_encode([
+                'success' => true,
+                'cart_count' => 0
+            ]);
             exit;
         }
         
@@ -109,9 +123,29 @@ class CartController {
         exit;
     }
     
+    public function getCartCount() {
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            $cart_count = $this->cart->getTotalItems();
+            
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController::getCartCount: cart_count=$cart_count\n", 3, 'logs/debug.log');
+            
+            echo json_encode([
+                'success' => true,
+                'cart_count' => $cart_count
+            ]);
+            exit;
+        }
+        
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ']);
+        exit;
+    }
+    
     public function applyPromotion() {
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             $code = isset($_POST['code']) ? trim($_POST['code']) : '';
+            
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController::applyPromotion: code=$code\n", 3, 'logs/debug.log');
             
             if (empty($code)) {
                 echo json_encode(['success' => false, 'message' => 'Vui lòng nhập mã khuyến mãi.']);
@@ -139,7 +173,8 @@ class CartController {
                     'success' => true,
                     'message' => $result['message'],
                     'discount_amount' => $discount,
-                    'new_total' => $cart_total - $discount
+                    'new_total' => $cart_total - $discount,
+                    'cart_count' => $this->cart->getTotalItems()
                 ]);
             } else {
                 echo json_encode(['success' => false, 'message' => $result['message']]);
@@ -154,10 +189,13 @@ class CartController {
     public function removePromotion() {
         unset($_SESSION['promotion']);
         
+        error_log("[" . date('Y-m-d H:i:s') . "] CartController::removePromotion: Promotion removed\n", 3, 'logs/debug.log');
+        
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             echo json_encode([
                 'success' => true,
-                'cart_total' => $this->cart->getTotalPrice()
+                'cart_total' => $this->cart->getTotalPrice(),
+                'cart_count' => $this->cart->getTotalItems()
             ]);
             exit;
         }
@@ -182,8 +220,8 @@ class CartController {
         
         $cart_total = $cart_subtotal - $promotion_discount;
         
-        error_log("DEBUG: CartController::checkout - cart_items: " . print_r($cart_items, true) . "\n", 3, '/tmp/cart_debug.log');
-        error_log("DEBUG: CartController::checkout - cart_subtotal: $cart_subtotal, promotion_discount: $promotion_discount, cart_total: $cart_total\n", 3, '/tmp/cart_debug.log');
+        error_log("[" . date('Y-m-d H:i:s') . "] CartController::checkout - cart_items: " . print_r($cart_items, true) . "\n", 3, 'logs/debug.log');
+        error_log("[" . date('Y-m-d H:i:s') . "] CartController::checkout - cart_subtotal: $cart_subtotal, promotion_discount: $promotion_discount, cart_total: $cart_total\n", 3, 'logs/debug.log');
         
         $user_data = [];
         if (isset($_SESSION['user_id'])) {
@@ -212,7 +250,7 @@ class CartController {
             $payment_method = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : '';
             $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
             
-            error_log("DEBUG: CartController::checkout - full_name: $full_name\n", 3, '/tmp/cart_debug.log');
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController::checkout - full_name: $full_name\n", 3, 'logs/debug.log');
             
             if (empty($full_name)) {
                 $error = "Vui lòng nhập tên người nhận.";
@@ -280,6 +318,7 @@ class CartController {
         
         $view_path = 'views/checkout/index.php';
         if (!file_exists($view_path)) {
+            error_log("[" . date('Y-m-d H:i:s') . "] CartController: View file not found: $view_path\n", 3, 'logs/debug.log');
             die("View file not found");
         }
         include $view_path;

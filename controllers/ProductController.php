@@ -465,7 +465,7 @@ class ProductController {
         if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không phải yêu cầu AJAX\n", FILE_APPEND);
             http_response_code(400);
-            echo json_encode(['error' => 'Yêu cầu không hợp lệ']);
+            echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ']);
             exit;
         }
 
@@ -477,10 +477,10 @@ class ProductController {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Add to cart: product_id=$product_id, variant_id=$variant_id, quantity=$quantity\n", FILE_APPEND);
 
         // Kiểm tra dữ liệu đầu vào
-        if ($product_id <= 0 || $variant_id <= 0 || $quantity <= 0) {
+        if ($product_id <= 0 || $quantity <= 0) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
             http_response_code(400);
-            echo json_encode(['error' => 'Dữ liệu không hợp lệ']);
+            echo json_encode(['success' => false, 'message' => 'Dữ liệu không hợp lệ']);
             exit;
         }
 
@@ -489,34 +489,7 @@ class ProductController {
         if (!$this->product->readOne()) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy sản phẩm với ID $product_id\n", FILE_APPEND);
             http_response_code(404);
-            echo json_encode(['error' => 'Sản phẩm không tồn tại']);
-            exit;
-        }
-
-        // Kiểm tra biến thể
-        $variants = $this->product->getVariants();
-        $variant_exists = false;
-        $selected_variant = null;
-        foreach ($variants as $variant) {
-            if ($variant['id'] == $variant_id) {
-                $variant_exists = true;
-                $selected_variant = $variant;
-                break;
-            }
-        }
-
-        if (!$variant_exists) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy biến thể với ID $variant_id\n", FILE_APPEND);
-            http_response_code(404);
-            echo json_encode(['error' => 'Biến thể không tồn tại']);
-            exit;
-        }
-
-        // Kiểm tra số lượng tồn kho
-        if ($selected_variant['stock'] < $quantity) {
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Số lượng yêu cầu vượt quá tồn kho\n", FILE_APPEND);
-            http_response_code(400);
-            echo json_encode(['error' => 'Số lượng vượt quá tồn kho']);
+            echo json_encode(['success' => false, 'message' => 'Sản phẩm không tồn tại']);
             exit;
         }
 
@@ -525,35 +498,94 @@ class ProductController {
             $_SESSION['cart'] = [];
         }
 
-        // Tạo khóa duy nhất cho mục trong giỏ hàng
-        $cart_key = $product_id . '_' . $variant_id;
+        if ($variant_id > 0) {
+            // Xử lý khi có biến thể
+            $variants = $this->product->getVariants();
+            $variant_exists = false;
+            $selected_variant = null;
+            foreach ($variants as $variant) {
+                if ($variant['id'] == $variant_id) {
+                    $variant_exists = true;
+                    $selected_variant = $variant;
+                    break;
+                }
+            }
 
-        // Cập nhật hoặc thêm mới mục trong giỏ hàng
-        if (isset($_SESSION['cart'][$cart_key])) {
-            $_SESSION['cart'][$cart_key]['quantity'] += $quantity;
+            if (!$variant_exists) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không tìm thấy biến thể với ID $variant_id\n", FILE_APPEND);
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Biến thể không tồn tại']);
+                exit;
+            }
+
+            // Kiểm tra số lượng tồn kho của biến thể
+            if ($selected_variant['stock'] < $quantity) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Số lượng yêu cầu vượt quá tồn kho\n", FILE_APPEND);
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Số lượng vượt quá tồn kho']);
+                exit;
+            }
+
+            // Tạo khóa duy nhất cho mục trong giỏ hàng
+            $cart_key = $product_id . '_' . $variant_id;
+
+            // Cập nhật hoặc thêm mới mục trong giỏ hàng
+            if (isset($_SESSION['cart'][$cart_key])) {
+                $_SESSION['cart'][$cart_key]['quantity'] += $quantity;
+            } else {
+                $_SESSION['cart'][$cart_key] = [
+                    'product_id' => $product_id,
+                    'variant_id' => $variant_id,
+                    'quantity' => $quantity,
+                    'name' => $this->product->name,
+                    'price' => $selected_variant['price'] > 0 ? $selected_variant['price'] : $this->product->price,
+                    'color' => $selected_variant['color'],
+                    'size' => $selected_variant['size'],
+                    'image' => $this->product->image
+                ];
+            }
         } else {
-            $_SESSION['cart'][$cart_key] = [
-                'product_id' => $product_id,
-                'variant_id' => $variant_id,
-                'quantity' => $quantity,
-                'name' => $this->product->name,
-                'price' => $selected_variant['price'] > 0 ? $selected_variant['price'] : $this->product->price,
-                'color' => $selected_variant['color'],
-                'size' => $selected_variant['size'],
-                'image' => $this->product->image
-            ];
+            // Xử lý khi không có biến thể
+            // Giả sử sản phẩm có thuộc tính stock tổng quát
+            $product_stock = $this->product->getTotalStock();
+            if ($product_stock < $quantity) {
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Số lượng yêu cầu vượt quá tồn kho sản phẩm\n", FILE_APPEND);
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Số lượng vượt quá tồn kho']);
+                exit;
+            }
+
+            // Tạo khóa duy nhất cho sản phẩm không có biến thể
+            $cart_key = $product_id . '_0';
+
+            // Cập nhật hoặc thêm mới mục trong giỏ hàng
+            if (isset($_SESSION['cart'][$cart_key])) {
+                $_SESSION['cart'][$cart_key]['quantity'] += $quantity;
+            } else {
+                $_SESSION['cart'][$cart_key] = [
+                    'product_id' => $product_id,
+                    'variant_id' => 0,
+                    'quantity' => $quantity,
+                    'name' => $this->product->name,
+                    'price' => $this->product->sale_price > 0 ? $this->product->sale_price : $this->product->price,
+                    'color' => null,
+                    'size' => null,
+                    'image' => $this->product->image
+                ];
+            }
         }
 
         // Tính tổng số lượng trong giỏ hàng
-        $total_items = array_sum(array_column($_SESSION['cart'], 'quantity'));
+        $cart_count = array_sum(array_column($_SESSION['cart'], 'quantity'));
 
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã thêm vào giỏ hàng, total_items=$total_items\n", FILE_APPEND);
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã thêm vào giỏ hàng, cart_count=$cart_count\n", FILE_APPEND);
 
         // Trả về phản hồi JSON
+        header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
             'message' => 'Đã thêm sản phẩm vào giỏ hàng',
-            'total_items' => $total_items
+            'cart_count' => $cart_count
         ]);
         exit;
     }

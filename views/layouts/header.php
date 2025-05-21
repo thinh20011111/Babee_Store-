@@ -177,11 +177,17 @@
 
     // Khởi tạo kết nối cơ sở dữ liệu nếu chưa có
     if (!isset($conn)) {
-        require_once 'config/database.php';
-        $db = new Database();
-        $conn = $db->getConnection();
-        if (!$conn) {
-            echo "<div class='alert alert-danger'>Lỗi: Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình.</div>";
+        try {
+            require_once 'config/database.php';
+            $db = new Database();
+            $conn = $db->getConnection();
+            if (!$conn) {
+                echo "<div class='alert alert-danger'>Lỗi: Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình.</div>";
+                error_log("[" . date('Y-m-d H:i:s') . "] header.php: Database connection failed\n", 3, 'logs/debug.log');
+            }
+        } catch (Exception $e) {
+            echo "<div class='alert alert-danger'>Lỗi kết nối cơ sở dữ liệu: " . htmlspecialchars($e->getMessage()) . "</div>";
+            error_log("[" . date('Y-m-d H:i:s') . "] header.php: Database connection error: " . $e->getMessage() . "\n", 3, 'logs/debug.log');
         }
     }
     ?>
@@ -199,7 +205,7 @@
                 <div class="col-md-6 text-center text-md-end small">
                     <?php if(isset($_SESSION['user_id'])): ?>
                         <a href="index.php?controller=user&action=profile" class="text-light me-3">
-                            <i class="fas fa-user me-1"></i> <?php echo $_SESSION['username']; ?>
+                            <i class="fas fa-user me-1"></i> <?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?>
                         </a>
                         <a href="index.php?controller=user&action=orders" class="text-light me-3">
                             <i class="fas fa-box me-1"></i> Đơn hàng
@@ -246,13 +252,18 @@
                         </a>
                         <?php
                         // Initialize cart
-                        $cart = new Cart();
-                        $cart_count = $cart->getTotalItems();
+                        $cart_count = 0;
+                        try {
+                            $cart = new Cart();
+                            $cart_count = $cart->getTotalItems();
+                        } catch (Exception $e) {
+                            error_log("[" . date('Y-m-d H:i:s') . "] header.php: Failed to initialize Cart: " . $e->getMessage() . "\n", 3, 'logs/debug.log');
+                        }
                         ?>
                         <a href="index.php?controller=cart&action=index" class="btn btn-link text-dark position-relative">
                             <i class="fas fa-shopping-cart fs-5"></i>
                             <span class="cart-count-badge" style="display: <?php echo ($cart_count > 0) ? 'inline-block' : 'none'; ?>">
-                                <?php echo htmlspecialchars($cart_count ?? 0); ?>
+                                <?php echo htmlspecialchars($cart_count); ?>
                             </span>
                         </a>
                     </div>
@@ -295,16 +306,17 @@
                     if (!$conn) {
                         echo "<li class='nav-item text-danger'>Lỗi: Kết nối cơ sở dữ liệu thất bại.</li>";
                     } else {
-                        $category = new Category($conn);
-                        $categoryStmt = $category->read();
+                        try {
+                            $category = new Category($conn);
+                            $categoryStmt = $category->read();
 
-                        if ($categoryStmt === false) {
-                            echo "<li class='nav-item text-danger'>Lỗi: Không thể lấy danh sách danh mục.</li>";
-                        } else {
-                            $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
+                            if ($categoryStmt === false) {
+                                echo "<li class='nav-item text-danger'>Lỗi: Không thể lấy danh sách danh mục.</li>";
+                            } else {
+                                $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
 
-                            if ($categoryStmt->rowCount() > 0) {
-                                while ($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
+                                if ($categoryStmt->rowCount() > 0) {
+                                    while ($row = $categoryStmt->fetch(PDO::FETCH_ASSOC)):
                     ?>
                     <li class="nav-item">
                         <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold text-primary' : ''; ?>" 
@@ -313,10 +325,14 @@
                         </a>
                     </li>
                     <?php
-                                endwhile;
-                            } else {
-                                echo "<li class='nav-item'>Không có danh mục nào.</li>";
+                                    endwhile;
+                                } else {
+                                    echo "<li class='nav-item'>Không có danh mục nào.</li>";
+                                }
                             }
+                        } catch (Exception $e) {
+                            echo "<li class='nav-item text-danger'>Lỗi: Không thể lấy danh mục: " . htmlspecialchars($e->getMessage()) . "</li>";
+                            error_log("[" . date('Y-m-d H:i:s') . "] header.php: Failed to read categories: " . $e->getMessage() . "\n", 3, 'logs/debug.log');
                         }
                     }
                     ?>
@@ -348,36 +364,52 @@
         // Function to update cart count badges
         function updateCartCount(count) {
             const cartBadges = document.querySelectorAll('.cart-count-badge');
+            const validCount = typeof count === 'number' && count >= 0 ? count : 0;
             cartBadges.forEach(badge => {
-                badge.textContent = count || 0;
-                badge.style.display = count > 0 ? 'inline-block' : 'none';
+                badge.textContent = validCount;
+                badge.style.display = validCount > 0 ? 'inline-block' : 'none';
                 // Add bounce animation
                 badge.classList.add('animate__animated', 'animate__bounce');
                 setTimeout(() => {
                     badge.classList.remove('animate__animated', 'animate__bounce');
                 }, 1000);
             });
+            console.log('Cart count updated:', validCount);
         }
 
         // Listen for custom cart update event
         document.addEventListener('cartUpdated', function(e) {
             console.log('Cart updated event received:', e.detail);
-            updateCartCount(e.detail.cart_count);
+            if (e.detail && typeof e.detail.cart_count === 'number') {
+                updateCartCount(e.detail.cart_count);
+            } else {
+                console.warn('Invalid cart count in cartUpdated event:', e.detail);
+            }
         });
 
-        // Optional: Fetch initial cart count on page load (if needed)
+        // Fetch initial cart count on page load
         fetch('index.php?controller=cart&action=getCartCount', {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
+            console.log('Initial cart count fetched:', data);
+            if (data.success && typeof data.cart_count === 'number') {
                 updateCartCount(data.cart_count);
+            } else {
+                console.warn('Invalid cart count data:', data);
             }
         })
-        .catch(error => console.error('Error fetching initial cart count:', error));
+        .catch(error => {
+            console.error('Error fetching initial cart count:', error);
+        });
     });
     </script>
