@@ -12,8 +12,8 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Google Fonts - Using Open Sans as fallback for ValueSansProVN -->
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Quicksand for entire site -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
@@ -33,9 +33,24 @@
             --danger-color: <?php echo isset($site_colors['danger_color']) ? $site_colors['danger_color'] : '#FF3547'; ?>;
         }
 
-        /* General Font Styling */
+        /* General Font Styling - Quicksand for all elements */
         body, h1, h2, h3, h4, h5, h6, p, a, button, input {
-            font-family: 'Open Sans', sans-serif !important;
+            font-family: 'Quicksand', sans-serif !important;
+        }
+
+        /* Navigation Categories */
+        .main-nav .nav-link {
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            color: var(--text-color, #121212);
+            transition: color 0.3s ease;
+        }
+
+        .main-nav .nav-link:hover,
+        .main-nav .nav-link.active {
+            color: var(--primary-color, #FF2D55);
         }
 
         /* Tùy chỉnh header */
@@ -49,7 +64,6 @@
         }
 
         .logo-text {
-            font-family: 'Open Sans', sans-serif;
             font-weight: 700;
         }
 
@@ -57,6 +71,7 @@
             border: 1px solid var(--light-bg-color);
             padding: 8px 15px;
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .search-form .btn {
@@ -66,6 +81,7 @@
         /* Tùy chỉnh top bar */
         .top-bar .small {
             font-size: 0.75rem;
+            font-weight: 500;
         }
 
         .top-bar .admin-link {
@@ -118,6 +134,10 @@
 
             .top-bar .admin-link {
                 margin-left: 1rem;
+            }
+
+            .main-nav .nav-link {
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -264,7 +284,7 @@
                     ?>
                     <li class="nav-item">
                         <a class="nav-link <?php echo ($category_id == $row['id']) ? 'active fw-bold text-primary' : ''; ?>" 
-                        href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
+                           href="index.php?controller=product&action=list&category_id=<?php echo $row['id']; ?>">
                             <?php echo strtoupper(htmlspecialchars($row['name'])); ?>
                         </a>
                     </li>
@@ -279,8 +299,8 @@
 
                     <li class="nav-item">
                         <a class="nav-link <?php echo (isset($_GET['controller']) && $_GET['controller'] == 'product' && isset($_GET['is_sale'])) ? 'active fw-bold text-danger' : ''; ?>" 
-                        href="index.php?controller=product&action=list&is_sale=1">
-                        SALE
+                           href="index.php?controller=product&action=list&is_sale=1">
+                            SALE
                         </a>
                     </li>
 

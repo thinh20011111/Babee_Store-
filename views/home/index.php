@@ -372,12 +372,12 @@ include 'views/layouts/header.php';
 <?php include 'views/layouts/footer.php'; ?>
 
 <style>
-    /* Import Google Fonts - Using Open Sans as fallback for ValueSansProVN */
-    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+    /* Import Google Fonts - Quicksand for entire site */
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
 
     /* General Font Styling */
     body, h1, h2, h3, h4, h5, h6, p, a, button, input, .card-title, .card-text {
-        font-family: 'Open Sans', sans-serif !important;
+        font-family: 'Quicksand', sans-serif !important;
     }
 
     /* Banner Carousel Styling */
@@ -417,7 +417,7 @@ include 'views/layouts/header.php';
 
     .banner-carousel .carousel-caption p {
         font-size: 1.2rem;
-        font-weight: 400;
+        font-weight: 500;
         margin: 15px 0 20px;
         line-height: 1.5;
         color: #e9ecef;
@@ -425,7 +425,7 @@ include 'views/layouts/header.php';
 
     .banner-carousel .carousel-caption .btn {
         padding: 10px 25px;
-        font-weight: 500;
+        font-weight: 600;
         background-color: #f8f9fa;
         color: #212529;
         border: none;

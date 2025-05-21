@@ -87,7 +87,7 @@
             font-size: 2rem;
             margin-bottom: 0;
             line-height: 1.2;
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Quicksand', sans-serif;
             font-weight: 700;
         }
 
@@ -96,7 +96,7 @@
             font-weight: 600;
             text-transform: uppercase;
             color: #ffffff;
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Quicksand', sans-serif;
         }
 
         .site-footer .footer-links {
@@ -108,7 +108,8 @@
             text-decoration: none;
             transition: opacity 0.2s ease;
             font-size: 0.95rem;
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
         }
 
         .site-footer .footer-links .footer-link:hover {
@@ -133,7 +134,8 @@
         .site-footer .footer-contact-info li {
             color: #adb5bd;
             font-size: 0.95rem;
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
         }
 
         .site-footer .footer-contact-info i {
@@ -149,7 +151,8 @@
 
         .site-footer .text-white-50 {
             color: #adb5bd !important;
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
         }
 
         /* Responsive adjustments */
