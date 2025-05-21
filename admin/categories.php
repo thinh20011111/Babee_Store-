@@ -83,13 +83,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Xử lý tải ảnh lên
         $category->image = $edit_category ? $edit_category->image : '';
         if (isset($_FILES['image']) && $_FILES['image']['error'] != UPLOAD_ERR_NO_FILE) {
-            $upload_dir = '../uploads/categories/';
+            $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/categories/';
             $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
             $max_size = 5 * 1024 * 1024; // 5MB
 
             // Tạo thư mục tải lên nếu chưa tồn tại
             if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0755, true);
+                if (!mkdir($upload_dir, 0755, true)) {
+                    throw new Exception("Không thể tạo thư mục uploads/categories.");
+                }
+            }
+
+            // Kiểm tra quyền ghi thư mục
+            if (!is_writable($upload_dir)) {
+                throw new Exception("Thư mục uploads/categories không có quyền ghi.");
             }
 
             $file = $_FILES['image'];
@@ -98,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     throw new Exception("Chỉ chấp nhận hình ảnh định dạng JPEG, PNG và GIF.");
                 }
                 if ($file['size'] > $max_size) {
-                    throw new Exception("Kích thước hình ảnh phải nhỏ hơn more than 5MB.");
+                    throw new Exception("Kích thước hình ảnh phải nhỏ hơn 5MB.");
                 }
 
                 $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
@@ -108,14 +115,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 if (move_uploaded_file($file['tmp_name'], $destination)) {
                     $category->image = 'uploads/categories/' . $filename;
                     // Xóa ảnh cũ nếu đang cập nhật
-                    if ($edit_category && $edit_category->image && file_exists('../' . $edit_category->image)) {
-                        unlink('../' . $edit_category->image);
+                    if ($edit_category && $edit_category->image && file_exists($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image)) {
+                        unlink($_SERVER['DOCUMENT_ROOT'] . '/' . $edit_category->image);
                     }
                 } else {
-                    throw new Exception("Tải ảnh lên thất bại.");
+                    error_log("Lỗi di chuyển file: Từ " . $file['tmp_name'] . " đến " . $destination);
+                    throw new Exception("Không thể di chuyển file hình ảnh vào thư mục đích.");
                 }
             } else {
-                throw new Exception("Lỗi tải ảnh: " . $file['error']);
+                throw new Exception("Lỗi tải ảnh: Mã lỗi " . $file['error']);
             }
         }
 
@@ -257,7 +265,7 @@ try {
                                         <?php if ($edit_category && $edit_category->image): ?>
                                         <div class="mt-2">
                                             <p>Hình ảnh hiện tại:</p>
-                                            <img src="../<?php echo htmlspecialchars($edit_category->image); ?>" alt="Hình ảnh danh mục" class="img-thumbnail" style="max-width: 150px;">
+                                            <img src="/<?php echo htmlspecialchars($edit_category->image); ?>" alt="Hình ảnh danh mục" class="img-thumbnail" style="max-width: 150px;">
                                         </div>
                                         <?php endif; ?>
                                     </div>
@@ -306,7 +314,7 @@ try {
                                                 <td><?php echo $cat['parent_id'] ? htmlspecialchars($category->getNameById($cat['parent_id'])) : 'Không có'; ?></td>
                                                 <td>
                                                     <?php if ($cat['image']): ?>
-                                                    <img src="../<?php echo htmlspecialchars($cat['image']); ?>" alt="Hình ảnh danh mục" class="img-thumbnail" style="max-width: 50px;">
+                                                    <img src="/<?php echo htmlspecialchars($cat['image']); ?>" alt="Hình ảnh danh mục" class="img-thumbnail" style="max-width: 50px;">
                                                     <?php else: ?>
                                                     Không có hình ảnh
                                                     <?php endif; ?>
