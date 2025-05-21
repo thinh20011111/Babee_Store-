@@ -6,14 +6,17 @@
     <title><?php echo isset($page_title) ? $page_title . ' - ' . SITE_NAME : SITE_NAME; ?></title>
     <meta name="description" content="<?php echo SITE_DESCRIPTION; ?>">
     
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts - Quicksand for entire site -->
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
@@ -95,6 +98,26 @@
             text-decoration: none;
         }
 
+        /* Cart badge styling */
+        .cart-count-badge {
+            display: inline-block;
+            min-width: 20px;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: var(--primary-color, #FF2D55);
+            color: white;
+            border-radius: 10px;
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            transition: transform 0.2s ease;
+        }
+
         /* Tùy chỉnh cho mobile */
         @media (max-width: 767.98px) {
             .site-logo {
@@ -124,9 +147,11 @@
                 font-size: 1.2rem;
             }
 
-            .badge {
+            .cart-count-badge {
                 font-size: 0.65rem;
-                padding: 3px 6px;
+                padding: 2px 5px;
+                top: -3px;
+                right: -8px;
             }
 
             .top-bar .small {
@@ -226,11 +251,9 @@
                         ?>
                         <a href="index.php?controller=cart&action=index" class="btn btn-link text-dark position-relative">
                             <i class="fas fa-shopping-cart fs-5"></i>
-                            <?php if($cart_count > 0): ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                                <?php echo $cart_count; ?>
+                            <span class="cart-count-badge" style="display: <?php echo ($cart_count > 0) ? 'inline-block' : 'none'; ?>">
+                                <?php echo htmlspecialchars($cart_count ?? 0); ?>
                             </span>
-                            <?php endif; ?>
                         </a>
                     </div>
                 </div>
@@ -318,3 +341,43 @@
     <!-- Main Content -->
     <main class="main-content py-4">
         <div class="container">
+
+    <!-- JavaScript for dynamic cart updates -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to update cart count badges
+        function updateCartCount(count) {
+            const cartBadges = document.querySelectorAll('.cart-count-badge');
+            cartBadges.forEach(badge => {
+                badge.textContent = count || 0;
+                badge.style.display = count > 0 ? 'inline-block' : 'none';
+                // Add bounce animation
+                badge.classList.add('animate__animated', 'animate__bounce');
+                setTimeout(() => {
+                    badge.classList.remove('animate__animated', 'animate__bounce');
+                }, 1000);
+            });
+        }
+
+        // Listen for custom cart update event
+        document.addEventListener('cartUpdated', function(e) {
+            console.log('Cart updated event received:', e.detail);
+            updateCartCount(e.detail.cart_count);
+        });
+
+        // Optional: Fetch initial cart count on page load (if needed)
+        fetch('index.php?controller=cart&action=getCartCount', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateCartCount(data.cart_count);
+            }
+        })
+        .catch(error => console.error('Error fetching initial cart count:', error));
+    });
+    </script>
