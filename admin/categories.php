@@ -126,12 +126,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (isset($_POST['edit_id'])) {
             $category->id = intval($_POST['edit_id']);
+        
+            // Nếu không upload ảnh mới => giữ ảnh cũ
+            if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+                $category->image = $edit_category->image ?? '';
+            }
+        
             if ($category->update()) {
-                $success_message = "Cập nhật thành công.";
+                $success_message = "Cập nhật danh mục thành công.";
                 $category->readOne();
                 $edit_category = $category;
             } else {
-                $error_message = "Cập nhật thất bại.";
+                $error_message = "Cập nhật danh mục thất bại.";
             }
         } else {
             if ($category->create()) {
