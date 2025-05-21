@@ -31,9 +31,9 @@ try {
     $debug_logs[] = "Database connection established successfully.";
 } catch (Exception $e) {
     $error_occurred = true;
-    $debug_logs[] = "Database connection error: " . $e->getMessage();
-    error_log("Database connection error: " . $e->getMessage());
-    die("Internal Server Error - Check logs for details.");
+    $debug_logs[] = "Lỗi kết nối cơ sở dữ liệu: " . $e->getMessage();
+    error_log("Lỗi kết nối cơ sở dữ liệu: " . $e->getMessage());
+    die("Lỗi máy chủ nội bộ - Vui lòng kiểm tra nhật ký để biết chi tiết.");
 }
 
 // Get page parameter (default to dashboard)
@@ -42,7 +42,7 @@ $page = filter_input(INPUT_GET, 'page', FILTER_SANITIZE_STRING) ?: 'dashboard';
 // Define allowed pages for all roles
 $allowed_pages = [
     'dashboard', 'orders', 'products', 'product-edit', 'users', 'traffic',
-    'banners', 'settings', 'promotions', 'reports'
+    'banners', 'settings', 'promotions', 'reports', 'categories' // Added categories
 ];
 
 // Restrict staff access
@@ -52,16 +52,16 @@ if ($_SESSION['user_role'] === 'staff') {
 
 // Validate the requested page
 if (!in_array($page, $allowed_pages)) {
-    $debug_logs[] = "Invalid page requested: $page, redirecting to dashboard";
+    $debug_logs[] = "Trang không hợp lệ được yêu cầu: $page, chuyển hướng về trang chủ";
     $page = 'dashboard';
 }
 
 // Log page access
-$debug_logs[] = "Page accessed: $page by user_role: {$_SESSION['user_role']}";
+$debug_logs[] = "Trang được truy cập: $page bởi user_role: {$_SESSION['user_role']}";
 
 // Users page debug
 if ($page === 'users' && $_SESSION['user_role'] !== 'admin') {
-    $debug_logs[] = "Access denied to users page for non-admin user_role: {$_SESSION['user_role']}";
+    $debug_logs[] = "Truy cập bị từ chối vào trang người dùng đối với user_role không phải admin: {$_SESSION['user_role']}";
     $_SESSION['error_message'] = "Bạn không có quyền truy cập trang này.";
     header("Location: index.php?page=dashboard");
     exit;
@@ -98,11 +98,11 @@ if ($page == 'product-edit') {
         // Lấy danh sách danh mục
         $category_model = new Category($conn);
         $categories = $category_model->read();
-        $debug_logs[] = "Product-edit initialized: ID=$product_id";
+        $debug_logs[] = "Khởi tạo product-edit: ID=$product_id";
     } catch (Exception $e) {
         $error_occurred = true;
-        $debug_logs[] = "Error initializing product-edit: " . $e->getMessage();
-        error_log("Product-edit error: " . $e->getMessage());
+        $debug_logs[] = "Lỗi khởi tạo product-edit: " . $e->getMessage();
+        error_log("Lỗi product-edit: " . $e->getMessage());
         $_SESSION['error_message'] = "Lỗi khi tải trang chỉnh sửa sản phẩm.";
         header("Location: index.php?page=products");
         exit;
@@ -164,17 +164,17 @@ if ($page === 'dashboard') {
             }
         }
         if (empty($traffic_data)) {
-            $traffic_labels = ['No Data'];
+            $traffic_labels = ['Không có dữ liệu'];
             $traffic_data = [0];
         }
 
         $traffic_labels_json = json_encode($traffic_labels, JSON_INVALID_UTF8_SUBSTITUTE);
         $traffic_data_json = json_encode($traffic_data, JSON_INVALID_UTF8_SUBSTITUTE);
-        $debug_logs[] = "Dashboard data fetched successfully.";
+        $debug_logs[] = "Dữ liệu trang chủ được tải thành công.";
     } catch (Exception $e) {
         $error_occurred = true;
-        $debug_logs[] = "Error fetching dashboard data: " . $e->getMessage();
-        error_log("Dashboard data error: " . $e->getMessage());
+        $debug_logs[] = "Lỗi tải dữ liệu trang chủ: " . $e->getMessage();
+        error_log("Lỗi dữ liệu trang chủ: " . $e->getMessage());
     }
 }
 
@@ -184,11 +184,11 @@ if (!defined('CURRENCY')) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Bảng điều khiển quản trị</title>
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -201,8 +201,8 @@ if (!defined('CURRENCY')) {
     <?php 
     $sidebar_included = include_once 'sidebar.php';
     if (!$sidebar_included) {
-        $debug_logs[] = "Error: Failed to include sidebar.php";
-        error_log("Failed to include sidebar.php");
+        $debug_logs[] = "Lỗi: Không thể bao gồm sidebar.php";
+        error_log("Không thể bao gồm sidebar.php");
     }
     ?>
 
@@ -210,6 +210,15 @@ if (!defined('CURRENCY')) {
     <div class="flex-grow-1 p-4 bg-light">
         <div class="container-fluid">
             <?php
+            // Display error message if set
+            if (isset($_SESSION['error_message'])) {
+                echo "<div class='alert alert-danger alert-dismissible fade show' role='alert'>";
+                echo htmlspecialchars($_SESSION['error_message']);
+                echo "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>";
+                echo "</div>";
+                unset($_SESSION['error_message']);
+            }
+
             // Include the requested page
             $page_file = $page . '.php';
             if (file_exists($page_file)) {
@@ -218,48 +227,60 @@ if (!defined('CURRENCY')) {
                     include_once $page_file;
                     $page_content = ob_get_clean();
                     echo $page_content;
-                    $debug_logs[] = "Loaded page: $page_file";
+                    $debug_logs[] = "Đã tải trang: $page_file";
                 } catch (Exception $e) {
                     $error_occurred = true;
-                    $debug_logs[] = "Error loading page $page_file: " . $e->getMessage();
-                    error_log("Error loading page $page_file: " . $e->getMessage());
-                    echo "<div class='alert alert-danger'>Error loading page: " . htmlspecialchars($e->getMessage()) . "</div>";
+                    $debug_logs[] = "Lỗi tải trang $page_file: " . $e->getMessage();
+                    error_log("Lỗi tải trang $page_file: " . $e->getMessage());
+                    echo "<div class='alert alert-danger'>Lỗi tải trang: " . htmlspecialchars($e->getMessage()) . "</div>";
                 }
             } else {
-                $debug_logs[] = "Page not found: $page_file";
+                $debug_logs[] = "Không tìm thấy trang: $page_file";
                 echo "<div class='alert alert-warning'>Trang <strong>" . htmlspecialchars($page) . "</strong> đang được phát triển.</div>";
             }
             ?>
         </div>
+
+        <!-- Debug Information -->
+        <?php if (DEBUG_MODE && !empty($debug_logs)): ?>
+        <div class="debug-info mt-4">
+            <h5>Thông tin gỡ lỗi</h5>
+            <ul>
+                <?php foreach ($debug_logs as $log): ?>
+                <li><?php echo htmlspecialchars($log); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <?php if ($page === 'dashboard'): ?>
     <script>
         window.addEventListener("load", function() {
-            console.log("Dashboard script started at <?php echo date('Y-m-d H:i:s'); ?>");
+            console.log("Kịch bản trang chủ bắt đầu tại <?php echo date('Y-m-d H:i:s'); ?>");
             if (!window.Chart) {
-                console.error("Chart.js not loaded!");
-                document.getElementById('trafficChartError').innerText = "Error: Chart.js failed to load. Check CDN or network.";
+                console.error("Chart.js không được tải!");
+                document.getElementById('trafficChartError').innerText = "Lỗi: Chart.js không tải được. Kiểm tra CDN hoặc mạng.";
                 return;
             }
             const trafficCtx = document.getElementById('trafficChart');
             if (!trafficCtx) {
-                console.error("Traffic chart canvas not found!");
-                document.getElementById('trafficChartError').innerText = "Error: Traffic chart canvas not found.";
+                console.error("Không tìm thấy canvas biểu đồ lượt truy cập!");
+                document.getElementById('trafficChartError').innerText = "Lỗi: Không tìm thấy canvas biểu đồ lượt truy cập.";
                 return;
             }
             const trafficContext = trafficCtx.getContext('2d');
             const trafficLabels = <?php echo $traffic_labels_json; ?>;
             const trafficData = <?php echo $traffic_data_json; ?>;
             if (!Array.isArray(trafficLabels) || !Array.isArray(trafficData)) {
-                console.error("Invalid data format:", { trafficLabels, trafficData });
-                document.getElementById('trafficChartError').innerText = "Error: Invalid data format for chart.";
+                console.error("Định dạng dữ liệu không hợp lệ:", { trafficLabels, trafficData });
+                document.getElementById('trafficChartError').innerText = "Lỗi: Định dạng dữ liệu không hợp lệ cho biểu đồ.";
                 return;
             }
             if (trafficLabels.length !== trafficData.length) {
-                console.error("Mismatch between labels and data length:", trafficLabels.length, trafficData.length);
-                document.getElementById('trafficChartError').innerText = "Error: Mismatch between labels and data length.";
+                console.error("Không khớp giữa độ dài nhãn và dữ liệu:", trafficLabels.length, trafficData.length);
+                document.getElementById('trafficChartError').innerText = "Lỗi: Không khớp giữa độ dài nhãn và dữ liệu.";
                 return;
             }
             const trafficGradient = trafficContext.createLinearGradient(0, 0, 0, 400);
@@ -308,10 +329,10 @@ if (!defined('CURRENCY')) {
                         interaction: { intersect: false, mode: 'index' }
                     }
                 });
-                console.log("Traffic chart initialized successfully.");
+                console.log("Biểu đồ lượt truy cập được khởi tạo thành công.");
             } catch (error) {
-                console.error("Error initializing traffic chart:", error.message);
-                document.getElementById('trafficChartError').innerText = "Error initializing chart: " + error.message;
+                console.error("Lỗi khởi tạo biểu đồ lượt truy cập:", error.message);
+                document.getElementById('trafficChartError').innerText = "Lỗi khởi tạo biểu đồ: " + error.message;
             }
         });
     </script>
