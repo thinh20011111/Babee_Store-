@@ -249,42 +249,48 @@ body {
 .list-group-item {
     display: flex;
     align-items: center;
-    border-radius: 8px !important;
     transition: background-color 0.2s ease, color 0.2s ease;
+    position: relative;
+    border: none;
     padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    min-height: 48px;
+}
+.list-group-item i {
+    min-width: 24px;
+    color: #495057;
+    transition: color 0.2s ease;
 }
 .list-group-item:hover {
     background-color: #e9ecef;
 }
+.list-group-item:hover i {
+    color: #007bff;
+}
 .list-group-item.active {
     background-color: #007bff;
-    border-color: #007bff;
+    color: #fff;
+}
+.list-group-item.active i {
     color: #fff;
 }
 .list-group-item.active:hover {
     background-color: #0069d9;
 }
 .list-group-item.text-danger {
-    color: #dc3545 !important;
+    color: #dc3545;
 }
 .list-group-item.text-danger:hover {
     background-color: #fff1f1;
-    color: #c82333 !important;
+    color: #c82333;
 }
-.list-group-item i {
-    transition: color 0.2s ease;
-    min-width: 24px;
-}
-.list-group-item:hover i {
-    color: #007bff;
-}
-.list-group-item.active i, .list-group-item.text-danger:hover i {
-    color: inherit;
+.list-group-item.text-danger:hover i {
+    color: #c82333;
 }
 
 /* Card styles */
 .card {
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
 }
 .card:hover {
     transform: translateY(-5px);
@@ -304,7 +310,7 @@ body {
 
 /* Table styles */
 .table tr {
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 .table tr:hover {
     background-color: #f8f9fa;
@@ -326,7 +332,7 @@ body {
 .btn-primary, .btn-danger, .btn-light {
     position: relative;
     overflow: hidden;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 .btn-primary:hover {
     background-color: #0056b3;
@@ -363,7 +369,7 @@ body {
 /* Timeline styles */
 .order-timeline {
     position: relative;
-    padding-left: 50px;
+    padding-left: 40px;
 }
 .order-timeline::before {
     content: '';
@@ -385,32 +391,32 @@ body {
 }
 .timeline-icon {
     position: absolute;
-    left: -35px;
+    left: -40px;
     top: 0;
     width: 32px;
     height: 32px;
     background: #dee2e6;
-    border-radius: 50%;
     border: 2px solid #fff;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6c757d;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    color: #495057;
+    transition: all 0.3s ease;
 }
 .timeline-icon.active {
     background: #007bff;
     color: #fff;
 }
 .timeline-content {
-    padding: 0 0 0 30px;
+    padding-left: 30px;
 }
 .timeline-content h6 {
-    margin-bottom: 4px;
+    margin-bottom: 5px;
     font-weight: 600;
     font-size: 1rem;
 }
-.timeline-content p {
+.timeline-content p.text-muted {
     font-size: 0.85rem;
     margin-bottom: 0;
 }
@@ -461,23 +467,29 @@ body {
         font-size: 0.8rem;
         padding: 0.5rem 1rem;
     }
+    .timeline-icon {
+        width: 28px;
+        height: 28px;
+        left: -38px;
+    }
+    .timeline-icon i {
+        font-size: 1.1rem;
+    }
     .order-timeline {
-        padding-left: 40px;
+        padding-left: 38px;
     }
     .order-timeline::before {
         left: 13px;
         width: 3px;
     }
-    .timeline-icon {
-        left: -29px;
-        width: 28px;
-        height: 28px;
-    }
-    .timeline-icon i {
-        font-size: 1.1rem;
-    }
     .timeline-content {
         padding-left: 20px;
+    }
+    .timeline-content h6 {
+        font-size: 0.95rem;
+    }
+    .timeline-content p.text-muted {
+        font-size: 0.8rem;
     }
     .notification {
         min-width: 250px;
@@ -501,9 +513,6 @@ body {
         font-size: 0.85rem;
         padding: 0.5rem 0.8rem;
     }
-    .list-group-item i {
-        min-width: 20px;
-    }
     .table {
         font-size: 0.85rem;
     }
@@ -519,6 +528,14 @@ body {
         font-size: 0.75rem;
         padding: 0.4rem 0.8rem;
     }
+    .timeline-icon {
+        width: 26px;
+        height: 26px;
+        left: -36px;
+    }
+    .timeline-icon i {
+        font-size: 1rem;
+    }
     .order-timeline {
         padding-left: 36px;
     }
@@ -526,21 +543,13 @@ body {
         left: 11px;
         width: 3px;
     }
-    .timeline-icon {
-        left: -27px;
-        width: 26px;
-        height: 26px;
-    }
-    .timeline-icon i {
-        font-size: 1rem;
-    }
     .timeline-content {
         padding-left: 16px;
     }
     .timeline-content h6 {
         font-size: 0.9rem;
     }
-    .timeline-content p {
+    .timeline-content p.text-muted {
         font-size: 0.8rem;
     }
     .notification {
