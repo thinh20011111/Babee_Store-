@@ -18,10 +18,10 @@ include 'views/layouts/header.php';
                     <h5 class="mb-0">Tài khoản của tôi</h5>
                 </div>
                 <div class="list-group list-group-flush">
-                    <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action rounded py-3">
+                    <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action active rounded py-3">
                         <i class="fas fa-user fa-lg me-2"></i> Hồ sơ cá nhân
                     </a>
-                    <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action active rounded py-3">
+                    <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action  rounded py-3">
                         <i class="fas fa-shopping-bag fa-lg me-2"></i> Đơn hàng của tôi
                     </a>
                     <a href="index.php?controller=user&action=changePassword" class="list-group-item list-group-item-action rounded py-3">

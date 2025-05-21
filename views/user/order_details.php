@@ -170,7 +170,7 @@ include 'views/layouts/header.php';
                 </div>
                 <div class="card-body">
                     <div class="order-timeline">
-                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.05s;">
                             <div class="timeline-icon <?php echo in_array($order->status, ['pending', 'processing', 'shipped', 'delivered']) ? 'active' : ''; ?>">
                                 <i class="fas fa-shopping-cart fa-2x"></i>
                             </div>
@@ -179,7 +179,7 @@ include 'views/layouts/header.php';
                                 <p class="text-muted"><?php echo date('d/m/Y H:i', strtotime($order->created_at)); ?></p>
                             </div>
                         </div>
-                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.10s;">
                             <div class="timeline-icon <?php echo in_array($order->status, ['processing', 'shipped', 'delivered']) ? 'active' : ''; ?>">
                                 <i class="fas fa-cogs fa-2x"></i>
                             </div>
@@ -188,7 +188,7 @@ include 'views/layouts/header.php';
                                 <p class="text-muted">Đơn hàng đã được xác nhận và đang xử lý</p>
                             </div>
                         </div>
-                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.15s;">
                             <div class="timeline-icon <?php echo in_array($order->status, ['shipped', 'delivered']) ? 'active' : ''; ?>">
                                 <i class="fas fa-truck fa-2x"></i>
                             </div>
@@ -197,7 +197,7 @@ include 'views/layouts/header.php';
                                 <p class="text-muted">Đơn hàng đã được gửi đi</p>
                             </div>
                         </div>
-                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.20s;">
                             <div class="timeline-icon <?php echo $order->status == 'delivered' ? 'active' : ''; ?>">
                                 <i class="fas fa-check-circle fa-2x"></i>
                             </div>
@@ -234,7 +234,7 @@ include 'views/layouts/header.php';
 
 <style>
 /* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
 
 /* General styles */
 body {
@@ -247,32 +247,44 @@ body {
 
 /* Sidebar styles */
 .list-group-item {
-    transition: all 0.3s ease;
-    position: relative;
-    z-index: 1;
+    display: flex;
+    align-items: center;
+    border-radius: 8px !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    padding: 0.75rem 1.25rem;
 }
 .list-group-item:hover {
-    transform: scale(1.05);
-    background-color: #f8f9fa;
+    background-color: #e9ecef;
 }
 .list-group-item.active {
     background-color: #007bff;
     border-color: #007bff;
     color: #fff;
 }
+.list-group-item.active:hover {
+    background-color: #0069d9;
+}
+.list-group-item.text-danger {
+    color: #dc3545 !important;
+}
 .list-group-item.text-danger:hover {
-    background-color: #fff5f5;
+    background-color: #fff1f1;
+    color: #c82333 !important;
 }
 .list-group-item i {
-    transition: transform 0.2s ease;
+    transition: color 0.2s ease;
+    min-width: 24px;
 }
 .list-group-item:hover i {
-    transform: scale(1.2);
+    color: #007bff;
+}
+.list-group-item.active i, .list-group-item.text-danger:hover i {
+    color: inherit;
 }
 
 /* Card styles */
 .card {
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease;
 }
 .card:hover {
     transform: translateY(-5px);
@@ -292,7 +304,7 @@ body {
 
 /* Table styles */
 .table tr {
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 .table tr:hover {
     background-color: #f8f9fa;
@@ -314,7 +326,7 @@ body {
 .btn-primary, .btn-danger, .btn-light {
     position: relative;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .btn-primary:hover {
     background-color: #0056b3;
@@ -351,44 +363,56 @@ body {
 /* Timeline styles */
 .order-timeline {
     position: relative;
-    padding-left: 40px;
+    padding-left: 50px;
 }
 .order-timeline::before {
     content: '';
     position: absolute;
-    left: 18px;
+    left: 15px;
     top: 0;
     bottom: 0;
     width: 4px;
-    background: #e9ecef;
+    background: #dee2e6;
 }
 .timeline-item {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    transition: background-color 0.2s ease;
+}
+.timeline-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 6px;
 }
 .timeline-icon {
     position: absolute;
-    left: -40px;
+    left: -35px;
     top: 0;
-    width: 36px;
-    height: 36px;
-    background: #e9ecef;
+    width: 32px;
+    height: 32px;
+    background: #dee2e6;
     border-radius: 50%;
+    border: 2px solid #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #6c757d;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 .timeline-icon.active {
     background: #007bff;
     color: #fff;
 }
 .timeline-content {
-    padding-left: 20px;
+    padding: 0 0 0 30px;
 }
 .timeline-content h6 {
-    margin-bottom: 5px;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 1rem;
+}
+.timeline-content p {
+    font-size: 0.85rem;
+    margin-bottom: 0;
 }
 
 /* Modal styles */
@@ -424,7 +448,7 @@ body {
     }
     .list-group-item {
         font-size: 0.9rem;
-        padding: 0.75rem 1rem;
+        padding: 0.6rem 1rem;
     }
     .table {
         font-size: 0.9rem;
@@ -437,16 +461,23 @@ body {
         font-size: 0.8rem;
         padding: 0.5rem 1rem;
     }
-    .timeline-icon {
-        width: 32px;
-        height: 32px;
-        left: -38px;
-    }
-    .timeline-icon i {
-        font-size: 1.2rem;
+    .order-timeline {
+        padding-left: 40px;
     }
     .order-timeline::before {
-        left: 16px;
+        left: 13px;
+        width: 3px;
+    }
+    .timeline-icon {
+        left: -29px;
+        width: 28px;
+        height: 28px;
+    }
+    .timeline-icon i {
+        font-size: 1.1rem;
+    }
+    .timeline-content {
+        padding-left: 20px;
     }
     .notification {
         min-width: 250px;
@@ -468,7 +499,10 @@ body {
     }
     .list-group-item {
         font-size: 0.85rem;
-        padding: 0.6rem 0.8rem;
+        padding: 0.5rem 0.8rem;
+    }
+    .list-group-item i {
+        min-width: 20px;
     }
     .table {
         font-size: 0.85rem;
@@ -485,16 +519,29 @@ body {
         font-size: 0.75rem;
         padding: 0.4rem 0.8rem;
     }
+    .order-timeline {
+        padding-left: 36px;
+    }
+    .order-timeline::before {
+        left: 11px;
+        width: 3px;
+    }
     .timeline-icon {
-        width: 28px;
-        height: 28px;
-        left: -36px;
+        left: -27px;
+        width: 26px;
+        height: 26px;
     }
     .timeline-icon i {
         font-size: 1rem;
     }
-    .order-timeline::before {
-        left: 14px;
+    .timeline-content {
+        padding-left: 16px;
+    }
+    .timeline-content h6 {
+        font-size: 0.9rem;
+    }
+    .timeline-content p {
+        font-size: 0.8rem;
     }
     .notification {
         min-width: 200px;
