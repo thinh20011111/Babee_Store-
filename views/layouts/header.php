@@ -1,4 +1,3 @@
-```php
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -13,8 +12,8 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Google Fonts - Updated to Roboto for Vietnamese support -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Updated to Noto Sans for better aesthetics and Vietnamese support -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
@@ -36,7 +35,7 @@
 
         /* General Font Styling */
         body, h1, h2, h3, h4, h5, h6, p, a, button, input {
-            font-family: 'Roboto', sans-serif !important;
+            font-family: 'Noto Sans', sans-serif !important;
         }
 
         /* Tùy chỉnh header */
@@ -50,7 +49,8 @@
         }
 
         .logo-text {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Noto Sans', sans-serif;
+            font-weight: 700;
         }
 
         .search-form .search-input {
@@ -297,4 +297,3 @@
     <!-- Main Content -->
     <main class="main-content py-4">
         <div class="container">
-```

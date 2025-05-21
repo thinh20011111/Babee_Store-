@@ -1,4 +1,3 @@
-```php
 <?php 
 $page_title = "Trang chủ";
 include 'views/layouts/header.php'; 
@@ -71,7 +70,7 @@ include 'views/layouts/header.php';
                         </div>
                         <?php endif; ?>
                         <div class="card-body flex-grow-1 d-flex align-items-center justify-content-center">
-                            <h5 class="card-title"><?php echo htmlspecialchars($category['name']); ?></h5>
+                            <h5 class="card-title category-title"><?php echo htmlspecialchars($category['name']); ?></h5>
                         </div>
                     </div>
                 </a>
@@ -373,12 +372,12 @@ include 'views/layouts/header.php';
 <?php include 'views/layouts/footer.php'; ?>
 
 <style>
-    /* Import Google Fonts - Updated to Roboto for Vietnamese support */
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+    /* Import Google Fonts - Updated to Noto Sans for better aesthetics and Vietnamese support */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&display=swap');
 
     /* General Font Styling */
     body, h1, h2, h3, h4, h5, h6, p, a, button, input, .card-title, .card-text {
-        font-family: 'Roboto', sans-serif !important;
+        font-family: 'Noto Sans', sans-serif !important;
     }
 
     /* Banner Carousel Styling */
@@ -486,24 +485,30 @@ include 'views/layouts/header.php';
         z-index: 1;
     }
 
-    /* Category Card Styling - Updated for uniform height */
+    /* Category Card Styling - Updated for uniform height and better typography */
     .category-card .card {
         display: flex;
         flex-direction: column;
         height: 100%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .category-card .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
 
     .category-image-wrapper {
         position: relative;
         overflow: hidden;
-        aspect-ratio: 1 / 1; /* Fixed aspect ratio for consistent image size */
-        height: 180px; /* Fixed height for images */
+        aspect-ratio: 1 / 1;
+        height: 180px;
     }
 
     .category-image-wrapper img {
         width: 100%;
         height: 100%;
-        object-fit: cover; /* Ensures images cover the area without distortion */
+        object-fit: cover;
     }
 
     .category-card .card-body {
@@ -511,6 +516,16 @@ include 'views/layouts/header.php';
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .category-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-color, #121212);
+        margin: 0;
+        padding: 10px 0;
     }
 
     /* Responsive Adjustments */
@@ -558,7 +573,11 @@ include 'views/layouts/header.php';
         }
 
         .category-image-wrapper {
-            height: 150px; /* Slightly smaller for mobile */
+            height: 150px;
+        }
+
+        .category-title {
+            font-size: 1rem;
         }
     }
 
@@ -606,8 +625,11 @@ include 'views/layouts/header.php';
         }
 
         .category-image-wrapper {
-            height: 120px; /* Smaller for smaller screens */
+            height: 120px;
+        }
+
+        .category-title {
+            font-size: 0.9rem;
         }
     }
 </style>
-```
