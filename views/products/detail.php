@@ -64,10 +64,11 @@ try {
 }
 ?>
 
-<!-- Đảm bảo Bootstrap và Font Awesome được include -->
+<!-- Đảm bảo Bootstrap, Font Awesome và Animate.css được include -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
 <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
@@ -483,8 +484,28 @@ endif; ?>
     background-color: #6c757d;
     color: #fff;
 }
+.product-detail-form .btn-primary {
+    position: relative;
+    overflow: hidden;
+}
+.product-detail-form .btn-primary::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease;
+}
+.product-detail-form .btn-primary:active::after {
+    width: 200px;
+    height: 200px;
+}
 
-/* Styles for related products button (adapted from homepage) */
+/* Styles for related products button */
 .related-products .btn-primary {
     font-family: 'Poppins', sans-serif;
     padding: 10px 25px;
@@ -497,6 +518,39 @@ endif; ?>
 .related-products .btn-primary:hover {
     background-color: #dee2e6;
     transform: scale(1.05);
+}
+
+/* Styles for cart badge and notification */
+.cart-count-badge {
+    display: inline-block;
+    min-width: 20px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 10px;
+    margin-left: 5px;
+    transition: transform 0.2s ease;
+}
+.notification {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    animation: slideInRight 0.3s ease-in-out;
+}
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* General styles for product detail page */
@@ -548,13 +602,10 @@ endif; ?>
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    /* General container */
     .container {
         padding-left: 10px;
         padding-right: 10px;
     }
-
-    /* Category header */
     .category-header-bg {
         height: 100px;
     }
@@ -562,8 +613,6 @@ endif; ?>
         font-size: 0.9rem;
         flex-wrap: wrap;
     }
-
-    /* Product images */
     .product-image-container img,
     .product-placeholder {
         max-height: 350px;
@@ -577,8 +626,6 @@ endif; ?>
         height: 60px;
         object-fit: cover;
     }
-
-    /* Product details */
     .product-title {
         font-size: 1.5rem;
     }
@@ -608,8 +655,6 @@ endif; ?>
         font-size: 0.9rem;
         padding: 0.5rem 1rem;
     }
-
-    /* Product features */
     .product-features .feature-item {
         padding: 1rem;
     }
@@ -619,8 +664,6 @@ endif; ?>
     .product-features .small {
         font-size: 0.8rem;
     }
-
-    /* Product info tabs */
     .product-info .nav-tabs .nav-link {
         font-size: 0.9rem;
         padding: 0.5rem 1rem;
@@ -638,13 +681,9 @@ endif; ?>
     .table-responsive table {
         font-size: 0.85rem;
     }
-
-    /* Social sharing */
     .product-share .social-icon {
         font-size: 1rem;
     }
-
-    /* Related products */
     .related-products .btn-primary {
         font-size: 1rem;
         padding: 8px 16px;
@@ -662,21 +701,16 @@ endif; ?>
 }
 
 @media (max-width: 576px) {
-    /* General container */
     .container {
         padding-left: 8px;
         padding-right: 8px;
     }
-
-    /* Category header */
     .category-header-bg {
         height: 80px;
     }
     .breadcrumb {
         font-size: 0.8rem;
     }
-
-    /* Product images */
     .product-image-container img,
     .product-placeholder {
         max-height: 300px;
@@ -689,8 +723,6 @@ endif; ?>
     .thumbnail-placeholder {
         height: 50px;
     }
-
-    /* Product details */
     .product-title {
         font-size: 1.3rem;
     }
@@ -728,8 +760,6 @@ endif; ?>
         font-size: 0.85rem;
         padding: 0.4rem;
     }
-
-    /* Product features */
     .product-features .col-6 {
         flex: 0 0 50%;
         max-width: 50%;
@@ -743,8 +773,6 @@ endif; ?>
     .product-features .small {
         font-size: 0.75rem;
     }
-
-    /* Product info tabs */
     .product-info .nav-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -767,13 +795,9 @@ endif; ?>
     .table-responsive table {
         font-size: 0.8rem;
     }
-
-    /* Social sharing */
     .product-share .social-icon {
         font-size: 0.9rem;
     }
-
-    /* Related products */
     .related-products .col-sm-6 {
         flex: 0 0 100%;
         max-width: 100%;
@@ -961,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Không tìm thấy quantityInput element');
     }
     
-    // Form submission
+    // Form submission with animation
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -969,6 +993,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const productId = this.querySelector('[name="product_id"]').value;
             const variantId = variants.length > 0 ? (this.querySelector('[name="variant_id"]')?.value || '') : '';
             const quantity = parseInt(this.querySelector('[name="quantity"]').value);
+            const addToCartBtn = this.querySelector('button[type="submit"]');
             
             console.log('Form submitted:', { productId, variantId, quantity });
             
@@ -982,6 +1007,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Lỗi: Số lượng không hợp lệ');
                 alert('Số lượng không hợp lệ.');
                 return;
+            }
+            
+            // Disable button and show loading state
+            addToCartBtn.disabled = true;
+            const originalBtnText = addToCartBtn.innerHTML;
+            addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang thêm...';
+            
+            // Get main image for animation
+            const mainImage = document.querySelector('.main-image');
+            const cartIcon = document.querySelector('.fa-shopping-cart');
+            
+            // Create animation effect
+            if (mainImage && cartIcon) {
+                const imgClone = mainImage.cloneNode(true);
+                imgClone.style.position = 'fixed';
+                imgClone.style.zIndex = '1000';
+                imgClone.style.width = mainImage.offsetWidth + 'px';
+                imgClone.style.height = mainImage.offsetHeight + 'px';
+                imgClone.style.top = mainImage.getBoundingClientRect().top + 'px';
+                imgClone.style.left = mainImage.getBoundingClientRect().left + 'px';
+                imgClone.style.transition = 'all 0.7s ease-in-out';
+                document.body.appendChild(imgClone);
+                
+                setTimeout(() => {
+                    const cartRect = cartIcon.getBoundingClientRect();
+                    imgClone.style.width = '30px';
+                    imgClone.style.height = '30px';
+                    imgClone.style.top = cartRect.top + 'px';
+                    imgClone.style.left = cartRect.left + 'px';
+                    imgClone.style.opacity = '0.5';
+                }, 100);
+                
+                setTimeout(() => {
+                    imgClone.remove();
+                }, 800);
             }
             
             // AJAX request to add to cart
@@ -1006,27 +1066,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(text);
                     console.log('AJAX data:', data);
                     if (data.success) {
-                        alert(data.message || 'Đã thêm vào giỏ hàng!');
-                        const cartBadge = document.querySelector('.fa-shopping-cart')?.nextElementSibling;
+                        // Update cart count
+                        const cartBadge = document.querySelector('.cart-count-badge');
                         if (cartBadge) {
                             cartBadge.textContent = data.cart_count || 0;
+                            cartBadge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
+                            // Add bounce animation to cart badge
+                            cartBadge.classList.add('animate__animated', 'animate__bounce');
+                            setTimeout(() => {
+                                cartBadge.classList.remove('animate__animated', 'animate__bounce');
+                            }, 1000);
                         }
+                        
+                        // Show success notification
+                        showNotification('Đã thêm vào giỏ hàng!', 'success');
                     } else {
                         console.error('Lỗi từ server:', data.message);
-                        alert(data.message || 'Không thể thêm vào giỏ hàng. Vui lòng thử lại.');
+                        showNotification(data.message || 'Không thể thêm vào giỏ hàng.', 'error');
                     }
                 } catch (e) {
                     console.error('Lỗi phân tích JSON:', e, 'Response text:', text);
-                    alert('Lỗi server: Không nhận được dữ liệu hợp lệ. Vui lòng thử lại.');
+                    showNotification('Lỗi server: Không nhận được dữ liệu hợp lệ.', 'error');
                 }
             })
             .catch(error => {
                 console.error('Lỗi AJAX:', error);
-                if (error.message.includes('timeout')) {
-                    alert('Yêu cầu quá lâu, vui lòng kiểm tra kết nối và thử lại.');
-                } else {
-                    alert('Đã xảy ra lỗi khi thêm vào giỏ hàng: ' + error.message);
-                }
+                showNotification('Đã xảy ra lỗi: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Restore button state
+                addToCartBtn.disabled = false;
+                addToCartBtn.innerHTML = originalBtnText;
             });
         });
     } else {
@@ -1050,6 +1120,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         console.log('Không có notify-form (sản phẩm còn hàng)');
+    }
+    
+    // Notification function
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show notification`;
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.zIndex = '2000';
+        notification.style.minWidth = '300px';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(notification);
+        
+        // Auto dismiss after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 });
 </script>
