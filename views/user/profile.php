@@ -15,20 +15,20 @@ include 'views/layouts/header.php';
         <div class="col-md-3 mb-4">
             <div class="card border-0 shadow-sm rounded">
                 <div class="card-header bg-primary text-white rounded-top">
-                    <h5 class="mb-0">My Account</h5>
+                    <h5 class="mb-0">Tài khoản của tôi</h5>
                 </div>
                 <div class="list-group list-group-flush">
-                    <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action active rounded py-3">
-                        <i class="fas fa-user fa-lg me-2"></i> My Profile
+                    <a href="index.php?controller=user&action=profile" class="list-group-item list-group-item-action rounded py-3">
+                        <i class="fas fa-user fa-lg me-2"></i> Hồ sơ cá nhân
                     </a>
-                    <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action rounded py-3">
-                        <i class="fas fa-shopping-bag fa-lg me-2"></i> My Orders
+                    <a href="index.php?controller=user&action=orders" class="list-group-item list-group-item-action active rounded py-3">
+                        <i class="fas fa-shopping-bag fa-lg me-2"></i> Đơn hàng của tôi
                     </a>
                     <a href="index.php?controller=user&action=changePassword" class="list-group-item list-group-item-action rounded py-3">
-                        <i class="fas fa-key fa-lg me-2"></i> Change Password
+                        <i class="fas fa-key fa-lg me-2"></i> Đổi mật khẩu
                     </a>
                     <a href="index.php?controller=user&action=logout" class="list-group-item list-group-item-action text-danger rounded py-3">
-                        <i class="fas fa-sign-out-alt fa-lg me-2"></i> Logout
+                        <i class="fas fa-sign-out-alt fa-lg me-2"></i> Đăng xuất
                     </a>
                 </div>
             </div>
