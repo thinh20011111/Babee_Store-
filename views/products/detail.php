@@ -999,13 +999,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (variants.length > 0 && !variantId) {
                 console.error('Lỗi: Chưa chọn biến thể hợp lệ');
-                alert('Vui lòng chọn kích cỡ' + (colorSelect ? ' và màu sắc' : '') + ' hợp lệ.');
+                showNotification('Vui lòng chọn kích cỡ' + (colorSelect ? ' và màu sắc' : '') + ' hợp lệ.', 'error', 'Lỗi chọn biến thể');
                 return;
             }
             
             if (quantity < 1 || isNaN(quantity)) {
                 console.error('Lỗi: Số lượng không hợp lệ');
-                alert('Số lượng không hợp lệ.');
+                showNotification('Số lượng không hợp lệ.', 'error', 'Lỗi số lượng');
                 return;
             }
             
@@ -1013,36 +1013,6 @@ document.addEventListener('DOMContentLoaded', function() {
             addToCartBtn.disabled = true;
             const originalBtnText = addToCartBtn.innerHTML;
             addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang thêm...';
-            
-            // Get main image for animation
-            const mainImage = document.querySelector('.main-image');
-            const cartIcon = document.querySelector('.fa-shopping-cart');
-            
-            // Create animation effect
-            if (mainImage && cartIcon) {
-                const imgClone = mainImage.cloneNode(true);
-                imgClone.style.position = 'fixed';
-                imgClone.style.zIndex = '1000';
-                imgClone.style.width = mainImage.offsetWidth + 'px';
-                imgClone.style.height = mainImage.offsetHeight + 'px';
-                imgClone.style.top = mainImage.getBoundingClientRect().top + 'px';
-                imgClone.style.left = mainImage.getBoundingClientRect().left + 'px';
-                imgClone.style.transition = 'all 0.7s ease-in-out';
-                document.body.appendChild(imgClone);
-                
-                setTimeout(() => {
-                    const cartRect = cartIcon.getBoundingClientRect();
-                    imgClone.style.width = '30px';
-                    imgClone.style.height = '30px';
-                    imgClone.style.top = cartRect.top + 'px';
-                    imgClone.style.left = cartRect.left + 'px';
-                    imgClone.style.opacity = '0.5';
-                }, 100);
-                
-                setTimeout(() => {
-                    imgClone.remove();
-                }, 800);
-            }
             
             // AJAX request to add to cart
             fetch('index.php?controller=product&action=addToCart', {
@@ -1066,6 +1036,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(text);
                     console.log('AJAX data:', data);
                     if (data.success) {
+                        // Create animation effect only on success
+                        const mainImage = document.querySelector('.main-image');
+                        const cartIcon = document.querySelector('.fa-shopping-cart');
+                        if (mainImage && cartIcon) {
+                            const imgClone = mainImage.cloneNode(true);
+                            imgClone.style.position = 'fixed';
+                            imgClone.style.zIndex = '1000';
+                            imgClone.style.width = mainImage.offsetWidth + 'px';
+                            imgClone.style.height = mainImage.offsetHeight + 'px';
+                            imgClone.style.top = mainImage.getBoundingClientRect().top + 'px';
+                            imgClone.style.left = mainImage.getBoundingClientRect().left + 'px';
+                            imgClone.style.transition = 'all 0.7s ease-in-out';
+                            document.body.appendChild(imgClone);
+                            
+                            setTimeout(() => {
+                                const cartRect = cartIcon.getBoundingClientRect();
+                                imgClone.style.width = '30px';
+                                imgClone.style.height = '30px';
+                                imgClone.style.top = cartRect.top + 'px';
+                                imgClone.style.left = cartRect.left + 'px';
+                                imgClone.style.opacity = '0.5';
+                            }, 100);
+                            
+                            setTimeout(() => {
+                                imgClone.remove();
+                            }, 800);
+                        }
+                        
                         // Update all cart count badges
                         const cartBadges = document.querySelectorAll('.cart-count-badge');
                         cartBadges.forEach(badge => {
@@ -1084,19 +1082,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.dispatchEvent(cartUpdatedEvent);
 
                         // Show success notification
-                        showNotification('Đã thêm vào giỏ hàng!', 'success');
+                        showNotification('Đã thêm vào giỏ hàng!', 'success', 'Thành công');
                     } else {
                         console.error('Lỗi từ server:', data.message);
-                        showNotification(data.message || 'Không thể thêm vào giỏ hàng.', 'error');
+                        // Check if error is related to stock
+                        const isStockError = data.message.includes('vượt quá tồn kho');
+                        showNotification(
+                            data.message || 'Không thể thêm vào giỏ hàng.',
+                            'error',
+                            isStockError ? 'Không đủ tồn kho' : 'Lỗi thêm vào giỏ hàng'
+                        );
                     }
                 } catch (e) {
                     console.error('Lỗi phân tích JSON:', e, 'Response text:', text);
-                    showNotification('Lỗi server: Không nhận được dữ liệu hợp lệ.', 'error');
+                    showNotification('Lỗi server: Không nhận được dữ liệu hợp lệ.', 'error', 'Lỗi server');
                 }
             })
             .catch(error => {
                 console.error('Lỗi AJAX:', error);
-                showNotification('Đã xảy ra lỗi: ' + error.message, 'error');
+                showNotification('Đã xảy ra lỗi: ' + error.message, 'error', 'Lỗi hệ thống');
             })
             .finally(() => {
                 // Restore button state
@@ -1116,19 +1120,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const email = this.querySelector('[name="email"]').value;
             console.log('Notify form submitted:', email);
             if (email) {
-                alert('Cảm ơn bạn! Chúng tôi sẽ thông báo khi sản phẩm có hàng.');
+                showNotification('Cảm ơn bạn! Chúng tôi sẽ thông báo khi sản phẩm có hàng.', 'success', 'Đăng ký thông báo');
                 this.reset();
             } else {
                 console.error('Lỗi: Email không hợp lệ');
-                alert('Vui lòng nhập email hợp lệ.');
+                showNotification('Vui lòng nhập email hợp lệ.', 'error', 'Lỗi email');
             }
         });
     } else {
         console.log('Không có notify-form (sản phẩm còn hàng)');
     }
     
-    // Notification function
-    function showNotification(message, type) {
+    // Notification function with title support
+    function showNotification(message, type, title = '') {
         const notification = document.createElement('div');
         notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show notification`;
         notification.style.position = 'fixed';
@@ -1137,6 +1141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         notification.style.zIndex = '2000';
         notification.style.minWidth = '300px';
         notification.innerHTML = `
+            ${title ? `<strong>${title}</strong><br>` : ''}
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
