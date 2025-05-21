@@ -394,7 +394,7 @@ if (!empty($_SESSION['order_message'])): ?>
                             </label>
                         </div>
                         <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="payment_method" id="payment_bank" value="bank" required>
+                            <input class="form-check-input" type="radio" name="payment_method" id="payment_bank" value="bank" required disabled>
                             <label class="form-check-label" for="payment_bank">
                                 <i class="fas fa-university me-2"></i> Chuyển khoản ngân hàng
                             </label>
