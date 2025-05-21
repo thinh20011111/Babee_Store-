@@ -8,7 +8,6 @@ class Category {
     public $id;
     public $name;
     public $description;
-    public $parent_id;
     public $image;
     public $created_at;
     public $updated_at;
@@ -52,11 +51,9 @@ class Category {
         if($row) {
             $this->name = $row['name'];
             $this->description = $row['description'];
-            $this->parent_id = $row['parent_id'];
             $this->image = $row['image'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
-            error_log("Category readOne: parent_id = " . ($this->parent_id ?? 'null')); // Debug
             return true;
         }
         
@@ -74,7 +71,6 @@ class Category {
                 SET 
                     name = :name, 
                     description = :description, 
-                    parent_id = :parent_id, 
                     image = :image, 
                     created_at = :created_at, 
                     updated_at = :updated_at";
@@ -84,7 +80,6 @@ class Category {
         // Sanitize inputs
         $this->name = htmlspecialchars(strip_tags($this->name));
         $this->description = htmlspecialchars(strip_tags($this->description));
-        $this->parent_id = $this->parent_id !== null ? intval($this->parent_id) : null;
         $this->image = htmlspecialchars(strip_tags($this->image));
         $this->created_at = date('Y-m-d H:i:s');
         $this->updated_at = date('Y-m-d H:i:s');
@@ -92,7 +87,6 @@ class Category {
         // Bind parameters
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':description', $this->description);
-        $stmt->bindParam(':parent_id', $this->parent_id); // Removed PDO::PARAM_NULLABLE
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':created_at', $this->created_at);
         $stmt->bindParam(':updated_at', $this->updated_at);
@@ -116,7 +110,6 @@ class Category {
                 SET 
                     name = :name, 
                     description = :description, 
-                    parent_id = :parent_id, 
                     image = :image, 
                     updated_at = :updated_at 
                 WHERE 
@@ -127,14 +120,12 @@ class Category {
         // Sanitize inputs
         $this->name = htmlspecialchars(strip_tags($this->name));
         $this->description = htmlspecialchars(strip_tags($this->description));
-        $this->parent_id = $this->parent_id !== null ? intval($this->parent_id) : null;
         $this->image = htmlspecialchars(strip_tags($this->image));
         $this->updated_at = date('Y-m-d H:i:s');
         
         // Bind parameters
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':description', $this->description);
-        $stmt->bindParam(':parent_id', $this->parent_id); // Removed PDO::PARAM_NULLABLE
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':updated_at', $this->updated_at);
         $stmt->bindParam(':id', $this->id);
