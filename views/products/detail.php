@@ -1066,18 +1066,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = JSON.parse(text);
                     console.log('AJAX data:', data);
                     if (data.success) {
-                        // Update all cart count badges (header and detail page)
+                        // Update all cart count badges
                         const cartBadges = document.querySelectorAll('.cart-count-badge');
                         cartBadges.forEach(badge => {
                             badge.textContent = data.cart_count || 0;
                             badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
-                            // Add bounce animation to badge
                             badge.classList.add('animate__animated', 'animate__bounce');
                             setTimeout(() => {
                                 badge.classList.remove('animate__animated', 'animate__bounce');
                             }, 1000);
                         });
-                        
+
+                        // Dispatch custom event for other pages
+                        const cartUpdatedEvent = new CustomEvent('cartUpdated', {
+                            detail: { cart_count: data.cart_count }
+                        });
+                        document.dispatchEvent(cartUpdatedEvent);
+
                         // Show success notification
                         showNotification('Đã thêm vào giỏ hàng!', 'success');
                     } else {
