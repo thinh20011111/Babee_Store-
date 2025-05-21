@@ -22,7 +22,7 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
 
 // Define accessible pages for roles
 $accessible_pages = [
-    'admin' => ['dashboard', 'orders', 'products', 'users', 'traffic', 'banners', 'settings', 'promotions', 'reports'],
+    'admin' => ['dashboard', 'orders', 'products', 'users', 'traffic', 'banners', 'settings', 'promotions', 'reports', 'categories'], // Added 'categories'
     'staff' => ['dashboard', 'orders', 'products', 'traffic']
 ];
 
@@ -34,7 +34,7 @@ $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashbo
 ?>
 
 <div id="admin-sidebar" class="bg-dark sidebar p-3 text-white">
-    <h4 class="text-center mb-4">Admin Panel</h4>
+    <h4 class="text-center mb-4">Bảng điều khiển quản trị</h4>
     <ul class="nav flex-column">
         <?php if (in_array('dashboard', $accessible_pages[$user_role])): ?>
         <li class="nav-item">
@@ -80,6 +80,14 @@ $current_page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'dashbo
         <li class="nav-item">
             <a class="nav-link text-white <?php echo ($current_page === 'banners') ? 'active bg-primary rounded' : ''; ?>" href="index.php?page=banners">
                 <i class="fas fa-images me-2"></i> Giao diện
+            </a>
+        </li>
+        <?php endif; ?>
+        
+        <?php if (in_array('categories', $accessible_pages[$user_role])): ?>
+        <li class="nav-item">
+            <a class="nav-link text-white <?php echo ($current_page === 'categories') ? 'active bg-primary rounded' : ''; ?>" href="index.php?page=categories">
+                <i class="fas fa-folder me-2"></i> Danh mục
             </a>
         </li>
         <?php endif; ?>
