@@ -372,12 +372,12 @@ include 'views/layouts/header.php';
 <?php include 'views/layouts/footer.php'; ?>
 
 <style>
-    /* Import Google Fonts - Updated to Noto Sans for better aesthetics and Vietnamese support */
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&display=swap');
+    /* Import Google Fonts - Using Open Sans as fallback for ValueSansProVN */
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
 
     /* General Font Styling */
     body, h1, h2, h3, h4, h5, h6, p, a, button, input, .card-title, .card-text {
-        font-family: 'Noto Sans', sans-serif !important;
+        font-family: 'Open Sans', sans-serif !important;
     }
 
     /* Banner Carousel Styling */
@@ -520,9 +520,9 @@ include 'views/layouts/header.php';
 
     .category-title {
         font-size: 1.1rem;
-        font-weight: 700;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.03em;
         color: var(--text-color, #121212);
         margin: 0;
         padding: 10px 0;
