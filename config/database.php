@@ -291,16 +291,48 @@ function createRemoteTables($conn) {
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+        // Tạo bảng orders
+        $conn->exec("CREATE TABLE IF NOT EXISTS orders (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            order_number VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            user_id INT UNSIGNED,
+            total_amount DECIMAL(10,0) NOT NULL,
+            status VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'pending',
+            payment_method VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            payment_status VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'pending',
+            shipping_address TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            shipping_city VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            shipping_phone VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            customer_email VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            shipping_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            notes TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Tạo bảng order_details
+        $conn->exec("CREATE TABLE IF NOT EXISTS order_details (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            order_id INT UNSIGNED NOT NULL,
+            product_id INT UNSIGNED NOT NULL,
+            variant_id INT UNSIGNED,
+            quantity INT NOT NULL,
+            price DECIMAL(10,0) NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
         // Tạo bảng feedback
         $conn->exec("CREATE TABLE IF NOT EXISTS feedback (
             id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
             user_id INT UNSIGNED NOT NULL,
             product_id INT UNSIGNED NOT NULL,
+            order_id INT UNSIGNED NOT NULL,
             content TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
             rating TINYINT UNSIGNED NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_user_product (user_id, product_id)
+            INDEX idx_user_product (user_id, product_id),
+            INDEX idx_order_id (order_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         // Tạo bảng feedback_media
