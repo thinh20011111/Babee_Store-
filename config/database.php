@@ -245,7 +245,29 @@ function createLocalTables($conn) {
 // Hàm tạo bảng cho MySQL/MariaDB (InfinityFree)
 function createRemoteTables($conn) {
     try {
-        // Đảm bảo products tồn tại
+        // Tạo bảng user
+        $conn->exec("CREATE TABLE IF NOT EXISTS user (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL UNIQUE,
+            email VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL UNIQUE,
+            password VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            full_name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            phone VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            address TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            role VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'customer',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Chèn dữ liệu mẫu cho user nếu chưa có
+        $check = $conn->query("SELECT COUNT(*) FROM user")->fetchColumn();
+        if ($check == 0) {
+            $conn->exec("INSERT INTO user (username, email, password, role) VALUES 
+                ('admin', 'admin@example.com', '$2y$10$8gF5Tcz8ZZi4ZKpzjXHgWOzxKCBXCQGUnkmlAWV7PZkWvpUwQ5wXC', 'admin')
+            ");
+        }
+
+        // Tạo bảng products
         $conn->exec("CREATE TABLE IF NOT EXISTS products (
             id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
             name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
@@ -267,6 +289,28 @@ function createRemoteTables($conn) {
             image TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Tạo bảng feedback
+        $conn->exec("CREATE TABLE IF NOT EXISTS feedback (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            user_id INT UNSIGNED NOT NULL,
+            product_id INT UNSIGNED NOT NULL,
+            content TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            rating TINYINT UNSIGNED NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_user_product (user_id, product_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Tạo bảng feedback_media
+        $conn->exec("CREATE TABLE IF NOT EXISTS feedback_media (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            feedback_id INT UNSIGNED NOT NULL,
+            file_path VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            file_size BIGINT UNSIGNED NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_feedback_id (feedback_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         // Chèn dữ liệu mẫu cho products nếu chưa có
