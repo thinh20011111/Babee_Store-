@@ -929,13 +929,17 @@ include 'views/layouts/header.php';
 
             fetch('index.php?controller=feedback&action=submit', {
                     method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
                     body: formData
                 })
                 .then(response => {
+                    const contentType = response.headers.get('content-type');
                     if (!response.ok) {
                         throw new Error('Lỗi kết nối server');
                     }
-                    const contentType = response.headers.get('content-type');
                     if (!contentType || !contentType.includes('application/json')) {
                         throw new Error('Phản hồi không hợp lệ từ server');
                     }

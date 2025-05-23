@@ -20,12 +20,13 @@ class FeedbackController
 
     public function submitFeedback($request, $files)
     {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => true / false,
-            'message' => 'Thông báo phản hồi'
-        ]);
-        exit;
+        if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
+            header('HTTP/1.1 400 Bad Request');
+            echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ']);
+            exit;
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
         try {
             // Kiểm tra đăng nhập
             if (!isset($_SESSION['user_id'])) {
