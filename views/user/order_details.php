@@ -923,44 +923,56 @@ include 'views/layouts/header.php';
             }
 
             const formData = new FormData(feedbackForm);
+
+            // Debug form data
+            console.log('Form Data:', Object.fromEntries(formData));
+
             this.disabled = true;
             const originalText = this.innerHTML;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi...';
 
-            $.ajax({
-                url: 'index.php?controller=feedback&action=submit',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    try {
-                        const data = typeof response === 'string' ? JSON.parse(response) : response;
-                        if (data.success) {
-                            showNotification(data.message, 'success');
-                            feedbackModal.hide();
-                            // Disable the feedback button for this product
-                            const productId = formData.get('product_id');
-                            const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
-                            if (feedbackBtn) {
-                                feedbackBtn.disabled = true;
-                                feedbackBtn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
-                            }
-                        } else {
-                            showNotification(data.message || 'Không thể gửi đánh giá', 'error');
+            fetch('index.php?controller=feedback&action=submit', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    // Debug response
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    return response.text().then(text => {
+                        console.log('Raw response:', text);
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                            throw new Error('Phản hồi không hợp lệ từ server');
                         }
-                    } catch (e) {
-                        showNotification('Lỗi xử lý phản hồi từ server', 'error');
+                    });
+                })
+                .then(data => {
+                    console.log('Parsed data:', data);
+                    if (data.success) {
+                        showNotification(data.message, 'success');
+                        feedbackModal.hide();
+                        // Disable the feedback button for this product
+                        const productId = formData.get('product_id');
+                        const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
+                        if (feedbackBtn) {
+                            feedbackBtn.disabled = true;
+                            feedbackBtn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
+                        }
+                    } else {
+                        showNotification(data.message || 'Không thể gửi đánh giá', 'error');
                     }
-                },
-                error: function(xhr, status, error) {
-                    showNotification('Lỗi kết nối: ' + error, 'error');
-                },
-                complete: function() {
-                    submitFeedbackBtn.disabled = false;
-                    submitFeedbackBtn.innerHTML = originalText;
-                }
-            });
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    showNotification('Lỗi hệ thống: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                });
         });
 
         // Reset form when modal is closed
