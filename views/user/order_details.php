@@ -945,9 +945,9 @@ include 'views/layouts/header.php';
                 return response.text().then(text => {
                     console.log('Raw response text:', text);
                     try {
-                        const parsedData = JSON.parse(text);
-                        console.log('Parsed data:', parsedData);
-                        return parsedData;
+                        const data = JSON.parse(text);
+                        console.log('Parsed data:', data);
+                        return data;
                     } catch (e) {
                         console.error('Parse error:', e);
                         console.error('Response text:', text);
@@ -974,8 +974,8 @@ include 'views/layouts/header.php';
                 showNotification('Lỗi hệ thống: ' + error.message, 'error');
             })
             .finally(() => {
-                this.disabled = false;
-                this.innerHTML = originalText;
+                submitFeedbackBtn.disabled = false;
+                submitFeedbackBtn.innerHTML = originalText;
             });
         });
 

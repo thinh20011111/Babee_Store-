@@ -32,30 +32,49 @@ spl_autoload_register(function ($class_name) {
     }
 });
 
-// Ghi log truy cập (trừ khi là trang admin hoặc file tài nguyên)
+// Ghi log truy cập
 include_once 'track_visits.php';
 
 // Xử lý routing
 $controller = isset($_GET['controller']) ? $_GET['controller'] : 'home';
 $action = isset($_GET['action']) ? $_GET['action'] : 'index';
 
-// Load controller tương ứng
+// Ánh xạ action đặc biệt
+$actionMap = [
+    'feedback' => [
+        'submit' => 'submitFeedback',
+        'update' => 'updateFeedback',
+        'delete' => 'deleteFeedback'
+    ]
+];
 $controller_name = ucfirst($controller) . 'Controller';
 $controller_file = "controllers/{$controller_name}.php";
 
 if (file_exists($controller_file)) {
     require_once $controller_file;
     $controller_instance = new $controller_name($conn);
-    
-    // Gọi action tương ứng
-    if (method_exists($controller_instance, $action)) {
-        $controller_instance->$action();
+
+    $method = $action;
+    if (isset($actionMap[$controller]) && isset($actionMap[$controller][$action])) {
+        $method = $actionMap[$controller][$action];
+    }
+
+    ob_start(); // Bắt đầu buffer
+    if (method_exists($controller_instance, $method)) {
+        header('Content-Type: application/json; charset=UTF-8');
+        $controller_instance->$method($_POST, $_FILES);
     } else {
-        // Action không tồn tại -> 404
-        include 'views/404.php';
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Action không tồn tại.']);
+    }
+    $output = ob_get_clean();
+    if (!empty($output)) {
+        echo $output;
     }
 } else {
-    // Controller không tồn tại -> 404
-    include 'views/404.php';
+    http_response_code(404);
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['success' => false, 'message' => 'Controller không tồn tại.']);
 }
+exit();
 ?>
