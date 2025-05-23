@@ -927,46 +927,40 @@ include 'views/layouts/header.php';
             const originalText = this.innerHTML;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi...';
 
-            fetch('index.php?controller=feedback&action=submit', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                .then(response => {
-                    const contentType = response.headers.get('content-type');
-                    if (!response.ok) {
-                        throw new Error('Lỗi kết nối server');
-                    }
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new Error('Phản hồi không hợp lệ từ server');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        showNotification('Đánh giá của bạn đã được gửi thành công', 'success');
-                        feedbackModal.hide();
-                        // Disable the feedback button for this product
-                        const productId = formData.get('product_id');
-                        const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
-                        if (feedbackBtn) {
-                            feedbackBtn.disabled = true;
-                            feedbackBtn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
+            $.ajax({
+                url: 'index.php?controller=feedback&action=submit',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    try {
+                        const data = typeof response === 'string' ? JSON.parse(response) : response;
+                        if (data.success) {
+                            showNotification(data.message, 'success');
+                            feedbackModal.hide();
+                            // Disable the feedback button for this product
+                            const productId = formData.get('product_id');
+                            const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
+                            if (feedbackBtn) {
+                                feedbackBtn.disabled = true;
+                                feedbackBtn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
+                            }
+                        } else {
+                            showNotification(data.message || 'Không thể gửi đánh giá', 'error');
                         }
-                    } else {
-                        showNotification(data.message || 'Không thể gửi đánh giá', 'error');
+                    } catch (e) {
+                        showNotification('Lỗi xử lý phản hồi từ server', 'error');
                     }
-                })
-                .catch(error => {
-                    showNotification('Lỗi hệ thống: ' + error.message, 'error');
-                })
-                .finally(() => {
-                    this.disabled = false;
-                    this.innerHTML = originalText;
-                });
+                },
+                error: function(xhr, status, error) {
+                    showNotification('Lỗi kết nối: ' + error, 'error');
+                },
+                complete: function() {
+                    submitFeedbackBtn.disabled = false;
+                    submitFeedbackBtn.innerHTML = originalText;
+                }
+            });
         });
 
         // Reset form when modal is closed

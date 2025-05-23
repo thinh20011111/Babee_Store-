@@ -20,17 +20,9 @@ class FeedbackController
 
     public function submitFeedback($request, $files)
     {
-        if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-            header('HTTP/1.1 400 Bad Request');
-            echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ']);
-            exit;
-        }
-
-        header('Content-Type: application/json; charset=utf-8');
         try {
-            // Kiểm tra đăng nhập
             if (!isset($_SESSION['user_id'])) {
-                return ['success' => false, 'message' => 'Vui lòng đăng nhập để gửi đánh giá.'];
+                die(json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để gửi đánh giá.']));
             }
 
             $user_id = $_SESSION['user_id'];
@@ -39,76 +31,31 @@ class FeedbackController
             $content = trim($request['content'] ?? '');
             $rating = isset($request['rating']) ? (int)$request['rating'] : 0;
 
-            // Kiểm tra dữ liệu đầu vào
+            // Validate input
             if ($product_id <= 0 || $order_id <= 0) {
-                return ['success' => false, 'message' => 'Dữ liệu không hợp lệ.'];
+                die(json_encode(['success' => false, 'message' => 'Dữ liệu không hợp lệ.']));
             }
             if (strlen($content) < 10) {
-                return ['success' => false, 'message' => 'Nội dung đánh giá phải có ít nhất 10 ký tự.'];
+                die(json_encode(['success' => false, 'message' => 'Nội dung đánh giá phải có ít nhất 10 ký tự.']));
             }
             if ($rating < 1 || $rating > 5) {
-                return ['success' => false, 'message' => 'Điểm đánh giá phải từ 1 đến 5.'];
+                die(json_encode(['success' => false, 'message' => 'Điểm đánh giá phải từ 1 đến 5.']));
             }
 
-            // Kiểm tra đã đánh giá chưa
+            // Check if already reviewed
             if ($this->feedback->hasOrderFeedback($user_id, $order_id, $product_id)) {
-                return ['success' => false, 'message' => 'Bạn đã đánh giá sản phẩm này trong đơn hàng.'];
+                die(json_encode(['success' => false, 'message' => 'Bạn đã đánh giá sản phẩm này trong đơn hàng.']));
             }
 
-            // Bắt đầu transaction
-            $this->db->beginTransaction();
-
-            // Thêm đánh giá
-            if (!$this->feedback->addFeedback($user_id, $product_id, $order_id, $content, $rating)) {
-                throw new Exception("Lỗi khi lưu đánh giá.");
+            // Insert feedback
+            $result = $this->feedback->addFeedback($user_id, $product_id, $order_id, $content, $rating);
+            if (!$result) {
+                die(json_encode(['success' => false, 'message' => 'Không thể lưu đánh giá.']));
             }
 
-            // Lấy feedback_id mới nhất
-            $feedback_id = $this->db->lastInsertId();
-
-            // Xử lý upload ảnh
-            if (!empty($files['photos']['name'][0])) {
-                $photo_count = $this->feedback->getPhotoCount($feedback_id);
-
-                foreach ($files['photos']['name'] as $index => $name) {
-                    if ($photo_count >= 3) {
-                        throw new Exception("Tối đa 3 ảnh được phép.");
-                    }
-
-                    if ($files['photos']['error'][$index] !== UPLOAD_ERR_OK) {
-                        throw new Exception("Lỗi khi tải lên ảnh: " . $name);
-                    }
-
-                    $file_size = $files['photos']['size'][$index];
-                    if ($file_size > $this->max_file_size) {
-                        throw new Exception("Ảnh " . $name . " vượt quá giới hạn 5MB.");
-                    }
-
-                    $file_type = mime_content_type($files['photos']['tmp_name'][$index]);
-                    if (!in_array($file_type, ['image/jpeg', 'image/png', 'image/gif'])) {
-                        throw new Exception("Chỉ hỗ trợ định dạng JPEG, PNG, GIF.");
-                    }
-
-                    $file_ext = pathinfo($name, PATHINFO_EXTENSION);
-                    $file_name = uniqid() . '.' . $file_ext;
-                    $file_path = $this->upload_dir . $file_name;
-
-                    if (!move_uploaded_file($files['photos']['tmp_name'][$index], $file_path)) {
-                        throw new Exception("Không thể lưu ảnh: " . $name);
-                    }
-
-                    if (!$this->feedback->addFeedbackMedia($feedback_id, $file_path, $file_size)) {
-                        throw new Exception("Lỗi khi lưu thông tin ảnh.");
-                    }
-                    $photo_count++;
-                }
-            }
-
-            $this->db->commit();
-            return ['success' => true, 'message' => 'Đánh giá đã được gửi thành công!'];
+            die(json_encode(['success' => true, 'message' => 'Đánh giá đã được gửi thành công!']));
         } catch (Exception $e) {
-            $this->db->rollBack();
-            return ['success' => false, 'message' => $e->getMessage()];
+            die(json_encode(['success' => false, 'message' => $e->getMessage()]));
         }
     }
 
