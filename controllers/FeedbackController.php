@@ -20,8 +20,7 @@ class FeedbackController
 
     public function submitFeedback($request, $files)
     {
-        // Đảm bảo không có output nào trước JSON
-        ob_start(); // Bắt đầu buffer để kiểm soát output
+        ob_start();
 
         try {
             header('Content-Type: application/json; charset=UTF-8');
@@ -37,10 +36,8 @@ class FeedbackController
             $content = trim($request['content'] ?? '');
             $rating = isset($request['rating']) ? (int)$request['rating'] : 0;
 
-            // Log dữ liệu đầu vào
             error_log("submitFeedback called with: user_id=$user_id, product_id=$product_id, order_id=$order_id, rating=$rating, content=$content");
 
-            // Validate input
             if ($product_id <= 0 || $order_id <= 0) {
                 error_log("submitFeedback: Invalid product_id ($product_id) or order_id ($order_id)");
                 die(json_encode(['success' => false, 'message' => 'Dữ liệu không hợp lệ.']));
@@ -54,10 +51,8 @@ class FeedbackController
                 die(json_encode(['success' => false, 'message' => 'Điểm đánh giá phải từ 1 đến 5.']));
             }
 
-            // Sanitize content
             $content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
 
-            // Check if already reviewed
             if ($this->feedback->hasOrderFeedback($user_id, $order_id, $product_id)) {
                 error_log("submitFeedback: Already reviewed (user_id=$user_id, order_id=$order_id, product_id=$product_id)");
                 die(json_encode(['success' => false, 'message' => 'Bạn đã đánh giá sản phẩm này trong đơn hàng.']));
@@ -65,18 +60,16 @@ class FeedbackController
 
             $this->db->beginTransaction();
 
-            // Insert feedback
             $feedback_id = $this->feedback->addFeedback($user_id, $product_id, $order_id, $content, $rating);
             if (!$feedback_id) {
                 throw new Exception('Không thể lưu đánh giá.');
             }
             error_log("submitFeedback: Feedback saved with ID $feedback_id");
 
-            // Handle image uploads
             if (!empty($files['images']['name'][0])) {
                 $photo_count = 0;
                 foreach ($files['images']['name'] as $index => $name) {
-                    if (empty($name)) continue; // Bỏ qua file rỗng
+                    if (empty($name)) continue;
                     if ($photo_count >= 3) {
                         throw new Exception('Chỉ được phép tải lên tối đa 3 ảnh.');
                     }
@@ -134,7 +127,6 @@ class FeedbackController
             header('Content-Type: application/json; charset=UTF-8');
             die(json_encode(['success' => false, 'message' => $error_message]));
         } finally {
-            // Xóa buffer để tránh output không mong muốn
             ob_end_clean();
         }
     }
@@ -151,12 +143,10 @@ class FeedbackController
             $content = trim($request['content'] ?? '');
             $rating = isset($request['rating']) ? (int)$request['rating'] : 0;
 
-            // Kiểm tra quyền chỉnh sửa
             if (!$this->feedback->canEditFeedback($feedback_id, $user_id)) {
                 return ['success' => false, 'message' => 'Bạn không có quyền chỉnh sửa đánh giá này.'];
             }
 
-            // Kiểm tra dữ liệu
             if (strlen($content) < 10) {
                 return ['success' => false, 'message' => 'Nội dung đánh giá phải có ít nhất 10 ký tự.'];
             }
@@ -166,14 +156,11 @@ class FeedbackController
 
             $this->db->beginTransaction();
 
-            // Cập nhật đánh giá
             if (!$this->feedback->updateFeedback($feedback_id, $content, $rating)) {
                 throw new Exception("Lỗi khi cập nhật đánh giá.");
             }
 
-            // Xử lý ảnh mới nếu có
             if (!empty($files['photos']['name'][0])) {
-                // Xóa ảnh cũ
                 $this->feedback->deleteMediaByFeedback($feedback_id);
 
                 $photo_count = 0;
@@ -182,7 +169,6 @@ class FeedbackController
                         throw new Exception("Tối đa 3 ảnh được phép.");
                     }
 
-                    // Kiểm tra và lưu ảnh mới
                     if ($files['photos']['error'][$index] !== UPLOAD_ERR_OK) {
                         throw new Exception("Lỗi khi tải lên ảnh: " . $name);
                     }
@@ -230,12 +216,10 @@ class FeedbackController
             $user_id = $_SESSION['user_id'];
             $feedback_id = isset($request['feedback_id']) ? (int)$request['feedback_id'] : 0;
 
-            // Kiểm tra quyền xóa
             if (!$this->feedback->canEditFeedback($feedback_id, $user_id)) {
                 return ['success' => false, 'message' => 'Bạn không có quyền xóa đánh giá này.'];
             }
 
-            // Xóa đánh giá và ảnh
             if (!$this->feedback->deleteFeedback($feedback_id)) {
                 throw new Exception("Lỗi khi xóa đánh giá.");
             }
@@ -246,7 +230,6 @@ class FeedbackController
         }
     }
 
-    // Lấy danh sách đánh giá cho sản phẩm
     public function getFeedback($product_id)
     {
         try {
@@ -260,3 +243,4 @@ class FeedbackController
         }
     }
 }
+?>
