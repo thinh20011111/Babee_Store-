@@ -439,13 +439,13 @@ endif; ?>
 <section class="customer-reviews mt-5 mb-5">
     <h3 class="mb-4">Đánh giá của khách hàng</h3>
 
-    <?php if ($feedback_stats['total_reviews'] > 0): ?>
+    <?php if (isset($feedback_stats) && $feedback_stats['total_reviews'] > 0): ?>
         <!-- Thống kê đánh giá -->
         <div class="review-stats bg-light p-4 rounded shadow-sm mb-4">
             <div class="row align-items-center">
                 <!-- Điểm trung bình -->
                 <div class="col-md-3 text-center">
-                    <h4 class="display-4 mb-0"><?php echo $feedback_stats['average_rating']; ?></h4>
+                    <h4 class="display-4 mb-0"><?php echo number_format($feedback_stats['average_rating'], 1); ?></h4>
                     <div class="rating mb-2">
                         <?php for ($i = 1; $i <= 5; $i++): ?>
                             <i class="fas fa-star <?php echo ($i <= round($feedback_stats['average_rating'])) ? 'text-warning' : 'text-muted'; ?>"></i>
@@ -456,17 +456,20 @@ endif; ?>
 
                 <!-- Phân bố số sao -->
                 <div class="col-md-9">
-                    <?php for ($i = 5; $i >= 1; $i--): ?>
+                    <?php for ($i = 5; $i >= 1; $i--):
+                        $star_count = isset($feedback_stats[$i . '_star']) ? $feedback_stats[$i . '_star'] : 0;
+                        $star_percent = isset($feedback_stats[$i . '_star_percent']) ? $feedback_stats[$i . '_star_percent'] : 0;
+                    ?>
                         <div class="d-flex align-items-center mb-2">
                             <div class="text-muted" style="width: 60px;"><?php echo $i; ?> sao</div>
                             <div class="progress flex-grow-1" style="height: 10px;">
                                 <div class="progress-bar bg-warning" role="progressbar"
-                                    style="width: <?php echo $feedback_stats[$i . '_star_percent']; ?>%"
-                                    aria-valuenow="<?php echo $feedback_stats[$i . '_star_percent']; ?>"
+                                    style="width: <?php echo $star_percent; ?>%"
+                                    aria-valuenow="<?php echo $star_percent; ?>"
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <div class="text-muted ml-2" style="width: 60px;">
-                                <?php echo $feedback_stats[$i . '_star']; ?> đánh giá
+                                <?php echo $star_count; ?> đánh giá
                             </div>
                         </div>
                     <?php endfor; ?>
@@ -475,43 +478,45 @@ endif; ?>
         </div>
 
         <!-- Danh sách đánh giá -->
-        <div class="review-list">
-            <?php foreach ($feedbacks as $feedback): ?>
-                <div class="review-item border-bottom pb-4 mb-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <img src="<?php echo !empty($feedback['avatar']) ? $feedback['avatar'] : 'assets/images/default-avatar.png'; ?>"
-                            class="rounded-circle mr-3" style="width: 50px; height: 50px; object-fit: cover;"
-                            alt="<?php echo htmlspecialchars($feedback['username']); ?>">
-                        <div>
-                            <h5 class="mb-0"><?php echo htmlspecialchars($feedback['username']); ?></h5>
-                            <div class="rating">
-                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                    <i class="fas fa-star <?php echo ($i <= $feedback['rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
-                                <?php endfor; ?>
-                                <span class="text-muted ml-2">
-                                    <?php echo date('d/m/Y', strtotime($feedback['created_at'])); ?>
-                                </span>
+        <?php if (isset($feedbacks) && !empty($feedbacks)): ?>
+            <div class="review-list">
+                <?php foreach ($feedbacks as $feedback): ?>
+                    <div class="review-item border-bottom pb-4 mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="<?php echo !empty($feedback['avatar']) ? htmlspecialchars($feedback['avatar']) : 'assets/images/default-avatar.png'; ?>"
+                                class="rounded-circle mr-3" style="width: 50px; height: 50px; object-fit: cover;"
+                                alt="<?php echo htmlspecialchars($feedback['username']); ?>">
+                            <div>
+                                <h5 class="mb-0"><?php echo htmlspecialchars($feedback['username']); ?></h5>
+                                <div class="rating">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fas fa-star <?php echo ($i <= $feedback['rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
+                                    <?php endfor; ?>
+                                    <span class="text-muted ml-2">
+                                        <?php echo date('d/m/Y', strtotime($feedback['created_at'])); ?>
+                                    </span>
+                                </div>
                             </div>
                         </div>
+
+                        <p class="mb-3"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
+
+                        <?php if (isset($feedback['media']) && !empty($feedback['media'])): ?>
+                            <div class="review-images d-flex flex-wrap gap-2 mb-3">
+                                <?php foreach ($feedback['media'] as $media): ?>
+                                    <a href="<?php echo htmlspecialchars($media['file_path']); ?>"
+                                        data-fancybox="review-<?php echo $feedback['id']; ?>">
+                                        <img src="<?php echo htmlspecialchars($media['file_path']); ?>"
+                                            class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;"
+                                            alt="Review image">
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
-
-                    <p class="mb-3"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
-
-                    <?php if (!empty($feedback['media'])): ?>
-                        <div class="review-images d-flex flex-wrap gap-2 mb-3">
-                            <?php foreach ($feedback['media'] as $media): ?>
-                                <a href="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                    data-fancybox="review-<?php echo $feedback['id']; ?>">
-                                    <img src="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                        class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;"
-                                        alt="Review image">
-                                </a>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php endforeach; ?>
-        </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     <?php else: ?>
         <div class="alert alert-info rounded shadow-sm">
             <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
