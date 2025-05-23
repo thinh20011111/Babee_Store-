@@ -924,7 +924,11 @@ include 'views/layouts/header.php';
 
             const formData = new FormData(feedbackForm);
 
-            // Debug form data
+            // Xóa file ảnh trống
+            if (formData.get('images[]')?.size === 0) {
+                formData.delete('images[]');
+            }
+
             console.log('Form Data:', Object.fromEntries(formData));
 
             this.disabled = true;
@@ -936,15 +940,14 @@ include 'views/layouts/header.php';
                     body: formData
                 })
                 .then(response => {
-                    // Debug response
                     console.log('Response status:', response.status);
-                    console.log('Response headers:', response.headers);
                     return response.text().then(text => {
-                        console.log('Raw response:', text);
+                        console.log('Raw response text:', text);
                         try {
                             return JSON.parse(text);
                         } catch (e) {
-                            console.error('JSON parse error:', e);
+                            console.error('Parse error:', e);
+                            console.error('Response text:', text);
                             throw new Error('Phản hồi không hợp lệ từ server');
                         }
                     });
@@ -954,7 +957,6 @@ include 'views/layouts/header.php';
                     if (data.success) {
                         showNotification(data.message, 'success');
                         feedbackModal.hide();
-                        // Disable the feedback button for this product
                         const productId = formData.get('product_id');
                         const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
                         if (feedbackBtn) {
@@ -966,7 +968,7 @@ include 'views/layouts/header.php';
                     }
                 })
                 .catch(error => {
-                    console.error('Fetch error:', error);
+                    console.error('Error:', error);
                     showNotification('Lỗi hệ thống: ' + error.message, 'error');
                 })
                 .finally(() => {
