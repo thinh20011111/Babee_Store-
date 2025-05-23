@@ -936,45 +936,47 @@ include 'views/layouts/header.php';
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi...';
 
             fetch('index.php?controller=feedback&action=submit', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    return response.text().then(text => {
-                        console.log('Raw response text:', text);
-                        try {
-                            return JSON.parse(text);
-                        } catch (e) {
-                            console.error('Parse error:', e);
-                            console.error('Response text:', text);
-                            throw new Error('Phản hồi không hợp lệ từ server');
-                        }
-                    });
-                })
-                .then(data => {
-                    console.log('Parsed data:', data);
-                    if (data.success) {
-                        showNotification(data.message, 'success');
-                        feedbackModal.hide();
-                        const productId = formData.get('product_id');
-                        const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
-                        if (feedbackBtn) {
-                            feedbackBtn.disabled = true;
-                            feedbackBtn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
-                        }
-                    } else {
-                        showNotification(data.message || 'Không thể gửi đánh giá', 'error');
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                return response.text().then(text => {
+                    console.log('Raw response text:', text);
+                    try {
+                        const parsedData = JSON.parse(text);
+                        console.log('Parsed data:', parsedData);
+                        return parsedData;
+                    } catch (e) {
+                        console.error('Parse error:', e);
+                        console.error('Response text:', text);
+                        throw new Error('Phản hồi không hợp lệ từ server');
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Lỗi hệ thống: ' + error.message, 'error');
-                })
-                .finally(() => {
-                    this.disabled = false;
-                    this.innerHTML = originalText;
                 });
+            })
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    feedbackModal.hide();
+                    const productId = formData.get('product_id');
+                    const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
+                    if (feedbackBtn) {
+                        feedbackBtn.disabled = true;
+                        feedbackBtn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
+                    }
+                } else {
+                    showNotification(data.message || 'Không thể gửi đánh giá', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Lỗi hệ thống: ' + error.message, 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = originalText;
+            });
         });
 
         // Reset form when modal is closed

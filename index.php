@@ -1,4 +1,9 @@
 <?php
+
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ALL);
+
 // Cấu hình ứng dụng
 define('SITE_NAME', 'Babee - Thời trang cho bé');
 define('SITE_DESCRIPTION', 'Thời trang đường phố dành cho giới trẻ - Bold & Colorful');
