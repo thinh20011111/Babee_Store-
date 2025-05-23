@@ -39,6 +39,12 @@ include_once 'track_visits.php';
 $controller = isset($_GET['controller']) ? $_GET['controller'] : 'home';
 $action = isset($_GET['action']) ? $_GET['action'] : 'index';
 
+// Danh sách các controller/action trả về JSON (AJAX)
+$jsonActions = [
+    'feedback' => ['submit', 'update', 'delete'],
+    'user' => ['updateCart', 'submitOrder'] // Thêm các action khác nếu cần
+];
+
 // Ánh xạ action đặc biệt
 $actionMap = [
     'feedback' => [
@@ -47,6 +53,7 @@ $actionMap = [
         'delete' => 'deleteFeedback'
     ]
 ];
+
 $controller_name = ucfirst($controller) . 'Controller';
 $controller_file = "controllers/{$controller_name}.php";
 
@@ -59,22 +66,40 @@ if (file_exists($controller_file)) {
         $method = $actionMap[$controller][$action];
     }
 
-    ob_start(); // Bắt đầu buffer
     if (method_exists($controller_instance, $method)) {
-        header('Content-Type: application/json; charset=UTF-8');
-        $controller_instance->$method($_POST, $_FILES);
+        // Kiểm tra xem action có trả về JSON không
+        $isJsonResponse = isset($jsonActions[$controller]) && in_array($action, $jsonActions[$controller]);
+
+        ob_start();
+        if ($isJsonResponse) {
+            header('Content-Type: application/json; charset=UTF-8');
+            $result = $controller_instance->$method($_POST, $_FILES);
+            echo is_string($result) ? $result : json_encode($result);
+        } else {
+            // Trả về HTML (giao diện)
+            $controller_instance->$method();
+        }
+        $output = ob_get_clean();
+        if (!empty($output)) {
+            echo $output;
+        }
     } else {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Action không tồn tại.']);
-    }
-    $output = ob_get_clean();
-    if (!empty($output)) {
-        echo $output;
+        if (isset($jsonActions[$controller]) && in_array($action, $jsonActions[$controller])) {
+            http_response_code(404);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode(['success' => false, 'message' => 'Action không tồn tại.']);
+        } else {
+            include 'views/404.php';
+        }
     }
 } else {
-    http_response_code(404);
-    header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode(['success' => false, 'message' => 'Controller không tồn tại.']);
+    if (isset($jsonActions[$controller]) && in_array($action, $jsonActions[$controller])) {
+        http_response_code(404);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['success' => false, 'message' => 'Controller không tồn tại.']);
+    } else {
+        include 'views/404.php';
+    }
 }
 exit();
 ?>
