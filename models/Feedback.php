@@ -106,4 +106,77 @@ class Feedback
         $stmt = $this->db->prepare($query);
         return $stmt->execute([$feedback_id]);
     }
+
+    public function getProductFeedbackStats($product_id)
+    {
+        try {
+            // Lấy tổng số đánh giá và điểm trung bình
+            $query = "SELECT COUNT(*) as total_reviews, 
+                             AVG(rating) as average_rating,
+                             SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
+                             SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
+                             SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
+                             SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
+                             SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
+                      FROM feedback
+                      WHERE product_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$product_id]);
+            $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Làm tròn điểm trung bình đến 1 chữ số thập phân
+            $stats['average_rating'] = round($stats['average_rating'], 1);
+
+            // Tính phần trăm cho mỗi mức sao
+            $total = $stats['total_reviews'];
+            if ($total > 0) {
+                $stats['five_star_percent'] = round(($stats['five_star'] / $total) * 100);
+                $stats['four_star_percent'] = round(($stats['four_star'] / $total) * 100);
+                $stats['three_star_percent'] = round(($stats['three_star'] / $total) * 100);
+                $stats['two_star_percent'] = round(($stats['two_star'] / $total) * 100);
+                $stats['one_star_percent'] = round(($stats['one_star'] / $total) * 100);
+            } else {
+                $stats['five_star_percent'] = 0;
+                $stats['four_star_percent'] = 0;
+                $stats['three_star_percent'] = 0;
+                $stats['two_star_percent'] = 0;
+                $stats['one_star_percent'] = 0;
+            }
+
+            return $stats;
+        } catch (Exception $e) {
+            error_log("Error in getProductFeedbackStats: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // Lấy danh sách đánh giá của sản phẩm có phân trang
+    public function getProductFeedbacks($product_id, $page = 1, $limit = 10)
+    {
+        try {
+            $offset = ($page - 1) * $limit;
+
+            // Lấy danh sách đánh giá
+            $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at,
+                             u.username, u.avatar
+                      FROM feedback f
+                      JOIN user u ON f.user_id = u.id
+                      WHERE f.product_id = ?
+                      ORDER BY f.created_at DESC
+                      LIMIT ? OFFSET ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$product_id, $limit, $offset]);
+            $feedbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Lấy ảnh cho mỗi đánh giá
+            foreach ($feedbacks as &$feedback) {
+                $feedback['media'] = $this->getMediaByFeedback($feedback['id']);
+            }
+
+            return $feedbacks;
+        } catch (Exception $e) {
+            error_log("Error in getProductFeedbacks: " . $e->getMessage());
+            return [];
+        }
+    }
 }

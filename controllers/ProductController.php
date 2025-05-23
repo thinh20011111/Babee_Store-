@@ -1,39 +1,44 @@
 <?php
-class ProductController {
+class ProductController
+{
     private $conn;
     private $product;
     private $category;
-    
-    public function __construct($db) {
+    private $feedback;
+
+    public function __construct($db)
+    {
         $this->conn = $db;
         $this->product = new Product($db);
         $this->category = new Category($db);
+        $this->feedback = new Feedback($db);
     }
-    
+
     // List products by category
-    public function list() {
+    public function list()
+    {
         // Get category ID from URL
         $category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
-        
+
         // Get current page
         $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
         if ($page < 1) $page = 1;
-        
+
         // Get search keyword
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-        
+
         // Set up variables for pagination
         $items_per_page = defined('ITEMS_PER_PAGE') ? ITEMS_PER_PAGE : 12;
         $total_rows = 0;
         $products = [];
-        
+
         // Get all categories for sidebar
         $categories = [];
         $category_stmt = $this->category->read();
         while ($row = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
             $categories[] = $row;
         }
-        
+
         // Get current category info if category_id is specified
         $category_name = '';
         if ($category_id > 0) {
@@ -42,7 +47,7 @@ class ProductController {
                 $category_name = $this->category->name;
             }
         }
-        
+
         // Get products based on search or category
         if (!empty($search)) {
             // Search products
@@ -57,51 +62,52 @@ class ProductController {
             $stmt = $this->product->read($items_per_page, $page);
             $total_rows = $this->product->countAll();
         }
-        
+
         // Process results
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $products[] = $row;
         }
-        
+
         // Calculate total pages
         $total_pages = ceil($total_rows / $items_per_page);
-        
+
         // Load product list view
         include 'views/products/list.php';
     }
-    
+
     // View product details
-    public function detail() {
+    public function detail()
+    {
         // Bật error reporting
         ini_set('display_errors', 1);
         ini_set('display_startup_errors', 1);
         error_reporting(E_ALL);
-        
+
         // Khởi tạo session
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        
+
         // Khởi tạo file log
         $log_file = 'logs/debug.log';
         if (!file_exists(dirname($log_file))) {
             mkdir(dirname($log_file), 0755, true);
         }
-        
+
         // Ghi log bắt đầu
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::detail\n", FILE_APPEND);
-        
+
         // Get product ID from URL
         $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID: $product_id\n", FILE_APPEND);
-        
+
         if ($product_id <= 0) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product ID không hợp lệ, chuyển hướng\n", FILE_APPEND);
             $_SESSION['error_message'] = "ID sản phẩm không hợp lệ.";
             header("Location: index.php?controller=product&action=list");
             exit;
         }
-        
+
         // Get product details
         try {
             $this->product->id = $product_id;
@@ -111,6 +117,10 @@ class ProductController {
                 header("Location: index.php?controller=product&action=list");
                 exit;
             }
+            // Lấy thông tin đánh giá sản phẩm
+            $feedback_stats = $this->feedback->getProductFeedbackStats($product_id);
+            $feedbacks = $this->feedback->getProductFeedbacks($product_id, 1, 10); // Lấy 10 đánh giá mới nhất
+
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product data: " . json_encode([
                 'id' => $this->product->id,
                 'name' => $this->product->name,
@@ -118,7 +128,9 @@ class ProductController {
                 'sale_price' => $this->product->sale_price,
                 'category_id' => $this->product->category_id,
                 'image' => $this->product->image,
-                'images' => $this->product->images
+                'images' => $this->product->images,
+                'feedback_stats' => $feedback_stats,
+                'feedbacks' => $feedbacks
             ], JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
@@ -126,7 +138,7 @@ class ProductController {
             header("Location: index.php?controller=product&action=list");
             exit;
         }
-        
+
         // Get variants
         try {
             $variants = $this->product->variants;
@@ -135,7 +147,7 @@ class ProductController {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc variants: " . $e->getMessage() . "\n", FILE_APPEND);
             $variants = [];
         }
-        
+
         // Get category name
         try {
             $category_name = $this->product->category_name ?? $this->category->getNameById($this->product->category_id);
@@ -147,7 +159,7 @@ class ProductController {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc category name: " . $e->getMessage() . "\n", FILE_APPEND);
             $category_name = 'Danh mục không xác định';
         }
-        
+
         // Get related products
         try {
             $related_products = [];
@@ -162,18 +174,22 @@ class ProductController {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc related products: " . $e->getMessage() . "\n", FILE_APPEND);
             $related_products = [];
         }
-        
+
+
+
         // Prepare data for view
         $data = [
             'product' => $this->product,
             'variants' => $variants,
             'category_name' => $category_name,
-            'related_products' => $related_products
+            'related_products' => $related_products,
+            'feedback_stats' => $feedback_stats,
+            'feedbacks' => $feedbacks
         ];
-        
+
         // Ghi log dữ liệu truyền vào view
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Data for view: " . json_encode($data, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
-        
+
         // Load product detail view
         try {
             extract($data);
@@ -193,23 +209,24 @@ class ProductController {
             exit;
         }
     }
-    
+
     // Create new product (Admin)
-    public function create() {
+    public function create()
+    {
         // Khởi tạo session
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        
+
         // Khởi tạo file log
         $log_file = 'logs/debug.log';
         if (!file_exists(dirname($log_file))) {
             mkdir(dirname($log_file), 0755, true);
         }
-        
+
         // Ghi log bắt đầu
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::create\n", FILE_APPEND);
-        
+
         // Kiểm tra quyền admin
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không có quyền admin\n", FILE_APPEND);
@@ -217,7 +234,7 @@ class ProductController {
             header("Location: index.php?controller=product&action=list");
             exit;
         }
-        
+
         // Xử lý form
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
@@ -228,7 +245,7 @@ class ProductController {
                 $this->product->category_id = intval($_POST['category_id'] ?? 0);
                 $this->product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
                 $this->product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
-                
+
                 // Kiểm tra dữ liệu đầu vào
                 if (empty($this->product->name) || $this->product->price <= 0 || $this->product->category_id <= 0) {
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
@@ -236,13 +253,13 @@ class ProductController {
                     header("Location: index.php?controller=product&action=create");
                     exit;
                 }
-                
+
                 // Xử lý upload ảnh
                 $upload_dir = 'uploads/images/';
                 if (!is_dir($upload_dir)) {
                     mkdir($upload_dir, 0755, true);
                 }
-                
+
                 // Ảnh chính
                 if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
                     $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
@@ -259,7 +276,7 @@ class ProductController {
                     header("Location: index.php?controller=product&action=create");
                     exit;
                 }
-                
+
                 // Ảnh bổ sung
                 $this->product->images = [];
                 if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
@@ -284,7 +301,7 @@ class ProductController {
                     }
                 }
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Additional images: " . json_encode($this->product->images) . "\n", FILE_APPEND);
-                
+
                 // Tạo sản phẩm
                 if ($product_id = $this->product->create()) {
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Tạo sản phẩm thành công, ID: $product_id\n", FILE_APPEND);
@@ -304,28 +321,29 @@ class ProductController {
                 exit;
             }
         }
-        
+
         // Load form tạo sản phẩm
         $categories = $this->category->read()->fetchAll(PDO::FETCH_ASSOC);
         include 'views/admin/products/create.php';
     }
-    
+
     // Update existing product (Admin)
-    public function update() {
+    public function update()
+    {
         // Khởi tạo session
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        
+
         // Khởi tạo file log
         $log_file = 'logs/debug.log';
         if (!file_exists(dirname($log_file))) {
             mkdir(dirname($log_file), 0755, true);
         }
-        
+
         // Ghi log bắt đầu
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Bắt đầu ProductController::update\n", FILE_APPEND);
-        
+
         // Kiểm tra quyền admin
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Không có quyền admin\n", FILE_APPEND);
@@ -333,7 +351,7 @@ class ProductController {
             header("Location: index.php?controller=product&action=list");
             exit;
         }
-        
+
         // Get product ID
         $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if ($product_id <= 0) {
@@ -342,7 +360,7 @@ class ProductController {
             header("Location: index.php?controller=product&action=list");
             exit;
         }
-        
+
         // Load product data
         $this->product->id = $product_id;
         if (!$this->product->readOne()) {
@@ -351,7 +369,7 @@ class ProductController {
             header("Location: index.php?controller=product&action=list");
             exit;
         }
-        
+
         // Xử lý form
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
@@ -362,7 +380,7 @@ class ProductController {
                 $this->product->category_id = intval($_POST['category_id'] ?? 0);
                 $this->product->is_featured = isset($_POST['is_featured']) ? 1 : 0;
                 $this->product->is_sale = isset($_POST['is_sale']) ? 1 : 0;
-                
+
                 // Kiểm tra dữ liệu đầu vào
                 if (empty($this->product->name) || $this->product->price <= 0 || $this->product->category_id <= 0) {
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Dữ liệu đầu vào không hợp lệ\n", FILE_APPEND);
@@ -370,13 +388,13 @@ class ProductController {
                     header("Location: index.php?controller=product&action=update&id=$product_id");
                     exit;
                 }
-                
+
                 // Xử lý upload ảnh
                 $upload_dir = 'uploads/images/';
                 if (!is_dir($upload_dir)) {
                     mkdir($upload_dir, 0755, true);
                 }
-                
+
                 // Ảnh chính
                 if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == UPLOAD_ERR_OK) {
                     $main_image_path = $upload_dir . time() . '_' . basename($_FILES['main_image']['name']);
@@ -388,7 +406,7 @@ class ProductController {
                     }
                     $this->product->image = $main_image_path;
                 }
-                
+
                 // Ảnh bổ sung
                 $this->product->images = [];
                 if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
@@ -413,7 +431,7 @@ class ProductController {
                     }
                 }
                 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Additional images: " . json_encode($this->product->images) . "\n", FILE_APPEND);
-                
+
                 // Xử lý xóa ảnh bổ sung
                 $delete_image_ids = isset($_POST['delete_image_ids']) && is_array($_POST['delete_image_ids']) ? $_POST['delete_image_ids'] : [];
                 if (!empty($delete_image_ids)) {
@@ -421,7 +439,7 @@ class ProductController {
                         $this->product->deleteImage($image_id);
                     }
                 }
-                
+
                 // Cập nhật sản phẩm
                 if ($this->product->update()) {
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cập nhật sản phẩm thành công, ID: $product_id\n", FILE_APPEND);
@@ -441,14 +459,15 @@ class ProductController {
                 exit;
             }
         }
-        
+
         // Load form cập nhật sản phẩm
         $categories = $this->category->read()->fetchAll(PDO::FETCH_ASSOC);
         include 'views/admin/products/update.php';
     }
-    
+
     // Add product to cart (AJAX)
-    public function addToCart() {
+    public function addToCart()
+    {
         // Đảm bảo session đã được khởi tạo
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -598,7 +617,8 @@ class ProductController {
     }
 
     // Delete product (Admin)
-    public function delete() {
+    public function delete()
+    {
         // Khởi tạo session
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -646,4 +666,3 @@ class ProductController {
         exit;
     }
 }
-?>

@@ -72,21 +72,21 @@ try {
 
 <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
-<div class="debug-info alert alert-info">
-    <strong>Debug Info:</strong><br>
-    Product ID: <?php echo htmlspecialchars($product->id ?? 'N/A'); ?><br>
-    Product Name: <?php echo htmlspecialchars($product->name ?? 'N/A'); ?><br>
-    Main Image: <?php echo htmlspecialchars($product->image ?? 'N/A'); ?><br>
-    Additional Images Count: <?php echo count($product->images); ?><br>
-    Total Stock: <?php echo !empty($product->id) ? $product->getTotalStock() : 0; ?><br>
-    Variants Count: <?php echo count($variants ?? []); ?><br>
-    Variants: <?php echo htmlspecialchars(json_encode($variants ?? [])); ?><br>
-    Category Name: <?php echo htmlspecialchars($category_name ?? 'N/A'); ?><br>
-    Related Products Count: <?php echo count($related_products ?? []); ?><br>
-    Has Multiple Colors: <?php echo $has_multiple_colors ? 'Yes' : 'No'; ?>
-</div>
+    <div class="debug-info alert alert-info">
+        <strong>Debug Info:</strong><br>
+        Product ID: <?php echo htmlspecialchars($product->id ?? 'N/A'); ?><br>
+        Product Name: <?php echo htmlspecialchars($product->name ?? 'N/A'); ?><br>
+        Main Image: <?php echo htmlspecialchars($product->image ?? 'N/A'); ?><br>
+        Additional Images Count: <?php echo count($product->images); ?><br>
+        Total Stock: <?php echo !empty($product->id) ? $product->getTotalStock() : 0; ?><br>
+        Variants Count: <?php echo count($variants ?? []); ?><br>
+        Variants: <?php echo htmlspecialchars(json_encode($variants ?? [])); ?><br>
+        Category Name: <?php echo htmlspecialchars($category_name ?? 'N/A'); ?><br>
+        Related Products Count: <?php echo count($related_products ?? []); ?><br>
+        Has Multiple Colors: <?php echo $has_multiple_colors ? 'Yes' : 'No'; ?>
+    </div>
 <?php
-file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info\n", FILE_APPEND);
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info\n", FILE_APPEND);
 endif; ?>
 
 <!-- Page Header with Breadcrumb -->
@@ -116,18 +116,18 @@ endif; ?>
         <div class="col-lg-6 mb-4 mb-lg-0">
             <div class="product-image-container position-relative shadow-sm rounded">
                 <?php if (!empty($product->image)): ?>
-                <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded main-image" alt="<?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
+                    <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded main-image" alt="<?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?>" style="max-height: 500px; width: 100%; object-fit: cover;">
                 <?php else: ?>
-                <div class="product-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 500px;">
-                    <i class="fas fa-tshirt fa-6x text-secondary"></i>
-                </div>
+                    <div class="product-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 500px;">
+                        <i class="fas fa-tshirt fa-6x text-secondary"></i>
+                    </div>
                 <?php endif; ?>
-                
+
                 <?php if (($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
-                <span class="badge bg-danger position-absolute top-0 end-0 m-3">SALE</span>
+                    <span class="badge bg-danger position-absolute top-0 end-0 m-3">SALE</span>
                 <?php endif; ?>
             </div>
-            
+
             <!-- Product Thumbnails -->
             <div class="product-thumbnails mt-3">
                 <div class="row g-2 flex-wrap">
@@ -135,41 +135,41 @@ endif; ?>
                     <div class="col-3 col-sm-2">
                         <div class="thumbnail-item border rounded p-1 <?php echo !empty($product->image) ? 'active' : ''; ?>" data-image="<?php echo htmlspecialchars($product->image ?? ''); ?>">
                             <?php if (!empty($product->image)): ?>
-                            <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Main Image Thumbnail">
+                                <img src="<?php echo htmlspecialchars($product->image); ?>" class="img-fluid rounded" alt="Main Image Thumbnail">
                             <?php else: ?>
-                            <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
-                                <i class="fas fa-tshirt fa-2x text-secondary"></i>
-                            </div>
+                                <div class="thumbnail-placeholder d-flex align-items-center justify-content-center bg-light rounded" style="height: 80px;">
+                                    <i class="fas fa-tshirt fa-2x text-secondary"></i>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
                     <!-- Additional Images Thumbnails -->
                     <?php foreach ($product->images as $index => $image): ?>
-                    <div class="col-3 col-sm-2">
-                        <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($image['image']); ?>">
-                            <img src="<?php echo htmlspecialchars($image['image']); ?>" class="img-fluid rounded" alt="Additional Image Thumbnail <?php echo $index + 1; ?>">
+                        <div class="col-3 col-sm-2">
+                            <div class="thumbnail-item border rounded p-1" data-image="<?php echo htmlspecialchars($image['image']); ?>">
+                                <img src="<?php echo htmlspecialchars($image['image']); ?>" class="img-fluid rounded" alt="Additional Image Thumbnail <?php echo $index + 1; ?>">
+                            </div>
                         </div>
-                    </div>
                     <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        
+
         <!-- Product Details -->
         <div class="col-lg-6">
             <div class="product-category text-uppercase mb-2 text-primary"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></div>
             <h1 class="product-title mb-3"><?php echo htmlspecialchars($product->name ?? 'Sản phẩm'); ?></h1>
-            
+
             <!-- Price -->
             <div class="product-price mb-4">
                 <?php if (($product->is_sale ?? 0) == 1 && !empty($product->sale_price) && $product->sale_price < $product->price): ?>
-                <span class="text-danger fs-3 fw-bold"><?php echo CURRENCY . number_format($product->sale_price); ?></span>
-                <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo CURRENCY . number_format($product->price); ?></span>
+                    <span class="text-danger fs-3 fw-bold"><?php echo CURRENCY . number_format($product->sale_price); ?></span>
+                    <span class="text-muted text-decoration-line-through fs-5 ms-2"><?php echo CURRENCY . number_format($product->price); ?></span>
                 <?php else: ?>
-                <span class="fs-3 fw-bold"><?php echo CURRENCY . number_format($product->price ?? 0); ?></span>
+                    <span class="fs-3 fw-bold"><?php echo CURRENCY . number_format($product->price ?? 0); ?></span>
                 <?php endif; ?>
             </div>
-            
+
             <!-- Availability -->
             <div class="product-availability mb-4">
                 <div class="d-flex align-items-center mb-2">
@@ -179,94 +179,94 @@ endif; ?>
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Total stock: $total_stock\n", FILE_APPEND);
                     ?>
                     <?php if ($total_stock > 0): ?>
-                    <span class="badge bg-success rounded-pill py-2 px-3">CÒN HÀNG</span>
+                        <span class="badge bg-success rounded-pill py-2 px-3">CÒN HÀNG</span>
                     <?php else: ?>
-                    <span class="badge bg-danger rounded-pill py-2 px-3">HẾT HÀNG</span>
+                        <span class="badge bg-danger rounded-pill py-2 px-3">HẾT HÀNG</span>
                     <?php endif; ?>
                 </div>
                 <div class="mb-2">
-                    <span class="fw-bold">Danh mục:</span> 
+                    <span class="fw-bold">Danh mục:</span>
                     <a href="index.php?controller=product&action=list&category_id=<?php echo htmlspecialchars($product->category_id ?? 0); ?>" class="ms-2 badge bg-light text-dark text-decoration-none py-2 px-3 rounded-pill"><?php echo htmlspecialchars($category_name ?? 'Danh mục'); ?></a>
                 </div>
             </div>
-        
+
             <!-- Add to Cart Form -->
             <?php if ($total_stock > 0): ?>
-            <form id="add-to-cart-form" class="mb-4 product-detail-form">
-                <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product->id ?? 0); ?>">
-                
-                <!-- Variant Selector (chỉ hiển thị nếu có variants) -->
-                <?php if (!empty($variants) && is_array($variants)): ?>
-                <div class="product-variants mb-4">
-                    <label class="fw-bold d-block mb-2">Biến thể:</label>
-                    <div class="row g-3">
-                        <!-- Size Selector -->
-                        <div class="col-12 col-md-6">
-                            <label class="fw-bold d-block mb-2">Kích cỡ:</label>
-                            <select class="form-select rounded-pill" name="size" id="variant-size" required>
-                                <option value="" disabled selected>Chọn kích cỡ</option>
-                                <?php
-                                $sizes = !empty($variants) ? array_unique(array_column($variants, 'size')) : [];
-                                foreach ($sizes as $size):
-                                    $size_stock = array_sum(array_map(function($v) use ($size) {
-                                        return $v['size'] === $size ? $v['stock'] : 0;
-                                    }, $variants));
-                                    $disabled = $size_stock == 0 ? 'disabled' : '';
-                                ?>
-                                <option value="<?php echo htmlspecialchars($size); ?>" <?php echo $disabled; ?>>
-                                    <?php echo htmlspecialchars($size); ?><?php echo $size_stock == 0 ? ' (Hết hàng)' : ''; ?>
-                                </option>
-                                <?php
-                                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Size: $size, Stock: $size_stock, Disabled: $disabled\n", FILE_APPEND);
-                                endforeach; ?>
-                            </select>
+                <form id="add-to-cart-form" class="mb-4 product-detail-form">
+                    <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product->id ?? 0); ?>">
+
+                    <!-- Variant Selector (chỉ hiển thị nếu có variants) -->
+                    <?php if (!empty($variants) && is_array($variants)): ?>
+                        <div class="product-variants mb-4">
+                            <label class="fw-bold d-block mb-2">Biến thể:</label>
+                            <div class="row g-3">
+                                <!-- Size Selector -->
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold d-block mb-2">Kích cỡ:</label>
+                                    <select class="form-select rounded-pill" name="size" id="variant-size" required>
+                                        <option value="" disabled selected>Chọn kích cỡ</option>
+                                        <?php
+                                        $sizes = !empty($variants) ? array_unique(array_column($variants, 'size')) : [];
+                                        foreach ($sizes as $size):
+                                            $size_stock = array_sum(array_map(function ($v) use ($size) {
+                                                return $v['size'] === $size ? $v['stock'] : 0;
+                                            }, $variants));
+                                            $disabled = $size_stock == 0 ? 'disabled' : '';
+                                        ?>
+                                            <option value="<?php echo htmlspecialchars($size); ?>" <?php echo $disabled; ?>>
+                                                <?php echo htmlspecialchars($size); ?><?php echo $size_stock == 0 ? ' (Hết hàng)' : ''; ?>
+                                            </option>
+                                        <?php
+                                            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Size: $size, Stock: $size_stock, Disabled: $disabled\n", FILE_APPEND);
+                                        endforeach; ?>
+                                    </select>
+                                </div>
+                                <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
+                                <?php if ($has_multiple_colors): ?>
+                                    <div class="col-12 col-md-6">
+                                        <label class="fw-bold d-block mb-2">Màu sắc:</label>
+                                        <select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
+                                            <option value="" disabled selected>Chọn màu sắc</option>
+                                        </select>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <input type="hidden" name="variant_id" id="variant-id">
                         </div>
-                        <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
-                        <?php if ($has_multiple_colors): ?>
-                        <div class="col-12 col-md-6">
-                            <label class="fw-bold d-block mb-2">Màu sắc:</label>
-                            <select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
-                                <option value="" disabled selected>Chọn màu sắc</option>
-                            </select>
+                    <?php endif; ?>
+
+                    <div class="row g-3 align-items-end mb-4">
+                        <div class="col-12 col-md-4">
+                            <label for="quantity" class="form-label fw-bold mb-2">Số lượng:</label>
+                            <div class="input-group shadow-sm">
+                                <button class="btn btn-outline-primary rounded-start-pill" type="button" onclick="decreaseQuantity()">-</button>
+                                <input type="number" class="form-control text-center border-primary" id="quantity" name="quantity" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
+                                <button class="btn btn-outline-primary rounded-end-pill" type="button" onclick="increaseQuantity()">+</button>
+                            </div>
                         </div>
-                        <?php endif; ?>
-                    </div>
-                    <input type="hidden" name="variant_id" id="variant-id">
-                </div>
-                <?php endif; ?>
-                
-                <div class="row g-3 align-items-end mb-4">
-                    <div class="col-12 col-md-4">
-                        <label for="quantity" class="form-label fw-bold mb-2">Số lượng:</label>
-                        <div class="input-group shadow-sm">
-                            <button class="btn btn-outline-primary rounded-start-pill" type="button" onclick="decreaseQuantity()">-</button>
-                            <input type="number" class="form-control text-center border-primary" id="quantity" name="quantity" value="1" min="1" max="<?php echo htmlspecialchars($total_stock); ?>">
-                            <button class="btn btn-outline-primary rounded-end-pill" type="button" onclick="increaseQuantity()">+</button>
+                        <div class="col-12 col-md-4">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill w-100 py-2 shadow-sm">
+                                <i class="far fa-heart me-1"></i> WISHLIST
+                            </button>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 shadow-sm">
+                                <i class="fas fa-cart-plus me-1"></i> THÊM VÀO GIỎ
+                            </button>
                         </div>
                     </div>
-                    <div class="col-12 col-md-4">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill w-100 py-2 shadow-sm">
-                            <i class="far fa-heart me-1"></i> WISHLIST
-                        </button>
-                    </div>
-                    <div class="col-12 col-md-4">
-                        <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 shadow-sm">
-                            <i class="fas fa-cart-plus me-1"></i> THÊM VÀO GIỎ
-                        </button>
-                    </div>
-                </div>
-            </form>
-            <?php else: ?>
-            <div class="product-out-of-stock mb-4 p-3 bg-light text-center rounded shadow-sm">
-                <p class="mb-2 fw-bold text-danger">SẢN PHẨM TẠM HẾT HÀNG</p>
-                <p class="mb-0 small">Vui lòng để lại email để nhận thông báo khi sản phẩm có hàng trở lại</p>
-                <form class="mt-3 d-flex gap-2 product-detail-form" id="notify-form">
-                    <input type="email" class="form-control rounded-pill" name="email" placeholder="Email của bạn" required>
-                    <button type="submit" class="btn btn-primary rounded-pill">Thông báo cho tôi</button>
                 </form>
-            </div>
+            <?php else: ?>
+                <div class="product-out-of-stock mb-4 p-3 bg-light text-center rounded shadow-sm">
+                    <p class="mb-2 fw-bold text-danger">SẢN PHẨM TẠM HẾT HÀNG</p>
+                    <p class="mb-0 small">Vui lòng để lại email để nhận thông báo khi sản phẩm có hàng trở lại</p>
+                    <form class="mt-3 d-flex gap-2 product-detail-form" id="notify-form">
+                        <input type="email" class="form-control rounded-pill" name="email" placeholder="Email của bạn" required>
+                        <button type="submit" class="btn btn-primary rounded-pill">Thông báo cho tôi</button>
+                    </form>
+                </div>
             <?php endif; ?>
-            
+
             <!-- Product Features -->
             <div class="product-features mb-4">
                 <div class="row g-3">
@@ -296,7 +296,7 @@ endif; ?>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Product Information Tabs -->
             <div class="product-info mb-4">
                 <ul class="nav nav-tabs" id="productTabs" role="tablist">
@@ -367,7 +367,7 @@ endif; ?>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Social Sharing -->
             <div class="product-share border-top pt-4">
                 <div class="d-flex align-items-center">
@@ -386,791 +386,982 @@ endif; ?>
 
 <!-- Related Products -->
 <?php if (!empty($related_products)): ?>
-<section class="related-products mt-5">
-    <h3 class="mb-4">Sản phẩm liên quan</h3>
-    <div class="row">
-        <?php foreach ($related_products as $related_product): ?>
-        <div class="col-12 col-sm-6 col-md-3 mb-4">
-            <div class="product-card h-100">
-                <div class="card border-0 shadow-sm h-100 rounded">
-                    <div class="position-relative">
-                        <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
-                            <?php if (!empty($related_product['image'])): ?>
-                            <img src="<?php echo htmlspecialchars($related_product['image']); ?>" class="card-img-top img-fluid rounded" alt="<?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?>">
-                            <?php else: ?>
-                            <div class="card-img-top bg-light p-4 d-flex align-items-center justify-content-center" style="height: 180px;">
-                                <i class="fas fa-tshirt fa-3x text-secondary"></i>
+    <section class="related-products mt-5">
+        <h3 class="mb-4">Sản phẩm liên quan</h3>
+        <div class="row">
+            <?php foreach ($related_products as $related_product): ?>
+                <div class="col-12 col-sm-6 col-md-3 mb-4">
+                    <div class="product-card h-100">
+                        <div class="card border-0 shadow-sm h-100 rounded">
+                            <div class="position-relative">
+                                <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
+                                    <?php if (!empty($related_product['image'])): ?>
+                                        <img src="<?php echo htmlspecialchars($related_product['image']); ?>" class="card-img-top img-fluid rounded" alt="<?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?>">
+                                    <?php else: ?>
+                                        <div class="card-img-top bg-light p-4 d-flex align-items-center justify-content-center" style="height: 180px;">
+                                            <i class="fas fa-tshirt fa-3x text-secondary"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </a>
+                                <?php if (($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
+                                    <span class="badge bg-danger position-absolute top-0 end-0 m-2">Giảm giá</span>
+                                <?php endif; ?>
                             </div>
-                            <?php endif; ?>
-                        </a>
-                        <?php if (($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
-                        <span class="badge bg-danger position-absolute top-0 end-0 m-2">Giảm giá</span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">
-                            <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>" class="text-decoration-none text-dark"><?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?></a>
-                        </h5>
-                        <div class="price-block mb-3">
-                            <?php if (($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
-                            <span class="text-danger fw-bold"><?php echo CURRENCY . number_format($related_product['sale_price']); ?></span>
-                            <span class="text-muted text-decoration-line-through ms-2"><?php echo CURRENCY . number_format($related_product['price']); ?></span>
-                            <?php else: ?>
-                            <span class="fw-bold"><?php echo CURRENCY . number_format($related_product['price'] ?? 0); ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="mt-auto">
-                            <button class="btn btn-primary btn-sm w-100 add-to-cart-btn rounded-pill" data-product-id="<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
-                                <i class="fas fa-shopping-cart me-1"></i> Thêm vào giỏ hàng
-                            </button>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">
+                                    <a href="index.php?controller=product&action=detail&id=<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>" class="text-decoration-none text-dark"><?php echo htmlspecialchars($related_product['name'] ?? 'Sản phẩm'); ?></a>
+                                </h5>
+                                <div class="price-block mb-3">
+                                    <?php if (($related_product['is_sale'] ?? 0) == 1 && !empty($related_product['sale_price']) && $related_product['sale_price'] < $related_product['price']): ?>
+                                        <span class="text-danger fw-bold"><?php echo CURRENCY . number_format($related_product['sale_price']); ?></span>
+                                        <span class="text-muted text-decoration-line-through ms-2"><?php echo CURRENCY . number_format($related_product['price']); ?></span>
+                                    <?php else: ?>
+                                        <span class="fw-bold"><?php echo CURRENCY . number_format($related_product['price'] ?? 0); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="mt-auto">
+                                    <button class="btn btn-primary btn-sm w-100 add-to-cart-btn rounded-pill" data-product-id="<?php echo htmlspecialchars($related_product['id'] ?? 0); ?>">
+                                        <i class="fas fa-shopping-cart me-1"></i> Thêm vào giỏ hàng
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
-    </div>
-</section>
+    </section>
 <?php
-file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã render related products\n", FILE_APPEND);
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã render related products\n", FILE_APPEND);
 endif; ?>
 
 <!-- Customer Reviews Section -->
 <section class="customer-reviews mt-5 mb-5">
     <h3 class="mb-4">Đánh giá của khách hàng</h3>
-    <div class="alert alert-info rounded shadow-sm">
-        <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
-    </div>
+
+    <?php if ($feedback_stats['total_reviews'] > 0): ?>
+        <!-- Thống kê đánh giá -->
+        <div class="review-stats bg-light p-4 rounded shadow-sm mb-4">
+            <div class="row align-items-center">
+                <!-- Điểm trung bình -->
+                <div class="col-md-3 text-center">
+                    <h4 class="display-4 mb-0"><?php echo $feedback_stats['average_rating']; ?></h4>
+                    <div class="rating mb-2">
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <i class="fas fa-star <?php echo ($i <= round($feedback_stats['average_rating'])) ? 'text-warning' : 'text-muted'; ?>"></i>
+                        <?php endfor; ?>
+                    </div>
+                    <p class="text-muted mb-0"><?php echo $feedback_stats['total_reviews']; ?> đánh giá</p>
+                </div>
+
+                <!-- Phân bố số sao -->
+                <div class="col-md-9">
+                    <?php for ($i = 5; $i >= 1; $i--): ?>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="text-muted" style="width: 60px;"><?php echo $i; ?> sao</div>
+                            <div class="progress flex-grow-1" style="height: 10px;">
+                                <div class="progress-bar bg-warning" role="progressbar"
+                                    style="width: <?php echo $feedback_stats[$i . '_star_percent']; ?>%"
+                                    aria-valuenow="<?php echo $feedback_stats[$i . '_star_percent']; ?>"
+                                    aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="text-muted ml-2" style="width: 60px;">
+                                <?php echo $feedback_stats[$i . '_star']; ?> đánh giá
+                            </div>
+                        </div>
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách đánh giá -->
+        <div class="review-list">
+            <?php foreach ($feedbacks as $feedback): ?>
+                <div class="review-item border-bottom pb-4 mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="<?php echo !empty($feedback['avatar']) ? $feedback['avatar'] : 'assets/images/default-avatar.png'; ?>"
+                            class="rounded-circle mr-3" style="width: 50px; height: 50px; object-fit: cover;"
+                            alt="<?php echo htmlspecialchars($feedback['username']); ?>">
+                        <div>
+                            <h5 class="mb-0"><?php echo htmlspecialchars($feedback['username']); ?></h5>
+                            <div class="rating">
+                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                    <i class="fas fa-star <?php echo ($i <= $feedback['rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
+                                <?php endfor; ?>
+                                <span class="text-muted ml-2">
+                                    <?php echo date('d/m/Y', strtotime($feedback['created_at'])); ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="mb-3"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
+
+                    <?php if (!empty($feedback['media'])): ?>
+                        <div class="review-images d-flex flex-wrap gap-2 mb-3">
+                            <?php foreach ($feedback['media'] as $media): ?>
+                                <a href="<?php echo htmlspecialchars($media['file_path']); ?>"
+                                    data-fancybox="review-<?php echo $feedback['id']; ?>">
+                                    <img src="<?php echo htmlspecialchars($media['file_path']); ?>"
+                                        class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;"
+                                        alt="Review image">
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div class="alert alert-info rounded shadow-sm">
+            <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
+        </div>
+    <?php endif; ?>
 </section>
 
 <style>
-/* Import Google Fonts for related products button */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+    /* Import Google Fonts for related products button */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
 
-/* General styles */
-* {
-    box-sizing: border-box;
-}
-.container {
-    padding-left: 15px;
-    padding-right: 15px;
-}
-
-/* Scoped styles for product detail form */
-.product-detail-form .input-group .btn {
-    background-color: #fff;
-    border-color: #007bff;
-    color: #007bff;
-    transition: all 0.2s ease;
-}
-.product-detail-form .input-group .btn:hover {
-    background-color: #007bff;
-    color: #fff;
-}
-.product-detail-form .input-group .form-control {
-    border-color: #007bff;
-}
-.product-detail-form .btn-primary,
-.product-detail-form .btn-outline-secondary {
-    transition: all 0.2s ease;
-}
-.product-detail-form .btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
-.product-detail-form .btn-outline-secondary:hover {
-    background-color: #6c757d;
-    color: #fff;
-}
-.product-detail-form .btn-primary {
-    position: relative;
-    overflow: hidden;
-}
-.product-detail-form .btn-primary::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.4s ease, height 0.4s ease;
-}
-.product-detail-form .btn-primary:active::after {
-    width: 200px;
-    height: 200px;
-}
-
-/* Styles for related products button */
-.related-products .btn-primary {
-    font-family: 'Poppins', sans-serif;
-    padding: 10px 25px;
-    font-weight: 500;
-    background-color: #f8f9fa;
-    color: #212529;
-    border: none;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-.related-products .btn-primary:hover {
-    background-color: #dee2e6;
-    transform: scale(1.05);
-}
-
-/* Styles for cart badge and notification */
-.cart-count-badge {
-    display: inline-block;
-    min-width: 20px;
-    padding: 2px 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    background-color: var(--primary-color, #FF2D55);
-    color: white;
-    border-radius: 10px;
-    position: absolute;
-    top: -5px;
-    right: -10px;
-    transition: transform 0.2s ease;
-}
-.notification {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    animation: slideInRight 0.3s ease-in-out;
-}
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
+    /* General styles */
+    * {
+        box-sizing: border-box;
     }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
 
-/* General styles for product detail page */
-.thumbnail-item {
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-.thumbnail-item:hover {
-    border-color: #0d6efd;
-    transform: scale(1.05);
-}
-.thumbnail-item.active {
-    border-color: #0d6efd;
-    border-width: 2px;
-}
-.product-image-container img, .product-placeholder {
-    transition: opacity 0.3s ease;
-}
-.product-image-container img:hover {
-    opacity: 0.9;
-}
-.product-image-container .badge {
-    z-index: 10;
-}
-.category-header {
-    margin-bottom: 2rem !important;
-}
-.product-title {
-    font-size: 1.8rem;
-}
-.product-price {
-    margin-bottom: 1.5rem;
-}
-.product-availability {
-    margin-bottom: 1.5rem;
-}
-.product-variants {
-    margin-bottom: 1.5rem;
-}
-.product-features {
-    margin-bottom: 1.5rem;
-}
-.product-info {
-    margin-bottom: 1.5rem;
-}
-.product-share {
-    margin-bottom: 1.5rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
     .container {
-        padding-left: 10px;
-        padding-right: 10px;
+        padding-left: 15px;
+        padding-right: 15px;
     }
-    .category-header-bg {
-        height: 100px;
-    }
-    .breadcrumb {
-        font-size: 0.9rem;
-        flex-wrap: wrap;
-    }
-    .product-image-container img,
-    .product-placeholder {
-        max-height: 350px;
-    }
-    .product-thumbnails .col-sm-2 {
-        flex: 0 0 20%;
-        max-width: 20%;
-    }
-    .thumbnail-item img,
-    .thumbnail-placeholder {
-        height: 60px;
-        object-fit: cover;
-    }
-    .product-title {
-        font-size: 1.5rem;
-    }
-    .product-price .fs-3 {
-        font-size: 1.4rem !important;
-    }
-    .product-price .fs-5 {
-        font-size: 1rem !important;
-    }
-    .product-variants .form-select {
-        font-size: 0.9rem;
-        padding: 0.5rem;
-    }
-    .product-detail-form .input-group {
-        flex-wrap: nowrap;
-    }
+
+    /* Scoped styles for product detail form */
     .product-detail-form .input-group .btn {
-        padding: 0.5rem;
-        font-size: 0.9rem;
+        background-color: #fff;
+        border-color: #007bff;
+        color: #007bff;
+        transition: all 0.2s ease;
     }
+
+    .product-detail-form .input-group .btn:hover {
+        background-color: #007bff;
+        color: #fff;
+    }
+
     .product-detail-form .input-group .form-control {
-        font-size: 0.9rem;
-        padding: 0.5rem;
+        border-color: #007bff;
     }
+
     .product-detail-form .btn-primary,
     .product-detail-form .btn-outline-secondary {
-        font-size: 0.9rem;
-        padding: 0.5rem 1rem;
+        transition: all 0.2s ease;
     }
-    .product-features .feature-item {
-        padding: 1rem;
+
+    .product-detail-form .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
     }
-    .product-features .fs-3 {
-        font-size: 1.5rem !important;
+
+    .product-detail-form .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: #fff;
     }
-    .product-features .small {
-        font-size: 0.8rem;
+
+    .product-detail-form .btn-primary {
+        position: relative;
+        overflow: hidden;
     }
-    .product-info .nav-tabs .nav-link {
-        font-size: 0.9rem;
-        padding: 0.5rem 1rem;
+
+    .product-detail-form .btn-primary::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.4s ease, height 0.4s ease;
     }
-    .product-info .tab-content {
-        padding: 1rem;
+
+    .product-detail-form .btn-primary:active::after {
+        width: 200px;
+        height: 200px;
     }
-    .product-info h5 {
-        font-size: 1.2rem;
-    }
-    .product-info p,
-    .product-info ul li {
-        font-size: 0.9rem;
-    }
-    .table-responsive table {
-        font-size: 0.85rem;
-    }
-    .product-share .social-icon {
-        font-size: 1rem;
-    }
+
+    /* Styles for related products button */
     .related-products .btn-primary {
-        font-size: 1rem;
-        padding: 8px 16px;
+        font-family: 'Poppins', sans-serif;
+        padding: 10px 25px;
+        font-weight: 500;
+        background-color: #f8f9fa;
+        color: #212529;
+        border: none;
+        transition: background-color 0.3s ease, transform 0.2s ease;
     }
-    .related-products .card-img-top,
-    .related-products .card-img-top div {
-        height: 150px;
-    }
-    .related-products .card-title {
-        font-size: 1rem;
-    }
-    .related-products .price-block {
-        font-size: 0.9rem;
-    }
-}
 
-@media (max-width: 576px) {
-    .container {
-        padding-left: 8px;
-        padding-right: 8px;
+    .related-products .btn-primary:hover {
+        background-color: #dee2e6;
+        transform: scale(1.05);
     }
-    .category-header-bg {
-        height: 80px;
-    }
-    .breadcrumb {
-        font-size: 0.8rem;
-    }
-    .product-image-container img,
-    .product-placeholder {
-        max-height: 300px;
-    }
-    .product-thumbnails .col-3 {
-        flex: 0 0 25%;
-        max-width: 25%;
-    }
-    .thumbnail-item img,
-    .thumbnail-placeholder {
-        height: 50px;
-    }
-    .product-title {
-        font-size: 1.3rem;
-    }
-    .product-price .fs-3 {
-        font-size: 1.2rem !important;
-    }
-    .product-price .fs-5 {
-        font-size: 0.9rem !important;
-    }
-    .product-variants .form-select {
-        font-size: 0.85rem;
-        padding: 0.4rem;
-    }
-    .product-detail-form .row {
-        flex-direction: column;
-    }
-    .product-detail-form .col-12 {
-        margin-bottom: 0.5rem;
-    }
-    .product-detail-form .input-group .btn {
-        padding: 0.4rem;
-        font-size: 0.85rem;
-    }
-    .product-detail-form .input-group .form-control {
-        font-size: 0.85rem;
-        padding: 0.4rem;
-    }
-    .product-detail-form .btn-primary,
-    .product-detail-form .btn-outline-secondary {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.8rem;
-    }
-    .product-out-of-stock .form-control,
-    .product-out-of-stock .btn {
-        font-size: 0.85rem;
-        padding: 0.4rem;
-    }
-    .product-features .col-6 {
-        flex: 0 0 50%;
-        max-width: 50%;
-    }
-    .product-features .feature-item {
-        padding: 0.8rem;
-    }
-    .product-features .fs-3 {
-        font-size: 1.2rem !important;
-    }
-    .product-features .small {
+
+    /* Styles for cart badge and notification */
+    .cart-count-badge {
+        display: inline-block;
+        min-width: 20px;
+        padding: 2px 6px;
         font-size: 0.75rem;
-    }
-    .product-info .nav-tabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
         white-space: nowrap;
+        vertical-align: baseline;
+        background-color: var(--primary-color, #FF2D55);
+        color: white;
+        border-radius: 10px;
+        position: absolute;
+        top: -5px;
+        right: -10px;
+        transition: transform 0.2s ease;
     }
-    .product-info .nav-tabs .nav-link {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.8rem;
+
+    .notification {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        animation: slideInRight 0.3s ease-in-out;
     }
-    .product-info .tab-content {
-        padding: 0.8rem;
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
-    .product-info h5 {
-        font-size: 1.1rem;
+
+    /* General styles for product detail page */
+    .thumbnail-item {
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
-    .product-info p,
-    .product-info ul li {
-        font-size: 0.85rem;
+
+    .thumbnail-item:hover {
+        border-color: #0d6efd;
+        transform: scale(1.05);
     }
-    .table-responsive table {
-        font-size: 0.8rem;
+
+    .thumbnail-item.active {
+        border-color: #0d6efd;
+        border-width: 2px;
     }
-    .product-share .social-icon {
-        font-size: 0.9rem;
+
+    .product-image-container img,
+    .product-placeholder {
+        transition: opacity 0.3s ease;
     }
-    .related-products .col-sm-6 {
-        flex: 0 0 100%;
-        max-width: 100%;
+
+    .product-image-container img:hover {
+        opacity: 0.9;
     }
-    .related-products .btn-primary {
-        font-size: 0.9rem;
-        padding: 6px 12px;
+
+    .product-image-container .badge {
+        z-index: 10;
     }
-    .related-products .card-img-top,
-    .related-products .card-img-top div {
-        height: 120px;
+
+    .category-header {
+        margin-bottom: 2rem !important;
     }
-    .related-products .card-title {
-        font-size: 0.9rem;
+
+    .product-title {
+        font-size: 1.8rem;
     }
-    .related-products .price-block {
-        font-size: 0.85rem;
+
+    .product-price {
+        margin-bottom: 1.5rem;
     }
-}
+
+    .product-availability {
+        margin-bottom: 1.5rem;
+    }
+
+    .product-variants {
+        margin-bottom: 1.5rem;
+    }
+
+    .product-features {
+        margin-bottom: 1.5rem;
+    }
+
+    .product-info {
+        margin-bottom: 1.5rem;
+    }
+
+    .product-share {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .container {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .category-header-bg {
+            height: 100px;
+        }
+
+        .breadcrumb {
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .product-image-container img,
+        .product-placeholder {
+            max-height: 350px;
+        }
+
+        .product-thumbnails .col-sm-2 {
+            flex: 0 0 20%;
+            max-width: 20%;
+        }
+
+        .thumbnail-item img,
+        .thumbnail-placeholder {
+            height: 60px;
+            object-fit: cover;
+        }
+
+        .product-title {
+            font-size: 1.5rem;
+        }
+
+        .product-price .fs-3 {
+            font-size: 1.4rem !important;
+        }
+
+        .product-price .fs-5 {
+            font-size: 1rem !important;
+        }
+
+        .product-variants .form-select {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+        }
+
+        .product-detail-form .input-group {
+            flex-wrap: nowrap;
+        }
+
+        .product-detail-form .input-group .btn {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .product-detail-form .input-group .form-control {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+        }
+
+        .product-detail-form .btn-primary,
+        .product-detail-form .btn-outline-secondary {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .product-features .feature-item {
+            padding: 1rem;
+        }
+
+        .product-features .fs-3 {
+            font-size: 1.5rem !important;
+        }
+
+        .product-features .small {
+            font-size: 0.8rem;
+        }
+
+        .product-info .nav-tabs .nav-link {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .product-info .tab-content {
+            padding: 1rem;
+        }
+
+        .product-info h5 {
+            font-size: 1.2rem;
+        }
+
+        .product-info p,
+        .product-info ul li {
+            font-size: 0.9rem;
+        }
+
+        .table-responsive table {
+            font-size: 0.85rem;
+        }
+
+        .product-share .social-icon {
+            font-size: 1rem;
+        }
+
+        .related-products .btn-primary {
+            font-size: 1rem;
+            padding: 8px 16px;
+        }
+
+        .related-products .card-img-top,
+        .related-products .card-img-top div {
+            height: 150px;
+        }
+
+        .related-products .card-title {
+            font-size: 1rem;
+        }
+
+        .related-products .price-block {
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .container {
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+
+        .category-header-bg {
+            height: 80px;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+
+        .product-image-container img,
+        .product-placeholder {
+            max-height: 300px;
+        }
+
+        .product-thumbnails .col-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+
+        .thumbnail-item img,
+        .thumbnail-placeholder {
+            height: 50px;
+        }
+
+        .product-title {
+            font-size: 1.3rem;
+        }
+
+        .product-price .fs-3 {
+            font-size: 1.2rem !important;
+        }
+
+        .product-price .fs-5 {
+            font-size: 0.9rem !important;
+        }
+
+        .product-variants .form-select {
+            font-size: 0.85rem;
+            padding: 0.4rem;
+        }
+
+        .product-detail-form .row {
+            flex-direction: column;
+        }
+
+        .product-detail-form .col-12 {
+            margin-bottom: 0.5rem;
+        }
+
+        .product-detail-form .input-group .btn {
+            padding: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        .product-detail-form .input-group .form-control {
+            font-size: 0.85rem;
+            padding: 0.4rem;
+        }
+
+        .product-detail-form .btn-primary,
+        .product-detail-form .btn-outline-secondary {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .product-out-of-stock .form-control,
+        .product-out-of-stock .btn {
+            font-size: 0.85rem;
+            padding: 0.4rem;
+        }
+
+        .product-features .col-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .product-features .feature-item {
+            padding: 0.8rem;
+        }
+
+        .product-features .fs-3 {
+            font-size: 1.2rem !important;
+        }
+
+        .product-features .small {
+            font-size: 0.75rem;
+        }
+
+        .product-info .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .product-info .nav-tabs .nav-link {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .product-info .tab-content {
+            padding: 0.8rem;
+        }
+
+        .product-info h5 {
+            font-size: 1.1rem;
+        }
+
+        .product-info p,
+        .product-info ul li {
+            font-size: 0.85rem;
+        }
+
+        .table-responsive table {
+            font-size: 0.8rem;
+        }
+
+        .product-share .social-icon {
+            font-size: 0.9rem;
+        }
+
+        .related-products .col-sm-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .related-products .btn-primary {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+        }
+
+        .related-products .card-img-top,
+        .related-products .card-img-top div {
+            height: 120px;
+        }
+
+        .related-products .card-title {
+            font-size: 0.9rem;
+        }
+
+        .related-products .price-block {
+            font-size: 0.85rem;
+        }
+    }
 </style>
 
 <script>
-console.log('Bắt đầu script views/products/detail.php');
-console.log('Product ID:', <?php echo json_encode($product->id ?? 'N/A'); ?>);
-console.log('Variants:', <?php echo json_encode($variants ?? []); ?>);
-console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?>);
-console.log('Related Products Count:', <?php echo json_encode(count($related_products ?? [])); ?>);
-console.log('Total Stock:', <?php echo json_encode($total_stock); ?>);
-console.log('Has Multiple Colors:', <?php echo json_encode($has_multiple_colors); ?>);
-console.log('Main Image:', <?php echo json_encode($product->image ?? 'N/A'); ?>);
-console.log('Additional Images:', <?php echo json_encode($product->images); ?>);
+    console.log('Bắt đầu script views/products/detail.php');
+    console.log('Product ID:', <?php echo json_encode($product->id ?? 'N/A'); ?>);
+    console.log('Variants:', <?php echo json_encode($variants ?? []); ?>);
+    console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?>);
+    console.log('Related Products Count:', <?php echo json_encode(count($related_products ?? [])); ?>);
+    console.log('Total Stock:', <?php echo json_encode($total_stock); ?>);
+    console.log('Has Multiple Colors:', <?php echo json_encode($has_multiple_colors); ?>);
+    console.log('Main Image:', <?php echo json_encode($product->image ?? 'N/A'); ?>);
+    console.log('Additional Images:', <?php echo json_encode($product->images); ?>);
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded');
-    const form = document.getElementById('add-to-cart-form');
-    const sizeSelect = document.getElementById('variant-size');
-    const colorSelect = document.getElementById('variant-color');
-    const variantIdInput = document.getElementById('variant-id');
-    const quantityInput = document.getElementById('quantity');
-    const variants = <?php echo json_encode($variants ?? []); ?>;
-    const totalStock = <?php echo json_encode($total_stock); ?>;
-    
-    // Khởi tạo số lượng ban đầu
-    if (quantityInput) {
-        quantityInput.value = 1;
-        quantityInput.max = variants.length > 0 ? 1 : totalStock;
-        console.log('Khởi tạo quantity:', { value: quantityInput.value, max: quantityInput.max });
-    }
-    
-    // Thumbnail click handling
-    try {
-        document.querySelectorAll('.thumbnail-item').forEach(thumbnail => {
-            thumbnail.addEventListener('click', function() {
-                console.log('Thumbnail clicked:', this.dataset.image);
-                document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                const mainImage = document.querySelector('.main-image');
-                const imageSrc = this.dataset.image;
-                if (mainImage && imageSrc) {
-                    mainImage.src = imageSrc;
-                    console.log('Main image updated to:', imageSrc);
-                } else {
-                    console.warn('Không thể cập nhật ảnh chính:', { mainImage: !!mainImage, imageSrc });
-                }
-            });
-        });
-    } catch (e) {
-        console.error('Lỗi khi xử lý thumbnail:', e);
-    }
-    
-    // Update color options based on size
-    if (sizeSelect) {
-        sizeSelect.addEventListener('change', function() {
-            console.log('Size selected:', this.value);
-            const selectedSize = this.value;
-            if (colorSelect) {
-                colorSelect.innerHTML = '<option value="" disabled selected>Chọn màu sắc</option>';
-                const availableColors = variants
-                    .filter(v => v.size === selectedSize && v.color)
-                    .map(v => ({ color: v.color, stock: v.stock }));
-                const uniqueColors = [...new Set(availableColors.map(c => c.color))];
-                
-                uniqueColors.forEach(color => {
-                    const colorStock = availableColors.find(c => c.color === color)?.stock || 0;
-                    const option = document.createElement('option');
-                    option.value = color;
-                    option.textContent = color + (colorStock === 0 ? ' (Hết hàng)' : '');
-                    if (colorStock === 0) {
-                        option.disabled = true;
-                    }
-                    colorSelect.appendChild(option);
-                });
-                
-                colorSelect.disabled = uniqueColors.length === 0 || uniqueColors.every(color => {
-                    return availableColors.find(c => c.color === color)?.stock === 0;
-                });
-                if (!colorSelect.disabled) {
-                    colorSelect.focus();
-                }
-                console.log('Updated colors:', uniqueColors, 'Disabled:', colorSelect.disabled);
-            }
-            updateVariant();
-        });
-    } else {
-        console.log('Không có sizeSelect, bỏ qua xử lý biến thể');
-    }
-    
-    // Update variant ID and max quantity
-    if (colorSelect) {
-        colorSelect.addEventListener('change', updateVariant);
-    }
-    
-    function updateVariant() {
-        if (!sizeSelect) {
-            console.log('Bỏ qua updateVariant vì không có sizeSelect');
-            return;
-        }
-        const selectedSize = sizeSelect.value;
-        const selectedColor = colorSelect ? colorSelect.value : (variants.length > 0 ? variants[0].color : '');
-        const variant = variants.find(v => v.size === selectedSize && (!colorSelect || v.color === selectedColor));
-        
-        if (variant && variant.stock > 0) {
-            console.log('Selected variant:', variant);
-            variantIdInput.value = variant.id;
-            quantityInput.max = variant.stock;
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded');
+        const form = document.getElementById('add-to-cart-form');
+        const sizeSelect = document.getElementById('variant-size');
+        const colorSelect = document.getElementById('variant-color');
+        const variantIdInput = document.getElementById('variant-id');
+        const quantityInput = document.getElementById('quantity');
+        const variants = <?php echo json_encode($variants ?? []); ?>;
+        const totalStock = <?php echo json_encode($total_stock); ?>;
+
+        // Khởi tạo số lượng ban đầu
+        if (quantityInput) {
             quantityInput.value = 1;
-        } else {
-            console.log('No valid variant selected');
-            variantIdInput.value = '';
             quantityInput.max = variants.length > 0 ? 1 : totalStock;
-            quantityInput.value = 1;
-        }
-        console.log('Cập nhật quantity:', { value: quantityInput.value, max: quantityInput.max });
-    }
-    
-    // Quantity increase/decrease handling
-    window.decreaseQuantity = function() {
-        if (quantityInput) {
-            let value = parseInt(quantityInput.value) || 1;
-            const min = parseInt(quantityInput.min) || 1;
-            if (value > min) {
-                quantityInput.value = value - 1;
-                console.log('Quantity decreased:', quantityInput.value);
-            } else {
-                quantityInput.value = min;
-                console.log('Quantity at minimum:', quantityInput.value);
-            }
-        } else {
-            console.error('Không tìm thấy quantityInput');
-        }
-    };
-    
-    window.increaseQuantity = function() {
-        if (quantityInput) {
-            let value = parseInt(quantityInput.value) || 1;
-            const max = parseInt(quantityInput.max) || totalStock;
-            if (value < max) {
-                quantityInput.value = value + 1;
-                console.log('Quantity increased:', quantityInput.value);
-            } else {
-                quantityInput.value = max;
-                console.log('Quantity at maximum:', quantityInput.value);
-            }
-        } else {
-            console.error('Không tìm thấy quantityInput');
-        }
-    };
-    
-    // Validate quantity input
-    if (quantityInput) {
-        quantityInput.addEventListener('input', function() {
-            let value = parseInt(this.value);
-            const min = parseInt(this.min) || 1;
-            const max = parseInt(this.max) || totalStock;
-            
-            console.log('Quantity input changed:', { value, min, max });
-            if (isNaN(value) || value < min) {
-                this.value = min;
-            } else if (value > max) {
-                this.value = max;
-            }
-            console.log('Quantity validated:', this.value);
-        });
-    } else {
-        console.error('Không tìm thấy quantityInput element');
-    }
-    
-    // Form submission with animation
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const productId = this.querySelector('[name="product_id"]').value;
-            const variantId = variants.length > 0 ? (this.querySelector('[name="variant_id"]')?.value || '') : '';
-            const quantity = parseInt(this.querySelector('[name="quantity"]').value);
-            const addToCartBtn = this.querySelector('button[type="submit"]');
-            
-            console.log('Form submitted:', { productId, variantId, quantity });
-            
-            if (variants.length > 0 && !variantId) {
-                console.error('Lỗi: Chưa chọn biến thể hợp lệ');
-                showNotification('Vui lòng chọn kích cỡ' + (colorSelect ? ' và màu sắc' : '') + ' hợp lệ.', 'error', 'Lỗi chọn biến thể');
-                return;
-            }
-            
-            if (quantity < 1 || isNaN(quantity)) {
-                console.error('Lỗi: Số lượng không hợp lệ');
-                showNotification('Số lượng không hợp lệ.', 'error', 'Lỗi số lượng');
-                return;
-            }
-            
-            // Disable button and show loading state
-            addToCartBtn.disabled = true;
-            const originalBtnText = addToCartBtn.innerHTML;
-            addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang thêm...';
-            
-            // AJAX request to add to cart
-            fetch('index.php?controller=product&action=addToCart', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: `product_id=${encodeURIComponent(productId)}&variant_id=${encodeURIComponent(variantId)}&quantity=${encodeURIComponent(quantity)}`
-            })
-            .then(response => {
-                console.log('AJAX response received', { status: response.status, ok: response.ok });
-                return response.text().then(text => ({ response, text }));
-            })
-            .then(({ response, text }) => {
-                console.log('Raw response:', text);
-                try {
-                    const data = JSON.parse(text);
-                    console.log('AJAX data:', data);
-                    if (data.success) {
-                        // Create animation effect only on success
-                        const mainImage = document.querySelector('.main-image');
-                        const cartIcon = document.querySelector('.fa-shopping-cart');
-                        if (mainImage && cartIcon) {
-                            const imgClone = mainImage.cloneNode(true);
-                            imgClone.style.position = 'fixed';
-                            imgClone.style.zIndex = '1000';
-                            imgClone.style.width = mainImage.offsetWidth + 'px';
-                            imgClone.style.height = mainImage.offsetHeight + 'px';
-                            imgClone.style.top = mainImage.getBoundingClientRect().top + 'px';
-                            imgClone.style.left = mainImage.getBoundingClientRect().left + 'px';
-                            imgClone.style.transition = 'all 0.7s ease-in-out';
-                            document.body.appendChild(imgClone);
-                            
-                            setTimeout(() => {
-                                const cartRect = cartIcon.getBoundingClientRect();
-                                imgClone.style.width = '30px';
-                                imgClone.style.height = '30px';
-                                imgClone.style.top = cartRect.top + 'px';
-                                imgClone.style.left = cartRect.left + 'px';
-                                imgClone.style.opacity = '0.5';
-                            }, 100);
-                            
-                            setTimeout(() => {
-                                imgClone.remove();
-                            }, 800);
-                        }
-                        
-                        // Update all cart count badges
-                        const cartBadges = document.querySelectorAll('.cart-count-badge');
-                        cartBadges.forEach(badge => {
-                            badge.textContent = data.cart_count || 0;
-                            badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
-                            badge.classList.add('animate__animated', 'animate__bounce');
-                            setTimeout(() => {
-                                badge.classList.remove('animate__animated', 'animate__bounce');
-                            }, 1000);
-                        });
-
-                        // Dispatch custom event for header and other pages
-                        const cartUpdatedEvent = new CustomEvent('cartUpdated', {
-                            detail: { cart_count: data.cart_count }
-                        });
-                        document.dispatchEvent(cartUpdatedEvent);
-
-                        // Show success notification
-                        showNotification('Đã thêm vào giỏ hàng!', 'success', 'Thành công');
-                    } else {
-                        console.error('Lỗi từ server:', data.message);
-                        // Check if error is related to stock
-                        const isStockError = data.message && data.message.includes('vượt quá tồn kho');
-                        showNotification(
-                            data.message || 'Không thể thêm vào giỏ hàng.',
-                            'error',
-                            isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi thêm vào giỏ hàng'
-                        );
-                    }
-                } catch (e) {
-                    console.error('Lỗi phân tích JSON:', e, 'Response text:', text);
-                    // Check if error is HTTP 400 and related to stock
-                    const isStockError = response.status === 400 && (
-                        text.includes('vượt quá tồn kho') || 
-                        text.includes('stock') || 
-                        text.includes('tồn kho')
-                    );
-                    showNotification(
-                        text || 'Lỗi server: Không nhận được dữ liệu hợp lệ.',
-                        'error',
-                        isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi hệ thống'
-                    );
-                }
-            })
-            .catch(error => {
-                console.error('Lỗi AJAX:', error);
-                // Check if error message indicates stock issue
-                const isStockError = error.message && (
-                    error.message.includes('vượt quá tồn kho') || 
-                    error.message.includes('stock') || 
-                    error.message.includes('tồn kho')
-                );
-                showNotification(
-                    'Đã xảy ra lỗi: ' + error.message,
-                    'error',
-                    isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi hệ thống'
-                );
-            })
-            .finally(() => {
-                // Restore button state
-                addToCartBtn.disabled = false;
-                addToCartBtn.innerHTML = originalBtnText;
+            console.log('Khởi tạo quantity:', {
+                value: quantityInput.value,
+                max: quantityInput.max
             });
-        });
-    } else {
-        console.error('Không tìm thấy add-to-cart-form');
-    }
+        }
 
-    // Notify form submission
-    const notifyForm = document.getElementById('notify-form');
-    if (notifyForm) {
-        notifyForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = this.querySelector('[name="email"]').value;
-            console.log('Notify form submitted:', email);
-            if (email) {
-                showNotification('Cảm ơn bạn! Chúng tôi sẽ thông báo khi sản phẩm có hàng.', 'success', 'Đăng ký thông báo');
-                this.reset();
-            } else {
-                console.error('Lỗi: Email không hợp lệ');
-                showNotification('Vui lòng nhập email hợp lệ.', 'error', 'Lỗi email');
+        // Thumbnail click handling
+        try {
+            document.querySelectorAll('.thumbnail-item').forEach(thumbnail => {
+                thumbnail.addEventListener('click', function() {
+                    console.log('Thumbnail clicked:', this.dataset.image);
+                    document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const mainImage = document.querySelector('.main-image');
+                    const imageSrc = this.dataset.image;
+                    if (mainImage && imageSrc) {
+                        mainImage.src = imageSrc;
+                        console.log('Main image updated to:', imageSrc);
+                    } else {
+                        console.warn('Không thể cập nhật ảnh chính:', {
+                            mainImage: !!mainImage,
+                            imageSrc
+                        });
+                    }
+                });
+            });
+        } catch (e) {
+            console.error('Lỗi khi xử lý thumbnail:', e);
+        }
+
+        // Update color options based on size
+        if (sizeSelect) {
+            sizeSelect.addEventListener('change', function() {
+                console.log('Size selected:', this.value);
+                const selectedSize = this.value;
+                if (colorSelect) {
+                    colorSelect.innerHTML = '<option value="" disabled selected>Chọn màu sắc</option>';
+                    const availableColors = variants
+                        .filter(v => v.size === selectedSize && v.color)
+                        .map(v => ({
+                            color: v.color,
+                            stock: v.stock
+                        }));
+                    const uniqueColors = [...new Set(availableColors.map(c => c.color))];
+
+                    uniqueColors.forEach(color => {
+                        const colorStock = availableColors.find(c => c.color === color)?.stock || 0;
+                        const option = document.createElement('option');
+                        option.value = color;
+                        option.textContent = color + (colorStock === 0 ? ' (Hết hàng)' : '');
+                        if (colorStock === 0) {
+                            option.disabled = true;
+                        }
+                        colorSelect.appendChild(option);
+                    });
+
+                    colorSelect.disabled = uniqueColors.length === 0 || uniqueColors.every(color => {
+                        return availableColors.find(c => c.color === color)?.stock === 0;
+                    });
+                    if (!colorSelect.disabled) {
+                        colorSelect.focus();
+                    }
+                    console.log('Updated colors:', uniqueColors, 'Disabled:', colorSelect.disabled);
+                }
+                updateVariant();
+            });
+        } else {
+            console.log('Không có sizeSelect, bỏ qua xử lý biến thể');
+        }
+
+        // Update variant ID and max quantity
+        if (colorSelect) {
+            colorSelect.addEventListener('change', updateVariant);
+        }
+
+        function updateVariant() {
+            if (!sizeSelect) {
+                console.log('Bỏ qua updateVariant vì không có sizeSelect');
+                return;
             }
-        });
-    } else {
-        console.log('Không có notify-form (sản phẩm còn hàng)');
-    }
-    
-    // Notification function with title support
-    function showNotification(message, type, title = '') {
-        const notification = document.createElement('div');
-        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show notification`;
-        notification.style.position = 'fixed';
-        notification.style.top = '20px';
-        notification.style.right = '20px';
-        notification.style.zIndex = '2000';
-        notification.style.minWidth = '300px';
-        notification.innerHTML = `
+            const selectedSize = sizeSelect.value;
+            const selectedColor = colorSelect ? colorSelect.value : (variants.length > 0 ? variants[0].color : '');
+            const variant = variants.find(v => v.size === selectedSize && (!colorSelect || v.color === selectedColor));
+
+            if (variant && variant.stock > 0) {
+                console.log('Selected variant:', variant);
+                variantIdInput.value = variant.id;
+                quantityInput.max = variant.stock;
+                quantityInput.value = 1;
+            } else {
+                console.log('No valid variant selected');
+                variantIdInput.value = '';
+                quantityInput.max = variants.length > 0 ? 1 : totalStock;
+                quantityInput.value = 1;
+            }
+            console.log('Cập nhật quantity:', {
+                value: quantityInput.value,
+                max: quantityInput.max
+            });
+        }
+
+        // Quantity increase/decrease handling
+        window.decreaseQuantity = function() {
+            if (quantityInput) {
+                let value = parseInt(quantityInput.value) || 1;
+                const min = parseInt(quantityInput.min) || 1;
+                if (value > min) {
+                    quantityInput.value = value - 1;
+                    console.log('Quantity decreased:', quantityInput.value);
+                } else {
+                    quantityInput.value = min;
+                    console.log('Quantity at minimum:', quantityInput.value);
+                }
+            } else {
+                console.error('Không tìm thấy quantityInput');
+            }
+        };
+
+        window.increaseQuantity = function() {
+            if (quantityInput) {
+                let value = parseInt(quantityInput.value) || 1;
+                const max = parseInt(quantityInput.max) || totalStock;
+                if (value < max) {
+                    quantityInput.value = value + 1;
+                    console.log('Quantity increased:', quantityInput.value);
+                } else {
+                    quantityInput.value = max;
+                    console.log('Quantity at maximum:', quantityInput.value);
+                }
+            } else {
+                console.error('Không tìm thấy quantityInput');
+            }
+        };
+
+        // Validate quantity input
+        if (quantityInput) {
+            quantityInput.addEventListener('input', function() {
+                let value = parseInt(this.value);
+                const min = parseInt(this.min) || 1;
+                const max = parseInt(this.max) || totalStock;
+
+                console.log('Quantity input changed:', {
+                    value,
+                    min,
+                    max
+                });
+                if (isNaN(value) || value < min) {
+                    this.value = min;
+                } else if (value > max) {
+                    this.value = max;
+                }
+                console.log('Quantity validated:', this.value);
+            });
+        } else {
+            console.error('Không tìm thấy quantityInput element');
+        }
+
+        // Form submission with animation
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const productId = this.querySelector('[name="product_id"]').value;
+                const variantId = variants.length > 0 ? (this.querySelector('[name="variant_id"]')?.value || '') : '';
+                const quantity = parseInt(this.querySelector('[name="quantity"]').value);
+                const addToCartBtn = this.querySelector('button[type="submit"]');
+
+                console.log('Form submitted:', {
+                    productId,
+                    variantId,
+                    quantity
+                });
+
+                if (variants.length > 0 && !variantId) {
+                    console.error('Lỗi: Chưa chọn biến thể hợp lệ');
+                    showNotification('Vui lòng chọn kích cỡ' + (colorSelect ? ' và màu sắc' : '') + ' hợp lệ.', 'error', 'Lỗi chọn biến thể');
+                    return;
+                }
+
+                if (quantity < 1 || isNaN(quantity)) {
+                    console.error('Lỗi: Số lượng không hợp lệ');
+                    showNotification('Số lượng không hợp lệ.', 'error', 'Lỗi số lượng');
+                    return;
+                }
+
+                // Disable button and show loading state
+                addToCartBtn.disabled = true;
+                const originalBtnText = addToCartBtn.innerHTML;
+                addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang thêm...';
+
+                // AJAX request to add to cart
+                fetch('index.php?controller=product&action=addToCart', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: `product_id=${encodeURIComponent(productId)}&variant_id=${encodeURIComponent(variantId)}&quantity=${encodeURIComponent(quantity)}`
+                    })
+                    .then(response => {
+                        console.log('AJAX response received', {
+                            status: response.status,
+                            ok: response.ok
+                        });
+                        return response.text().then(text => ({
+                            response,
+                            text
+                        }));
+                    })
+                    .then(({
+                        response,
+                        text
+                    }) => {
+                        console.log('Raw response:', text);
+                        try {
+                            const data = JSON.parse(text);
+                            console.log('AJAX data:', data);
+                            if (data.success) {
+                                // Create animation effect only on success
+                                const mainImage = document.querySelector('.main-image');
+                                const cartIcon = document.querySelector('.fa-shopping-cart');
+                                if (mainImage && cartIcon) {
+                                    const imgClone = mainImage.cloneNode(true);
+                                    imgClone.style.position = 'fixed';
+                                    imgClone.style.zIndex = '1000';
+                                    imgClone.style.width = mainImage.offsetWidth + 'px';
+                                    imgClone.style.height = mainImage.offsetHeight + 'px';
+                                    imgClone.style.top = mainImage.getBoundingClientRect().top + 'px';
+                                    imgClone.style.left = mainImage.getBoundingClientRect().left + 'px';
+                                    imgClone.style.transition = 'all 0.7s ease-in-out';
+                                    document.body.appendChild(imgClone);
+
+                                    setTimeout(() => {
+                                        const cartRect = cartIcon.getBoundingClientRect();
+                                        imgClone.style.width = '30px';
+                                        imgClone.style.height = '30px';
+                                        imgClone.style.top = cartRect.top + 'px';
+                                        imgClone.style.left = cartRect.left + 'px';
+                                        imgClone.style.opacity = '0.5';
+                                    }, 100);
+
+                                    setTimeout(() => {
+                                        imgClone.remove();
+                                    }, 800);
+                                }
+
+                                // Update all cart count badges
+                                const cartBadges = document.querySelectorAll('.cart-count-badge');
+                                cartBadges.forEach(badge => {
+                                    badge.textContent = data.cart_count || 0;
+                                    badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
+                                    badge.classList.add('animate__animated', 'animate__bounce');
+                                    setTimeout(() => {
+                                        badge.classList.remove('animate__animated', 'animate__bounce');
+                                    }, 1000);
+                                });
+
+                                // Dispatch custom event for header and other pages
+                                const cartUpdatedEvent = new CustomEvent('cartUpdated', {
+                                    detail: {
+                                        cart_count: data.cart_count
+                                    }
+                                });
+                                document.dispatchEvent(cartUpdatedEvent);
+
+                                // Show success notification
+                                showNotification('Đã thêm vào giỏ hàng!', 'success', 'Thành công');
+                            } else {
+                                console.error('Lỗi từ server:', data.message);
+                                // Check if error is related to stock
+                                const isStockError = data.message && data.message.includes('vượt quá tồn kho');
+                                showNotification(
+                                    data.message || 'Không thể thêm vào giỏ hàng.',
+                                    'error',
+                                    isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi thêm vào giỏ hàng'
+                                );
+                            }
+                        } catch (e) {
+                            console.error('Lỗi phân tích JSON:', e, 'Response text:', text);
+                            // Check if error is HTTP 400 and related to stock
+                            const isStockError = response.status === 400 && (
+                                text.includes('vượt quá tồn kho') ||
+                                text.includes('stock') ||
+                                text.includes('tồn kho')
+                            );
+                            showNotification(
+                                text || 'Lỗi server: Không nhận được dữ liệu hợp lệ.',
+                                'error',
+                                isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi hệ thống'
+                            );
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Lỗi AJAX:', error);
+                        // Check if error message indicates stock issue
+                        const isStockError = error.message && (
+                            error.message.includes('vượt quá tồn kho') ||
+                            error.message.includes('stock') ||
+                            error.message.includes('tồn kho')
+                        );
+                        showNotification(
+                            'Đã xảy ra lỗi: ' + error.message,
+                            'error',
+                            isStockError ? 'Tồn kho không đủ để thêm vào giỏ hàng' : 'Lỗi hệ thống'
+                        );
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        addToCartBtn.disabled = false;
+                        addToCartBtn.innerHTML = originalBtnText;
+                    });
+            });
+        } else {
+            console.error('Không tìm thấy add-to-cart-form');
+        }
+
+        // Notify form submission
+        const notifyForm = document.getElementById('notify-form');
+        if (notifyForm) {
+            notifyForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = this.querySelector('[name="email"]').value;
+                console.log('Notify form submitted:', email);
+                if (email) {
+                    showNotification('Cảm ơn bạn! Chúng tôi sẽ thông báo khi sản phẩm có hàng.', 'success', 'Đăng ký thông báo');
+                    this.reset();
+                } else {
+                    console.error('Lỗi: Email không hợp lệ');
+                    showNotification('Vui lòng nhập email hợp lệ.', 'error', 'Lỗi email');
+                }
+            });
+        } else {
+            console.log('Không có notify-form (sản phẩm còn hàng)');
+        }
+
+        // Notification function with title support
+        function showNotification(message, type, title = '') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show notification`;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '2000';
+            notification.style.minWidth = '300px';
+            notification.innerHTML = `
             ${title ? `<strong>${title}</strong><br>` : ''}
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        document.body.appendChild(notification);
-        
-        // Auto dismiss after 3 seconds
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
-    }
-});
+            document.body.appendChild(notification);
+
+            // Auto dismiss after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    });
 </script>
 
 <?php
