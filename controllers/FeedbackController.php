@@ -20,6 +20,12 @@ class FeedbackController
 
     public function submitFeedback($request, $files)
     {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true / false,
+            'message' => 'Thông báo phản hồi'
+        ]);
+        exit;
         try {
             // Kiểm tra đăng nhập
             if (!isset($_SESSION['user_id'])) {

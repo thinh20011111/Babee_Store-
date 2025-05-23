@@ -931,7 +931,16 @@ include 'views/layouts/header.php';
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi kết nối server');
+                    }
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('Phản hồi không hợp lệ từ server');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         showNotification('Đánh giá của bạn đã được gửi thành công', 'success');
