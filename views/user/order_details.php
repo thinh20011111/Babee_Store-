@@ -149,9 +149,97 @@ include 'views/layouts/header.php';
                                     </tr>
                                 <?php endwhile; ?>
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Tạm tính:</td>
+                                    <td colspan="2"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($subtotal); ?></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Phí vận chuyển:</td>
+                                    <td colspan="2">Miễn phí</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Tổng cộng:</td>
+                                    <td colspan="2" class="fw-bold"><?php echo (defined('CURRENCY') ? CURRENCY : '₫') . number_format($order->total_amount); ?></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
+
+                    <?php if ($order->status == 'pending'): ?>
+                        <div class="text-end mt-3">
+                            <button class="btn btn-danger rounded-pill px-4 cancel-order-btn" data-id="<?php echo $order->id; ?>" data-order-number="<?php echo htmlspecialchars($order->order_number); ?>">
+                                <i class="fas fa-times me-1"></i> Hủy đơn hàng
+                            </button>
+                        </div>
+                    <?php endif; ?>
                 </div>
+            </div>
+
+            <!-- Order Timeline -->
+            <div class="card border-0 shadow-sm rounded">
+                <div class="card-header bg-light rounded-top">
+                    <h5 class="mb-0">Tiến trình đơn hàng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="order-timeline">
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.05s;">
+                            <div class="timeline-icon <?php echo in_array($order->status, ['pending', 'processing', 'shipped', 'delivered']) ? 'active' : ''; ?>">
+                                <i class="fas fa-shopping-cart fa-lg"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6>Đã đặt hàng</h6>
+                                <p class="text-muted"><?php echo date('d/m/Y H:i', strtotime($order->created_at)); ?></p>
+                            </div>
+                        </div>
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.10s;">
+                            <div class="timeline-icon <?php echo in_array($order->status, ['processing', 'shipped', 'delivered']) ? 'active' : ''; ?>">
+                                <i class="fas fa-cogs fa-lg"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6>Đang xử lý</h6>
+                                <p class="text-muted">Đơn hàng đã được xác nhận và đang xử lý</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.15s;">
+                            <div class="timeline-icon <?php echo in_array($order->status, ['shipped', 'delivered']) ? 'active' : ''; ?>">
+                                <i class="fas fa-truck fa-lg"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6>Đã giao hàng</h6>
+                                <p class="text-muted">Đơn hàng đã được gửi đi</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item animate__animated animate__fadeInUp" style="animation-delay: 0.20s;">
+                            <div class="timeline-icon <?php echo $order->status == 'delivered' ? 'active' : ''; ?>">
+                                <i class="fas fa-check-circle fa-lg"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6>Hoàn thành</h6>
+                                <p class="text-muted">Đơn hàng đã được giao thành công</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận hủy đơn hàng -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">Xác nhận hủy đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc muốn hủy đơn hàng <strong id="order-number"></strong> không?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-danger rounded-pill" id="confirm-cancel-btn">Hủy đơn hàng</button>
             </div>
         </div>
     </div>
@@ -167,37 +255,39 @@ include 'views/layouts/header.php';
             </div>
             <div class="modal-body">
                 <form id="feedback-form" enctype="multipart/form-data">
-                    <input type="hidden" name="product_id" id="product_id">
-                    <input type="hidden" name="order_id" id="order_id">
+                    <input type="hidden" name="product_id" id="feedback-product-id">
+                    <input type="hidden" name="order_id" id="feedback-order-id">
 
                     <div class="mb-3">
                         <label class="form-label">Sản phẩm:</label>
-                        <div id="product-name" class="fw-bold"></div>
+                        <span id="feedback-product-name" class="fw-bold"></span>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Đánh giá:</label>
                         <div class="rating">
-                            <i class="far fa-star fs-4 me-1" data-rating="1"></i>
-                            <i class="far fa-star fs-4 me-1" data-rating="2"></i>
-                            <i class="far fa-star fs-4 me-1" data-rating="3"></i>
-                            <i class="far fa-star fs-4 me-1" data-rating="4"></i>
-                            <i class="far fa-star fs-4" data-rating="5"></i>
+                            <i class="far fa-star" data-rating="1"></i>
+                            <i class="far fa-star" data-rating="2"></i>
+                            <i class="far fa-star" data-rating="3"></i>
+                            <i class="far fa-star" data-rating="4"></i>
+                            <i class="far fa-star" data-rating="5"></i>
                         </div>
-                        <input type="hidden" name="rating" id="rating" required>
+                        <input type="hidden" name="rating" id="rating-value" required>
                     </div>
 
                     <div class="mb-3">
-                        <label for="content" class="form-label">Nhận xét:</label>
-                        <textarea class="form-control" id="content" name="content" rows="3" minlength="10" maxlength="500" required></textarea>
+                        <label for="feedback-content" class="form-label">Nội dung đánh giá:</label>
+                        <textarea class="form-control" id="feedback-content" name="content" rows="3"
+                            minlength="10" maxlength="500" required></textarea>
                         <div class="form-text">Tối thiểu 10 ký tự, tối đa 500 ký tự</div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="photos" class="form-label">Hình ảnh (tối đa 3 ảnh):</label>
-                        <input type="file" class="form-control" id="photos" name="photos[]" accept="image/*" multiple>
-                        <div class="form-text">Chấp nhận các định dạng: JPG, PNG, GIF. Kích thước tối đa: 5MB/ảnh</div>
-                        <div id="preview" class="d-flex gap-2 mt-2"></div>
+                        <label class="form-label">Hình ảnh (tối đa 3 ảnh):</label>
+                        <input type="file" class="form-control" id="feedback-images" name="images[]"
+                            multiple accept="image/jpeg,image/png,image/gif" />
+                        <div class="form-text">Định dạng: JPG, PNG, GIF. Kích thước tối đa: 5MB/ảnh</div>
+                        <div id="image-preview" class="mt-2 d-flex gap-2 flex-wrap"></div>
                     </div>
                 </form>
             </div>
@@ -209,31 +299,440 @@ include 'views/layouts/header.php';
     </div>
 </div>
 
-<!-- CSS cho rating stars -->
 <style>
-    .rating {
-        cursor: pointer;
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+    /* General styles */
+    body {
+        font-family: 'Poppins', sans-serif;
     }
 
-    .rating i {
-        cursor: pointer;
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* Sidebar styles */
+    .card .card-body {
+        padding: 0.5rem;
+    }
+
+    .list-group-item {
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s ease, color 0.2s ease;
+        position: relative;
+        border: none;
+        padding: 0.75rem 1.25rem;
+        border-radius: 10px;
+        min-height: 48px;
+        margin-bottom: 0.25rem;
+    }
+
+    .list-group-item i {
+        min-width: 24px;
+        color: #495057;
         transition: color 0.2s ease;
     }
 
+    .list-group-item:hover {
+        background-color: #e9ecef;
+    }
+
+    .list-group-item:hover i {
+        color: #007bff;
+    }
+
+    .list-group-item.active {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+    .list-group-item.active i {
+        color: #fff;
+    }
+
+    .list-group-item.active:hover {
+        background-color: #0069d9;
+    }
+
+    .list-group-item.text-danger {
+        color: #dc3545;
+    }
+
+    .list-group-item.text-danger:hover {
+        background-color: #fff1f1;
+        color: #c82333;
+    }
+
+    .list-group-item.text-danger:hover i {
+        color: #c82333;
+    }
+
+    /* Card styles */
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-header {
+        border-bottom: 0;
+    }
+
+    .card-body {
+        background-color: #fff;
+    }
+
+    /* List group for info */
+    .list-group-item {
+        border: none;
+        padding: 0.5rem 0;
+    }
+
+    /* Table styles */
+    .table tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .table td,
+    .table th {
+        vertical-align: middle;
+    }
+
+    .table .img-thumbnail {
+        border-radius: 8px;
+    }
+
+    .table tfoot td {
+        font-weight: 600;
+    }
+
+    .badge {
+        font-size: 0.9rem;
+    }
+
+    /* Button styles */
+    .btn-primary,
+    .btn-danger,
+    .btn-light {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #c82333;
+    }
+
+    .btn-light:hover {
+        background-color: #e9ecef;
+    }
+
+    .btn-primary::after,
+    .btn-danger::after,
+    .btn-light::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.4s ease, height 0.4s ease;
+    }
+
+    .btn-primary:active::after,
+    .btn-danger:active::after,
+    .btn-light:active::after {
+        width: 200px;
+        height: 200px;
+    }
+
+    .btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Timeline styles */
+    .order-timeline {
+        position: relative;
+        padding-left: 40px;
+    }
+
+    .order-timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #dee2e6;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 24px;
+        transition: background-color 0.2s ease;
+    }
+
+    .timeline-item:hover {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .timeline-icon {
+        position: absolute;
+        left: -40px;
+        top: 0;
+        width: 32px;
+        height: 32px;
+        background: #dee2e6;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #495057;
+        transition: all 0.3s ease;
+    }
+
+    .timeline-icon.active {
+        background: #007bff;
+        color: #fff;
+    }
+
+    .timeline-icon i {
+        font-size: 1.1rem;
+    }
+
+    .timeline-content {
+        padding-left: 40px;
+    }
+
+    .timeline-content h6 {
+        margin-bottom: 5px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .timeline-content p.text-muted {
+        font-size: 0.85rem;
+        margin-bottom: 0;
+    }
+
+    /* Modal styles */
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    /* Rating stars styles */
+    .rating {
+        display: flex;
+        gap: 5px;
+        font-size: 24px;
+        color: #ffc107;
+        cursor: pointer;
+    }
+
     .rating i:hover,
-    .rating i.active {
+    .rating i.fas {
         color: #ffc107;
     }
 
-    #preview img {
-        width: 100px;
-        height: 100px;
+    /* Image preview styles */
+    #image-preview img {
+        width: 80px;
+        height: 80px;
         object-fit: cover;
-        border-radius: 8px;
+        border-radius: 4px;
     }
+
+    /* Notification styles */
+    .notification {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        animation: slideInRight 0.3s ease-in-out;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 2000;
+        min-width: 300px;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .container {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .card-header h5 {
+            font-size: 1.2rem;
+        }
+
+        .list-group-item {
+            font-size: 0.9rem;
+            padding: 0.6rem 1rem;
+        }
+
+        .table {
+            font-size: 0.9rem;
+        }
+
+        .btn-sm,
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .timeline-icon {
+            width: 28px;
+            height: 28px;
+            left: -38px;
+        }
+
+        .timeline-icon i {
+            font-size: 1rem;
+        }
+
+        .order-timeline {
+            padding-left: 38px;
+        }
+
+        .order-timeline::before {
+            left: 13px;
+            width: 3px;
+        }
+
+        .timeline-content {
+            padding-left: 20px;
+        }
+
+        .timeline-content h6 {
+            font-size: 0.95rem;
+        }
+
+        .timeline-content p.text-muted {
+            font-size: 0.8rem;
+        }
+
+        .notification {
+            min-width: 250px;
+            top: 10px;
+            right: 10px;
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+
+            .col-md-3 {
+                width: 100%;
+            }
+
+            .card-header h5 {
+                font-size: 1.1rem;
+            }
+
+            .list-group-item {
+                font-size: 0.85rem;
+                padding: 0.5rem 0.8rem;
+            }
+
+            .table {
+                font-size: 0.85rem;
+            }
+
+            .table .img-thumbnail,
+            .table .bg-light {
+                width: 50px;
+                height: 50px;
+            }
+
+            .btn-sm,
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.6rem;
+            }
+
+            .badge {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .timeline-icon {
+                width: 26px;
+                height: 26px;
+                left: -36px;
+            }
+
+            .timeline-icon i {
+                font-size: 0.9rem;
+            }
+
+            .order-timeline {
+                padding-left: 36px;
+            }
+
+            .order-timeline::before {
+                left: 11px;
+                width: 3px;
+            }
+
+            .timeline-content {
+                padding-left: 16px;
+            }
+
+            .timeline-content h6 {
+                font-size: 0.9rem;
+            }
+
+            .timeline-content p.text-muted {
+                font-size: 0.8rem;
+            }
+
+            .notification {
+                min-width: 200px;
+                font-size: 0.8rem;
+            }
+        }
 </style>
 
-<!-- JavaScript cho xử lý đánh giá -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Notification function
@@ -241,10 +740,10 @@ include 'views/layouts/header.php';
             const notification = document.createElement('div');
             notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show notification`;
             notification.innerHTML = `
-            ${title ? `<strong>${title}</strong><br>` : ''}
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+                ${title ? `<strong>${title}</strong><br>` : ''}
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
             document.body.appendChild(notification);
 
             // Auto dismiss after 3 seconds
@@ -254,83 +753,178 @@ include 'views/layouts/header.php';
             }, 3000);
         }
 
-        // Xử lý modal đánh giá
+        // Handle cancel order
+        const cancelButton = document.querySelector('.cancel-order-btn');
+        const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+        let currentOrderId = null;
+
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function() {
+                currentOrderId = this.dataset.id;
+                document.getElementById('order-number').textContent = this.dataset.orderNumber;
+                modal.show();
+            });
+        }
+
+        confirmCancelBtn.addEventListener('click', function() {
+            if (!currentOrderId) return;
+
+            // Disable button and show loading state
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang hủy...';
+
+            // AJAX request to cancel order
+            fetch(`index.php?controller=order&action=cancel&id=${currentOrderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message || 'Đơn hàng đã được hủy thành công.', 'success', 'Hủy đơn hàng');
+                        // Update UI without reload
+                        const statusBadge = document.querySelector('.badge');
+                        statusBadge.className = 'badge bg-danger rounded-pill py-2 px-3';
+                        statusBadge.textContent = 'Đã hủy';
+                        document.querySelector('.cancel-order-btn').remove();
+                        // Update timeline
+                        document.querySelectorAll('.timeline-icon').forEach(icon => {
+                            icon.classList.remove('active');
+                        });
+                        document.querySelector('.timeline-item:first-child .timeline-icon').classList.add('active');
+                    } else {
+                        const isStockError = data.message && (
+                            data.message.includes('tồn kho') ||
+                            data.message.includes('stock')
+                        );
+                        showNotification(
+                            data.message || 'Không thể hủy đơn hàng.',
+                            'error',
+                            isStockError ? 'Tồn kho không đủ' : 'Lỗi hủy đơn hàng'
+                        );
+                    }
+                })
+                .catch(error => {
+                    const isStockError = error.message && (
+                        error.message.includes('tồn kho') ||
+                        error.message.includes('stock')
+                    );
+                    showNotification(
+                        'Lỗi hệ thống: ' + error.message,
+                        'error',
+                        isStockError ? 'Tồn kho không đủ' : 'Lỗi hệ thống'
+                    );
+                })
+                .finally(() => {
+                    // Restore button state
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                    modal.hide();
+                    currentOrderId = null;
+                });
+        });
+
+        // Feedback functionality
         const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
         const feedbackForm = document.getElementById('feedback-form');
         const ratingStars = document.querySelectorAll('.rating i');
-        const ratingInput = document.getElementById('rating');
-        const photoInput = document.getElementById('photos');
-        const previewDiv = document.getElementById('preview');
+        const imageInput = document.getElementById('feedback-images');
+        const imagePreview = document.getElementById('image-preview');
+        const submitFeedbackBtn = document.getElementById('submit-feedback');
 
-        // Xử lý nút đánh giá
+        // Handle feedback button click
         document.querySelectorAll('.feedback-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.getElementById('product_id').value = this.dataset.productId;
-                document.getElementById('order_id').value = this.dataset.orderId;
-                document.getElementById('product-name').textContent = this.dataset.productName;
-                resetForm();
+                const productId = this.dataset.productId;
+                const orderId = this.dataset.orderId;
+                const productName = this.dataset.productName;
+
+                document.getElementById('feedback-product-id').value = productId;
+                document.getElementById('feedback-order-id').value = orderId;
+                document.getElementById('feedback-product-name').textContent = productName;
+
                 feedbackModal.show();
             });
         });
 
-        // Xử lý rating stars
+        // Handle rating selection
         ratingStars.forEach(star => {
             star.addEventListener('click', function() {
                 const rating = this.dataset.rating;
-                ratingInput.value = rating;
+                document.getElementById('rating-value').value = rating;
+
                 ratingStars.forEach(s => {
                     if (s.dataset.rating <= rating) {
                         s.classList.remove('far');
                         s.classList.add('fas');
-                        s.classList.add('active');
                     } else {
-                        s.classList.add('far');
                         s.classList.remove('fas');
-                        s.classList.remove('active');
+                        s.classList.add('far');
+                    }
+                });
+            });
+
+            star.addEventListener('mouseenter', function() {
+                const rating = this.dataset.rating;
+                ratingStars.forEach(s => {
+                    if (s.dataset.rating <= rating) {
+                        s.classList.remove('far');
+                        s.classList.add('fas');
+                    }
+                });
+            });
+
+            star.addEventListener('mouseleave', function() {
+                const currentRating = document.getElementById('rating-value').value;
+                ratingStars.forEach(s => {
+                    if (!currentRating || s.dataset.rating > currentRating) {
+                        s.classList.remove('fas');
+                        s.classList.add('far');
                     }
                 });
             });
         });
 
-        // Xử lý preview ảnh
-        photoInput.addEventListener('change', function() {
+        // Handle image preview
+        imageInput.addEventListener('change', function() {
             if (this.files.length > 3) {
                 showNotification('Chỉ được chọn tối đa 3 ảnh', 'error');
                 this.value = '';
                 return;
             }
 
-            previewDiv.innerHTML = '';
+            imagePreview.innerHTML = '';
             Array.from(this.files).forEach(file => {
                 if (file.size > 5 * 1024 * 1024) {
-                    showNotification(`Ảnh ${file.name} vượt quá 5MB`, 'error');
+                    showNotification('Kích thước ảnh không được vượt quá 5MB', 'error');
+                    this.value = '';
                     return;
                 }
 
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = e => {
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    previewDiv.appendChild(img);
-                }
+                    imagePreview.appendChild(img);
+                };
                 reader.readAsDataURL(file);
             });
         });
 
-        // Xử lý submit form
-        document.getElementById('submit-feedback').addEventListener('click', function() {
+        // Handle form submission
+        submitFeedbackBtn.addEventListener('click', function() {
             if (!feedbackForm.checkValidity()) {
                 feedbackForm.reportValidity();
                 return;
             }
 
-            if (!ratingInput.value) {
-                showNotification('Vui lòng chọn số sao đánh giá', 'error');
-                return;
-            }
-
             const formData = new FormData(feedbackForm);
             this.disabled = true;
+            const originalText = this.innerHTML;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi...';
 
             fetch('index.php?controller=feedback&action=submit', {
@@ -340,38 +934,38 @@ include 'views/layouts/header.php';
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showNotification(data.message, 'success');
+                        showNotification('Đánh giá của bạn đã được gửi thành công', 'success');
                         feedbackModal.hide();
                         // Disable the feedback button for this product
-                        const btn = document.querySelector(`.feedback-btn[data-product-id="${formData.get('product_id')}"]`);
-                        if (btn) {
-                            btn.disabled = true;
-                            btn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
+                        const productId = formData.get('product_id');
+                        const feedbackBtn = document.querySelector(`.feedback-btn[data-product-id="${productId}"]`);
+                        if (feedbackBtn) {
+                            feedbackBtn.disabled = true;
+                            feedbackBtn.innerHTML = '<i class="fas fa-check me-1"></i> Đã đánh giá';
                         }
                     } else {
-                        showNotification(data.message, 'error');
+                        showNotification(data.message || 'Không thể gửi đánh giá', 'error');
                     }
                 })
                 .catch(error => {
-                    showNotification('Có lỗi xảy ra khi gửi đánh giá', 'error');
+                    showNotification('Lỗi hệ thống: ' + error.message, 'error');
                 })
                 .finally(() => {
                     this.disabled = false;
-                    this.innerHTML = 'Gửi đánh giá';
+                    this.innerHTML = originalText;
                 });
         });
 
-        // Reset form
-        function resetForm() {
+        // Reset form when modal is closed
+        document.getElementById('feedbackModal').addEventListener('hidden.bs.modal', function() {
             feedbackForm.reset();
-            ratingInput.value = '';
-            previewDiv.innerHTML = '';
+            imagePreview.innerHTML = '';
+            document.getElementById('rating-value').value = '';
             ratingStars.forEach(star => {
-                star.classList.add('far');
                 star.classList.remove('fas');
-                star.classList.remove('active');
+                star.classList.add('far');
             });
-        }
+        });
     });
 </script>
 
