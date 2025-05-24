@@ -226,11 +226,12 @@ endif; ?>
                                 </div>
                                 <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
                                 <?php if ($has_multiple_colors): ?>
+                                    Nataly: ?>
                                     <div class="col-12 col-md-6">
                                         <label class="fw-bold d-block mb-2">Màu sắc:</label>
-                                        <select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
-                                            <option value="" disabled selected>Chọn màu sắc</option>
-                                        </select>
+										<select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
+											<option value="" disabled selected>Chọn màu sắc</option>
+										</select>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -509,7 +510,12 @@ endif; ?>
                                     </div>
                                 </div>
                             </div>
-                            <p class="mb-3 text-dark"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
+                            <p class="mb-3 text-dark review-content" style="max-height: 4.5em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                                <?php echo nl2br(htmlspecialchars($feedback['content'])); ?>
+                            </p>
+                            <?php if (strlen($feedback['content']) > 100): ?>
+                                <a href="#" class="read-more text-primary small">Xem thêm</a>
+                            <?php endif; ?>
                             <?php if (isset($feedback['media']) && !empty($feedback['media'])): ?>
                                 <div class="review-images d-flex flex-wrap gap-2 mb-3">
                                     <?php foreach ($feedback['media'] as $media): ?>
@@ -747,6 +753,15 @@ endif; ?>
 
     #load-more-reviews:hover i {
         transform: rotate(360deg);
+    }
+
+    .read-more {
+        transition: color 0.2s ease;
+    }
+
+    .read-more:hover {
+        color: #0056b3;
+        text-decoration: underline;
     }
 
     @keyframes slideInRight {
@@ -1403,10 +1418,7 @@ endif; ?>
                             text
                         }));
                     })
-                    .then(({
-                        response,
-                        text
-                    }) => {
+                    .then(({ response, text }) => {
                         console.log('Raw response:', text);
                         try {
                             const data = JSON.parse(text);
@@ -1548,6 +1560,18 @@ endif; ?>
                 }
             });
         }
+
+        // Read More for truncated reviews
+        document.querySelectorAll('.read-more').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const content = this.previousElementSibling;
+                content.style.maxHeight = 'none';
+                content.style.webkitLineClamp = 'unset';
+                this.style.display = 'none';
+                console.log('Read more clicked for review');
+            });
+        });
 
         // Notification function with title support
         function showNotification(message, type, title = '') {
