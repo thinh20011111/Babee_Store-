@@ -1273,6 +1273,28 @@ endif; ?>
     console.log('Feedbacks:', <?php echo json_encode($feedbacks ?? []); ?>);
     console.log('Feedback Stats:', <?php echo json_encode($feedback_stats ?? []); ?>);
 
+    // Log detailed review content
+    const feedbacks = <?php echo json_encode($feedbacks ?? []); ?>;
+    console.group('Review Content Details');
+    if (feedbacks.length > 0) {
+        feedbacks.forEach((feedback, index) => {
+            console.log(`Review ${index + 1}:`, {
+                id: feedback.id || 'N/A',
+                username: feedback.username || 'N/A',
+                rating: feedback.rating || 'N/A',
+                content: feedback.content || 'N/A',
+                created_at: feedback.created_at || 'N/A',
+                media: feedback.media || []
+            });
+        });
+    } else {
+        console.log('No reviews available');
+    }
+    console.groupEnd();
+    <?php
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã log nội dung đánh giá vào console\n", FILE_APPEND);
+    ?>
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM loaded');
         const form = document.getElementById('add-to-cart-form');
