@@ -119,7 +119,7 @@ class ProductController
             }
             // Lấy thông tin đánh giá sản phẩm
             $feedback_stats = $this->feedback->getProductFeedbackStats($product_id);
-            $feedbacks = $this->feedback->getProductFeedbacks($product_id, 1, 10); // Lấy 10 đánh giá mới nhất
+            $feedbacks = $this->feedback->getProductFeedbacks($product_id, 1, 3); // Chỉ lấy 3 đánh giá mới nhất
 
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product data: " . json_encode([
                 'id' => $this->product->id,
@@ -664,5 +664,53 @@ class ProductController
 
         header("Location: index.php?controller=product&action=list");
         exit;
+    }
+
+    public function loadMoreReviews()
+    {
+        // Khởi tạo file log
+        $log_file = 'logs/debug.log';
+        if (!file_exists(dirname($log_file))) {
+            mkdir(dirname($log_file), 0755, true);
+        }
+
+        // Kiểm tra tham số đầu vào
+        if (!isset($_GET['product_id']) || !isset($_GET['page'])) {
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error: Missing required parameters\n", FILE_APPEND);
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing required parameters']);
+            return;
+        }
+
+        $product_id = intval($_GET['product_id']);
+        $page = intval($_GET['page']);
+
+        // Log thông tin request
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Loading more reviews - Product ID: $product_id, Page: $page\n", FILE_APPEND);
+
+        try {
+            // Lấy thêm 3 đánh giá
+            $feedbacks = $this->feedback->getProductFeedbacks($product_id, $page, 3);
+
+            // Log kết quả
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Successfully loaded " . count($feedbacks) . " feedbacks\n", FILE_APPEND);
+
+            // Trả về kết quả dạng JSON
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'feedbacks' => $feedbacks
+            ]);
+        } catch (Exception $e) {
+            // Log lỗi
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Error: " . $e->getMessage() . "\n", FILE_APPEND);
+
+            // Trả về thông báo lỗi
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
