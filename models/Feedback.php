@@ -38,7 +38,7 @@ class Feedback
     {
         $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at, u.username 
                   FROM feedback f
-                  JOIN user u ON f.user_id = u.id
+                  JOIN users u ON f.user_id = u.id
                   WHERE f.product_id = ?
                   ORDER BY f.created_at DESC";
         $stmt = $this->db->prepare($query);
@@ -160,7 +160,7 @@ class Feedback
             $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at,
                              u.username, u.avatar
                       FROM feedback f
-                      JOIN user u ON f.user_id = u.id
+                      JOIN users u ON f.user_id = u.id
                       WHERE f.product_id = ?
                       ORDER BY f.created_at DESC
                       LIMIT ? OFFSET ?";
