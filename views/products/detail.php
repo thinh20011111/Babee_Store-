@@ -437,91 +437,119 @@ endif; ?>
 
 <!-- Customer Reviews Section -->
 <section class="customer-reviews mt-5 mb-5">
-    <h3 class="mb-4">Đánh giá của khách hàng</h3>
+    <div class="container">
+        <h3 class="mb-4 fw-bold text-dark">Đánh giá của khách hàng</h3>
 
-    <?php if (isset($feedback_stats) && $feedback_stats['total_reviews'] > 0): ?>
-        <!-- Thống kê đánh giá -->
-        <div class="review-stats bg-light p-4 rounded shadow-sm mb-4">
-            <div class="row align-items-center">
-                <!-- Điểm trung bình -->
-                <div class="col-md-3 text-center">
-                    <h4 class="display-4 mb-0"><?php echo number_format($feedback_stats['average_rating'], 1); ?></h4>
-                    <div class="rating mb-2">
-                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <i class="fas fa-star <?php echo ($i <= round($feedback_stats['average_rating'])) ? 'text-warning' : 'text-muted'; ?>"></i>
+        <?php if (isset($feedback_stats) && $feedback_stats['total_reviews'] > 0): ?>
+            <!-- Review Statistics -->
+            <div class="review-stats bg-white p-4 rounded shadow-sm mb-5">
+                <div class="row align-items-center">
+                    <!-- Average Rating -->
+                    <div class="col-md-3 text-center mb-3 mb-md-0">
+                        <h4 class="display-3 fw-bold text-primary mb-1"><?php echo number_format($feedback_stats['average_rating'], 1); ?></h4>
+                        <div class="rating mb-2">
+                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                <i class="fas fa-star <?php echo ($i <= round($feedback_stats['average_rating'])) ? 'text-warning' : 'text-muted'; ?>"></i>
+                            <?php endfor; ?>
+                        </div>
+                        <p class="text-muted mb-0 fs-6"><?php echo $feedback_stats['total_reviews']; ?> đánh giá</p>
+                    </div>
+
+                    <!-- Star Distribution -->
+                    <div class="col-md-9">
+                        <?php for ($i = 5; $i >= 1; $i--):
+                            $star_count = isset($feedback_stats[$i . '_star']) ? $feedback_stats[$i . '_star'] : 0;
+                            $star_percent = isset($feedback_stats[$i . '_star_percent']) ? $feedback_stats[$i . '_star_percent'] : 0;
+                        ?>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="text-muted fw-medium" style="width: 60px;"><?php echo $i; ?> sao</div>
+                                <div class="progress flex-grow-1" style="height: 12px; background-color: #f1f1f1;">
+                                    <div class="progress-bar bg-warning" role="progressbar"
+                                         style="width: <?php echo $star_percent; ?>%"
+                                         aria-valuenow="<?php echo $star_percent; ?>"
+                                         aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="text-muted ms-3" style="width: 60px;">
+                                    <?php echo $star_count; ?>
+                                </div>
+                            </div>
                         <?php endfor; ?>
                     </div>
-                    <p class="text-muted mb-0"><?php echo $feedback_stats['total_reviews']; ?> đánh giá</p>
-                </div>
-
-                <!-- Phân bố số sao -->
-                <div class="col-md-9">
-                    <?php for ($i = 5; $i >= 1; $i--):
-                        $star_count = isset($feedback_stats[$i . '_star']) ? $feedback_stats[$i . '_star'] : 0;
-                        $star_percent = isset($feedback_stats[$i . '_star_percent']) ? $feedback_stats[$i . '_star_percent'] : 0;
-                    ?>
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="text-muted" style="width: 60px;"><?php echo $i; ?> sao</div>
-                            <div class="progress flex-grow-1" style="height: 10px;">
-                                <div class="progress-bar bg-warning" role="progressbar"
-                                    style="width: <?php echo $star_percent; ?>%"
-                                    aria-valuenow="<?php echo $star_percent; ?>"
-                                    aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <div class="text-muted ml-2" style="width: 60px;">
-                                <?php echo $star_count; ?> đánh giá
-                            </div>
-                        </div>
-                    <?php endfor; ?>
                 </div>
             </div>
-        </div>
 
-        <!-- Danh sách đánh giá -->
-        <?php if (isset($feedbacks) && !empty($feedbacks)): ?>
-            <div class="review-list">
-                <?php foreach ($feedbacks as $feedback): ?>
-                    <div class="review-item border-bottom pb-4 mb-4">
-                        <div class="d-flex align-items-center mb-3">
+            <!-- Review List -->
+            <div class="review-list" id="review-list">
+                <?php
+                $displayed_reviews = 0;
+                if (isset($feedbacks) && !empty($feedbacks)):
+                    foreach ($feedbacks as $index => $feedback):
+                        if ($displayed_reviews >= $initial_reviews) {
+                            echo '<div class="review-item border-bottom pb-4 mb-4 d-none" data-review-index="' . $index . '">';
+                        } else {
+                            echo '<div class="review-item border-bottom pb-4 mb-4" data-review-index="' . $index . '">';
+                        }
+                        $displayed_reviews++;
+                ?>
+                        <div class="d-flex align-items-start mb-3">
                             <img src="<?php echo !empty($feedback['avatar']) ? htmlspecialchars($feedback['avatar']) : 'assets/images/default-avatar.png'; ?>"
-                                class="rounded-circle mr-3" style="width: 50px; height: 50px; object-fit: cover;"
-                                alt="<?php echo htmlspecialchars($feedback['username']); ?>">
-                            <div>
-                                <h5 class="mb-0"><?php echo htmlspecialchars($feedback['username']); ?></h5>
-                                <div class="rating">
+                                 class="rounded-circle me-3"
+                                 style="width: 60px; height: 60px; object-fit: cover;"
+                                 alt="<?php echo htmlspecialchars($feedback['username']); ?>">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1 fw-bold"><?php echo htmlspecialchars($feedback['username']); ?></h5>
+                                <div class="rating mb-2">
                                     <?php for ($i = 1; $i <= 5; $i++): ?>
                                         <i class="fas fa-star <?php echo ($i <= $feedback['rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
                                     <?php endfor; ?>
-                                    <span class="text-muted ml-2">
-                                        <?php echo date('d/m/Y', strtotime($feedback['created_at'])); ?>
+                                    <span class="text-muted ms-2 small">
+                                        <?php echo date('d/m/Y H:i', strtotime($feedback['created_at'])); ?>
                                     </span>
                                 </div>
                             </div>
                         </div>
-
-                        <p class="mb-3"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
-
+                        <p class="mb-3 text-dark"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
                         <?php if (isset($feedback['media']) && !empty($feedback['media'])): ?>
                             <div class="review-images d-flex flex-wrap gap-2 mb-3">
                                 <?php foreach ($feedback['media'] as $media): ?>
                                     <a href="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                        data-fancybox="review-<?php echo $feedback['id']; ?>">
+                                       data-fancybox="review-<?php echo $feedback['id']; ?>"
+                                       class="review-image-link">
                                         <img src="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                            class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;"
-                                            alt="Review image">
+                                             class="img-thumbnail rounded"
+                                             style="width: 120px; height: 120px; object-fit: cover;"
+                                             alt="Review image">
                                     </a>
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
+                <?php
+                    endforeach;
+                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Rendered $displayed_reviews reviews\n", FILE_APPEND);
+                endif;
+                ?>
             </div>
+
+            <!-- Load More Button -->
+            <?php if ($displayed_reviews > $initial_reviews): ?>
+                <div class="text-center mt-4">
+                    <button id="load-more-reviews" class="btn btn-outline-primary rounded-pill px-5 py-2 fw-medium">
+                        <i class="fas fa-plus me-2"></i>Xem thêm đánh giá
+                    </button>
+                </div>
+            <?php
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Load more button rendered\n", FILE_APPEND);
+            endif; ?>
+        <?php else: ?>
+            <div class="alert alert-info rounded shadow-sm">
+                <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
+            </div>
+            <?php
+                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] No reviews available\n", FILE_APPEND);
+            ?>
         <?php endif; ?>
-    <?php else: ?>
-        <div class="alert alert-info rounded shadow-sm">
-            <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
-        </div>
-    <?php endif; ?>
+    </div>
 </section>
 
 <style>
@@ -633,6 +661,91 @@ endif; ?>
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         border-radius: 8px;
         animation: slideInRight 0.3s ease-in-out;
+    }
+
+    /* Customer Reviews Section Styles */
+    .customer-reviews {
+        background-color: #f8f9fa;
+        padding: 3rem 0;
+    }
+
+    .customer-reviews h3 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.8rem;
+        color: #212529;
+    }
+
+    .review-stats {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .review-stats:hover {
+        transform: translateY(-5px);
+    }
+
+    .review-stats .progress {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .review-stats .progress-bar {
+        transition: width 0.3s ease;
+    }
+
+    .review-item {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .review-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .review-item img {
+        border: 2px solid #e9ecef;
+        transition: border-color 0.2s ease;
+    }
+
+    .review-item img:hover {
+        border-color: #007bff;
+    }
+
+    .review-images img {
+        border-radius: 8px;
+        transition: transform 0.2s ease;
+    }
+
+    .review-images img:hover {
+        transform: scale(1.05);
+    }
+
+    #load-more-reviews {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        border-width: 2px;
+        transition: all 0.3s ease;
+    }
+
+    #load-more-reviews:hover {
+        background-color: #007bff;
+        color: #fff;
+        transform: scale(1.05);
+    }
+
+    #load-more-reviews i {
+        transition: transform 0.3s ease;
+    }
+
+    #load-more-reviews:hover i {
+        transform: rotate(360deg);
     }
 
     @keyframes slideInRight {
@@ -832,6 +945,41 @@ endif; ?>
         .related-products .price-block {
             font-size: 0.9rem;
         }
+
+        .customer-reviews {
+            padding: 2rem 0;
+        }
+
+        .customer-reviews h3 {
+            font-size: 1.5rem;
+        }
+
+        .review-stats {
+            padding: 1.5rem;
+        }
+
+        .review-stats .display-3 {
+            font-size: 2.5rem;
+        }
+
+        .review-item {
+            padding: 1rem;
+        }
+
+        .review-item img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .review-images img {
+            width: 100px;
+            height: 100px;
+        }
+
+        #load-more personally {
+            padding: 0.5rem 2rem;
+            font-size: 0.9rem;
+        }
     }
 
     @media (max-width: 576px) {
@@ -981,7 +1129,44 @@ endif; ?>
         .related-products .price-block {
             font-size: 0.85rem;
         }
+
+        .customer-reviews {
+            padding: 1.5rem 0;
+        }
+
+        .customer-reviews h3 {
+            font-size: 1.3rem;
+        }
+
+        .review-stats {
+            padding: 1rem;
+        }
+
+        .review-stats .display-3 {
+            font-size: 2rem;
+        }
+
+        .review-item {
+            padding: 0.8rem;
+        }
+
+        .review-item img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .review-images img {
+            width: 80px;
+            height: 80px;
+        }
+
+        #load-more-reviews {
+            padding: 0.4rem 1.5rem;
+            font-size: 0.85rem;
+        }
     }
+
+    
 </style>
 
 <script>
