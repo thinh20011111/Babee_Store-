@@ -80,6 +80,9 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<!-- Fancybox for review images -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 
 <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
@@ -530,6 +533,19 @@ endif; ?>
                 </div>
             </div>
 
+            <!-- Star Filter -->
+            <div class="review-filter mb-4">
+                <label class="fw-bold me-3">Lọc theo số sao:</label>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary star-filter active" data-star="all">Tất cả</button>
+                    <?php for ($i = 5; $i >= 1; $i--): ?>
+                        <button type="button" class="btn btn-outline-primary star-filter" data-star="<?php echo $i; ?>">
+                            <?php echo $i; ?> <i class="fas fa-star text-warning"></i>
+                        </button>
+                    <?php endfor; ?>
+                </div>
+            </div>
+
             <!-- Review List -->
             <div class="review-list" id="review-list">
                 <?php
@@ -540,7 +556,7 @@ endif; ?>
                         $display_class = ($displayed_reviews < $initial_reviews) ? '' : 'd-none';
                         $displayed_reviews++;
                 ?>
-                        <div class="review-item border-bottom pb-4 mb-4 <?php echo $display_class; ?>" data-review-index="<?php echo $index; ?>">
+                        <div class="review-item border-bottom pb-4 mb-4 <?php echo $display_class; ?>" data-review-index="<?php echo $index; ?>" data-rating="<?php echo $feedback['rating']; ?>">
                             <div class="d-flex align-items-start mb-3">
                                 <img src="<?php echo !empty($feedback['avatar']) ? htmlspecialchars($feedback['avatar']) : 'assets/images/default-avatar.png'; ?>"
                                      class="rounded-circle me-3"
@@ -812,6 +828,27 @@ endif; ?>
         text-decoration: underline;
     }
 
+    /* Star Filter Styles */
+    .review-filter .btn-group .btn {
+        font-family: 'Poppins', sans-serif;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        border-radius: 20px;
+        margin-right: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .review-filter .btn-group .btn.active,
+    .review-filter .btn-group .btn:hover {
+        background-color: #007bff;
+        color: #fff;
+        border-color: #007bff;
+    }
+
+    .review-filter .btn-group .btn i {
+        margin-left: 5px;
+    }
+
     @keyframes slideInRight {
         from {
             transform: translateX(100%);
@@ -1068,6 +1105,11 @@ endif; ?>
             font-size: 0.8rem;
             max-height: 200px;
         }
+
+        .review-filter .btn-group .btn {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
     }
 
     @media (max-width: 576px) {
@@ -1257,6 +1299,11 @@ endif; ?>
             font-size: 0.75rem;
             max-height: 150px;
         }
+
+        .review-filter .btn-group .btn {
+            font-size: 0.75rem;
+            padding: 5px 10px;
+        }
     }
 </style>
 
@@ -1272,28 +1319,6 @@ endif; ?>
     console.log('Additional Images:', <?php echo json_encode($product->images); ?>);
     console.log('Feedbacks:', <?php echo json_encode($feedbacks ?? []); ?>);
     console.log('Feedback Stats:', <?php echo json_encode($feedback_stats ?? []); ?>);
-
-    // Log detailed review content
-    const feedbacks = <?php echo json_encode($feedbacks ?? []); ?>;
-    console.group('Review Content Details');
-    if (feedbacks.length > 0) {
-        feedbacks.forEach((feedback, index) => {
-            console.log(`Review ${index + 1}:`, {
-                id: feedback.id || 'N/A',
-                username: feedback.username || 'N/A',
-                rating: feedback.rating || 'N/A',
-                content: feedback.content || 'N/A',
-                created_at: feedback.created_at || 'N/A',
-                media: feedback.media || []
-            });
-        });
-    } else {
-        console.log('No reviews available');
-    }
-    console.groupEnd();
-    <?php
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã log nội dung đánh giá vào console\n", FILE_APPEND);
-    ?>
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM loaded');
@@ -1642,20 +1667,63 @@ endif; ?>
             console.log('Không có notify-form (sản phẩm còn hàng)');
         }
 
+        // Star Filter Handling
+        const starFilters = document.querySelectorAll('.star-filter');
+        starFilters.forEach(button => {
+            button.addEventListener('click', function() {
+                const selectedStar = this.dataset.star;
+                console.log('Filter by star:', selectedStar);
+
+                // Update active state
+                starFilters.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                // Filter reviews
+                const reviewItems = document.querySelectorAll('.review-item');
+                let displayedCount = 0;
+                reviewItems.forEach(item => {
+                    const rating = parseInt(item.dataset.rating);
+                    if (selectedStar === 'all' || rating === parseInt(selectedStar)) {
+                        item.classList.remove('d-none');
+                        if (displayedCount < initialReviews) {
+                            item.classList.add('animate__animated', 'animate__fadeIn');
+                            displayedCount++;
+                        } else {
+                            item.classList.add('d-none');
+                        }
+                    } else {
+                        item.classList.add('d-none');
+                    }
+                });
+
+                // Update load more button visibility
+                const loadMoreButton = document.getElementById('load-more-reviews');
+                const hiddenReviews = document.querySelectorAll('.review-item.d-none').length;
+                if (loadMoreButton) {
+                    loadMoreButton.style.display = hiddenReviews > 0 ? 'block' : 'none';
+                }
+            });
+        });
+
         // Load More Reviews
         const loadMoreButton = document.getElementById('load-more-reviews');
         if (loadMoreButton) {
             loadMoreButton.addEventListener('click', function() {
                 console.log('Load more reviews clicked');
-                const hiddenReviews = document.querySelectorAll('.review-item.d-none');
-                const reviewsToShow = Array.from(hiddenReviews).slice(0, 3); // Show next 3 reviews
+                const selectedStar = document.querySelector('.star-filter.active').dataset.star;
+                const hiddenReviews = Array.from(document.querySelectorAll('.review-item.d-none')).filter(item => {
+                    const rating = parseInt(item.dataset.rating);
+                    return selectedStar === 'all' || rating === parseInt(selectedStar);
+                });
+                const reviewsToShow = hiddenReviews.slice(0, 3); // Show next 3 reviews
                 reviewsToShow.forEach(review => {
                     review.classList.remove('d-none');
                     review.classList.add('animate__animated', 'animate__fadeIn');
                 });
 
                 // Hide button if no more reviews to show
-                if (document.querySelectorAll('.review-item.d-none').length === 0) {
+                const remainingHidden = document.querySelectorAll('.review-item.d-none').length;
+                if (remainingHidden === 0) {
                     loadMoreButton.style.display = 'none';
                     console.log('No more reviews to load');
                 }
@@ -1672,6 +1740,14 @@ endif; ?>
                 this.style.display = 'none';
                 console.log('Read more clicked for review');
             });
+        });
+
+        // Initialize Fancybox
+        Fancybox.bind("[data-fancybox]", {
+            // Fancybox options
+            Thumbs: {
+                autoStart: false
+            }
         });
 
         // Notification function with title support
@@ -1702,16 +1778,22 @@ endif; ?>
 <?php
 // Include footer
 try {
-    $footer_path = __DIR__ . '/../layouts/footer.php';
-    if (!file_exists($footer_path)) {
+    $log_file = __DIR__ . '/../logs/error.log';
+    $footer_path = realpath(__DIR__ . '/../layouts/footer.php');
+
+    if ($footer_path === false || !file_exists($footer_path)) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $footer_path không tồn tại\n", FILE_APPEND);
-        die("Lỗi: File footer.php không tồn tại tại " . htmlspecialchars($footer_path));
+        header('Location: /error.php?message=' . urlencode('Footer file not found'));
+        exit;
     }
+
     include $footer_path;
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n", FILE_APPEND);
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Hoàn thành render views/products/detail.php\n", FILE_APPEND);
+
+    $log_message = "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n";
+    $log_message .= "[" . date('Y-m-d H:i:s') . "] Hoàn thành render views/products/detail.php\n";
+    file_put_contents($log_file, $log_message, FILE_APPEND);
 } catch (Exception $e) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include footer.php: " . $e->getMessage() . "\n", FILE_APPEND);
-    die("Lỗi khi load footer: " . htmlspecialchars($e->getMessage()));
+    header('Location: /error.php?message=' . urlencode('Error including footer'));
+    exit;
 }
-?>
