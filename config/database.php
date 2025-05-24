@@ -173,24 +173,34 @@ function createLocalTables($conn) {
         }
 
         // Add sample admin user if no users exist
+        // Kiểm tra và thêm tài khoản admin mặc định nếu bảng users trống
         $check = $conn->query("SELECT COUNT(*) FROM users")->fetchColumn();
         if ($check == 0) {
-            // Default password: admin123
-            $conn->exec("INSERT INTO users (username, email, password, role) VALUES 
-                ('admin', 'admin@example.com', '$2y$10$8gF5Tcz8ZZi4ZKpzjXHgWOzxKCBXCQGUnkmlAWV7PZkWvpUwQ5wXC', 'admin')
-            ");
+            // Thêm tài khoản admin mặc định
+            $admin_sql = "INSERT INTO users (username, email, password, role, created_at) 
+                VALUES ('admin', 'admin@example.com', 
+                '$2y$10$8gF5Tcz8ZZi4ZKpzjXHgWOzxKCBXCQGUnkmlAWV7PZkWvpUwQ5wXC', 
+                'admin', CURRENT_TIMESTAMP)";
+            $conn->exec($admin_sql);
         }
-
-        // Add sample products if no products exist
+        
+        // Kiểm tra và thêm sản phẩm mẫu nếu bảng products trống
         $check = $conn->query("SELECT COUNT(*) FROM products")->fetchColumn();
         if ($check == 0) {
-            $conn->exec("INSERT INTO products (name, description, price, sale_price, category_id, is_featured, is_sale) VALUES 
-                ('Oversized Logo Tee', 'Áo phông rộng với logo nổi bật, 100% cotton hữu cơ', 450000, 0, 1, 1, 0),
-                ('Cargo Pants', 'Quần túi hộp phong cách đường phố, nhiều túi tiện lợi', 620000, 520000, 2, 1, 1),
-                ('Graphic Hoodie', 'Áo hoodie in họa tiết đồ họa hiện đại', 850000, 0, 1, 1, 0),
-                ('Bucket Hat', 'Mũ bucket dáng rộng với họa tiết táo bạo', 320000, 250000, 4, 0, 1),
-                ('High-top Sneakers', 'Giày thể thao cổ cao phong cách retro', 1200000, 0, 5, 1, 0)
-            ");
+            $products_sql = "INSERT INTO products 
+                (name, description, price, sale_price, category_id, is_featured, is_sale, created_at) 
+                VALUES 
+                ('Oversized Logo Tee', 'Áo phông rộng với logo nổi bật, 100% cotton hữu cơ', 
+                    450000, 0, 1, 1, 0, CURRENT_TIMESTAMP),
+                ('Cargo Pants', 'Quần túi hộp phong cách đường phố, nhiều túi tiện lợi', 
+                    620000, 520000, 2, 1, 1, CURRENT_TIMESTAMP),
+                ('Graphic Hoodie', 'Áo hoodie in họa tiết đồ họa hiện đại', 
+                    850000, 0, 1, 1, 0, CURRENT_TIMESTAMP),
+                ('Bucket Hat', 'Mũ bucket dáng rộng với họa tiết táo bạo', 
+                    320000, 250000, 4, 0, 1, CURRENT_TIMESTAMP),
+                ('High-top Sneakers', 'Giày thể thao cổ cao phong cách retro', 
+                    1200000, 0, 5, 1, 0, CURRENT_TIMESTAMP)";
+            $conn->exec($products_sql);
         }
 
         // Add sample product images if no images exist
