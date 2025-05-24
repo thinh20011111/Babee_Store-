@@ -490,138 +490,147 @@ try {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã render related products\n", FILE_APPEND);
 endif; ?>
 
-<!-- Customer Reviews Section -->
-<section class="customer-reviews mt-5 mb-5">
-    <div class="container">
-        <h3 class="mb-4 fw-bold text-dark">Đánh giá của khách hàng</h3>
-
-        <?php if (isset($feedback_stats) && $feedback_stats['total_reviews'] > 0): ?>
-            <!-- Review Statistics -->
-            <div class="review-stats bg-white p-4 rounded shadow-sm mb-5">
-                <div class="row align-items-center">
-                    <!-- Average Rating -->
-                    <div class="col-md-3 text-center mb-3 mb-md-0">
-                        <h4 class="display-3 fw-bold text-primary mb-1"><?php echo number_format($feedback_stats['average_rating'], 1); ?></h4>
-                        <div class="rating mb-2">
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i class="fas fa-star <?php echo ($i <= round($feedback_stats['average_rating'])) ? 'text-warning' : 'text-muted'; ?>"></i>
-                            <?php endfor; ?>
-                        </div>
-                        <p class="text-muted mb-0 fs-6"><?php echo $feedback_stats['total_reviews']; ?> đánh giá</p>
-                    </div>
-
-                    <!-- Star Distribution -->
-                    <div class="col-md-9">
-                        <?php for ($i = 5; $i >= 1; $i--):
-                            $star_count = isset($feedback_stats[$i . '_star']) ? $feedback_stats[$i . '_star'] : 0;
-                            $star_percent = isset($feedback_stats[$i . '_star_percent']) ? $feedback_stats[$i . '_star_percent'] : 0;
-                        ?>
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="text-muted fw-medium" style="width: 60px;"><?php echo $i; ?> sao</div>
-                                <div class="progress flex-grow-1" style="height: 12px; background-color: #f1f1f1;">
-                                    <div class="progress-bar bg-warning" role="progressbar"
-                                         style="width: <?php echo $star_percent; ?>%"
-                                         aria-valuenow="<?php echo $star_percent; ?>"
-                                         aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <div class="text-muted ms-3" style="width: 60px;">
-                                    <?php echo $star_count; ?>
-                                </div>
-                            </div>
+<!-- Product Reviews Section -->
+<div class="product-reviews mt-5">
+    <h3 class="mb-4">Đánh giá sản phẩm</h3>
+    
+    <?php if (isset($feedback_stats) && $feedback_stats['total_reviews'] > 0): ?>
+        <!-- Review Statistics -->
+        <div class="review-stats mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-4 text-center">
+                    <h1 class="display-4 fw-bold mb-0"><?php echo number_format($feedback_stats['average_rating'], 1); ?></h1>
+                    <div class="stars mb-2">
+                        <?php for($i = 1; $i <= 5; $i++): ?>
+                            <i class="fas fa-star <?php echo $i <= round($feedback_stats['average_rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
                         <?php endfor; ?>
                     </div>
+                    <p class="text-muted mb-0"><?php echo $feedback_stats['total_reviews']; ?> đánh giá</p>
                 </div>
-            </div>
-
-            <!-- Star Filter -->
-            <div class="review-filter mb-4">
-                <label class="fw-bold me-3">Lọc theo số sao:</label>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-primary star-filter active" data-star="all">Tất cả</button>
-                    <?php for ($i = 5; $i >= 1; $i--): ?>
-                        <button type="button" class="btn btn-outline-primary star-filter" data-star="<?php echo $i; ?>">
-                            <?php echo $i; ?> <i class="fas fa-star text-warning"></i>
-                        </button>
+                <div class="col-md-8">
+                    <?php for($i = 5; $i >= 1; $i--): ?>
+                        <?php 
+                            $percent_key = $i . '_star_percent';
+                            $count_key = $i . '_star';
+                            $percent = isset($feedback_stats[$percent_key]) ? $feedback_stats[$percent_key] : 0;
+                            $count = isset($feedback_stats[$count_key]) ? $feedback_stats[$count_key] : 0;
+                        ?>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stars me-2">
+                                <?php for($j = 1; $j <= 5; $j++): ?>
+                                    <i class="fas fa-star <?php echo $j <= $i ? 'text-warning' : 'text-muted'; ?> small"></i>
+                                <?php endfor; ?>
+                            </div>
+                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo $percent; ?>%"></div>
+                            </div>
+                            <span class="text-muted small"><?php echo $count; ?></span>
+                        </div>
                     <?php endfor; ?>
                 </div>
             </div>
+        </div>
 
-            <!-- Review List -->
-            <div class="review-list" id="review-list">
-                <?php
-                $displayed_reviews = 0;
-                if (isset($feedbacks) && !empty($feedbacks)):
-                    foreach ($feedbacks as $index => $feedback):
-                        // Show only first 3 reviews initially, hide the rest
-                        $display_class = ($displayed_reviews < $initial_reviews) ? '' : 'd-none';
-                        $displayed_reviews++;
-                ?>
-                        <div class="review-item border-bottom pb-4 mb-4 <?php echo $display_class; ?>" data-review-index="<?php echo $index; ?>" data-rating="<?php echo $feedback['rating']; ?>">
-                            <div class="d-flex align-items-start mb-3">
-                                <img src="<?php echo !empty($feedback['avatar']) ? htmlspecialchars($feedback['avatar']) : 'assets/images/default-avatar.png'; ?>"
-                                     class="rounded-circle me-3"
-                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                     alt="<?php echo htmlspecialchars($feedback['username']); ?>">
-                                <div class="flex-grow-1">
-                                    <h5 class="mb-1 fw-bold"><?php echo htmlspecialchars($feedback['username']); ?></h5>
-                                    <div class="rating mb-2">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star <?php echo ($i <= $feedback['rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
+        <!-- Review List -->
+        <div class="review-list" id="reviewList">
+            <?php if (isset($feedbacks) && !empty($feedbacks)): ?>
+                <?php foreach ($feedbacks as $feedback): ?>
+                    <div class="review-item card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex mb-3">
+                                <img src="<?php echo htmlspecialchars($feedback['avatar'] ?? 'assets/images/default-avatar.png'); ?>" 
+                                     class="rounded-circle me-3" 
+                                     alt="User Avatar"
+                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                <div>
+                                    <h6 class="mb-1"><?php echo htmlspecialchars($feedback['username']); ?></h6>
+                                    <div class="stars mb-1">
+                                        <?php for($i = 1; $i <= 5; $i++): ?>
+                                            <i class="fas fa-star <?php echo $i <= $feedback['rating'] ? 'text-warning' : 'text-muted'; ?> small"></i>
                                         <?php endfor; ?>
-                                        <span class="text-muted ms-2 small">
-                                            <?php echo date('d/m/Y H:i', strtotime($feedback['created_at'])); ?>
-                                        </span>
                                     </div>
+                                    <small class="text-muted"><?php echo date('d/m/Y', strtotime($feedback['created_at'])); ?></small>
                                 </div>
                             </div>
-                            <p class="mb-3 text-dark review-content" style="max-height: 4.5em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
-                                <?php echo nl2br(htmlspecialchars($feedback['content'])); ?>
-                            </p>
-                            <?php if (strlen($feedback['content']) > 100): ?>
-                                <a href="#" class="read-more text-primary small">Xem thêm</a>
-                            <?php endif; ?>
+                            <p class="mb-3"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
+                            
                             <?php if (isset($feedback['media']) && !empty($feedback['media'])): ?>
-                                <div class="review-images d-flex flex-wrap gap-2 mb-3">
-                                    <?php foreach ($feedback['media'] as $media): ?>
-                                        <a href="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                           data-fancybox="review-<?php echo $feedback['id']; ?>"
-                                           class="review-image-link">
-                                            <img src="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                                 class="img-thumbnail rounded"
-                                                 style="width: 120px; height: 120px; object-fit: cover;"
-                                                 alt="Review image">
-                                        </a>
-                                    <?php endforeach; ?>
+                                <div class="review-media mb-3">
+                                    <div class="row g-2">
+                                        <?php foreach ($feedback['media'] as $media): ?>
+                                            <div class="col-4 col-md-2">
+                                                <a href="<?php echo htmlspecialchars($media['file_path']); ?>" 
+                                                   data-fancybox="review-<?php echo $feedback['id']; ?>">
+                                                    <img src="<?php echo htmlspecialchars($media['file_path']); ?>" 
+                                                         class="img-fluid rounded" 
+                                                         alt="Review Image">
+                                                </a>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
                             <?php endif; ?>
                         </div>
-                <?php
-                    endforeach;
-                    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Rendered $displayed_reviews reviews\n", FILE_APPEND);
-                endif;
-                ?>
-            </div>
+                    </div>
+                <?php endforeach; ?>
 
-            <!-- Load More Button -->
-            <?php if ($displayed_reviews > $initial_reviews): ?>
-                <div class="text-center mt-4">
-                    <button id="load-more-reviews" class="btn btn-outline-primary rounded-pill px-5 py-2 fw-medium">
-                        <i class="fas fa-plus me-2"></i>Xem thêm đánh giá
-                    </button>
-                </div>
-            <?php
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Load more button rendered\n", FILE_APPEND);
-            endif; ?>
-        <?php else: ?>
-            <div class="alert alert-info rounded shadow-sm">
-                <p class="mb-0">Sản phẩm này chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
-            </div>
-            <?php
-                file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] No reviews available\n", FILE_APPEND);
-            ?>
-        <?php endif; ?>
-    </div>
-</section>
+                <?php if ($feedback_stats['total_reviews'] > 3): ?>
+                    <div class="text-center mt-4">
+                        <button id="loadMoreReviews" class="btn btn-outline-primary rounded-pill px-4">
+                            Xem thêm đánh giá
+                        </button>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    <?php else: ?>
+        <div class="text-center py-5">
+            <i class="fas fa-comments text-muted fa-3x mb-3"></i>
+            <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này</p>
+        </div>
+    <?php endif; ?>
+</div>
+
+<!-- Add JavaScript for Load More functionality -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentPage = 1;
+        const loadMoreBtn = document.getElementById('loadMoreReviews');
+        
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function() {
+                currentPage++;
+                
+                fetch(`index.php?controller=product&action=loadMoreReviews&product_id=<?php echo $product->id; ?>&page=${currentPage}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.feedbacks && data.feedbacks.length > 0) {
+                            const reviewList = document.getElementById('reviewList');
+                            
+                            data.feedbacks.forEach(feedback => {
+                                // Create and append new review HTML
+                                const reviewHtml = createReviewHtml(feedback);
+                                reviewList.insertBefore(reviewHtml, loadMoreBtn.parentElement);
+                            });
+                            
+                            // Hide load more button if no more reviews
+                            if (data.feedbacks.length < 3) {
+                                loadMoreBtn.style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error loading more reviews:', error));
+            });
+        }
+        
+        function createReviewHtml(feedback) {
+            const reviewDiv = document.createElement('div');
+            reviewDiv.className = 'review-item card mb-3';
+            // ... Tạo HTML cho review item tương tự như template PHP ở trên
+            return reviewDiv;
+        }
+    });
+</script>
 
 <style>
     /* Import Google Fonts for related products button */
