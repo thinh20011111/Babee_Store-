@@ -1787,7 +1787,14 @@ endif; ?>
 <?php
 // Include footer
 try {
-    $log_file = __DIR__ . '/../logs/error.log';
+    $log_dir = __DIR__ . '/../logs';
+    $log_file = $log_dir . '/error.log';
+    
+    // Create logs directory if it doesn't exist
+    if (!file_exists($log_dir)) {
+        mkdir($log_dir, 0755, true);
+    }
+    
     $footer_path = realpath(__DIR__ . '/../layouts/footer.php');
 
     if ($footer_path === false || !file_exists($footer_path)) {
@@ -1802,6 +1809,10 @@ try {
     $log_message .= "[" . date('Y-m-d H:i:s') . "] Hoàn thành render views/products/detail.php\n";
     file_put_contents($log_file, $log_message, FILE_APPEND);
 } catch (Exception $e) {
+    // Create logs directory if it doesn't exist (in case of exception)
+    if (!file_exists($log_dir)) {
+        mkdir($log_dir, 0755, true);
+    }
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include footer.php: " . $e->getMessage() . "\n", FILE_APPEND);
     header('Location: /error.php?message=' . urlencode('Error including footer'));
     exit;
