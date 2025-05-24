@@ -38,6 +38,9 @@ if (!isset($product->images)) {
     $product->images = [];
 }
 
+// Define initial_reviews to fix undefined variable error
+$initial_reviews = 3; // Display 3 reviews initially
+
 $page_title = htmlspecialchars($product->name ?? 'Sản phẩm');
 file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Page title: $page_title\n", FILE_APPEND);
 
@@ -484,46 +487,44 @@ endif; ?>
                 $displayed_reviews = 0;
                 if (isset($feedbacks) && !empty($feedbacks)):
                     foreach ($feedbacks as $index => $feedback):
-                        if ($displayed_reviews >= $initial_reviews) {
-                            echo '<div class="review-item border-bottom pb-4 mb-4 d-none" data-review-index="' . $index . '">';
-                        } else {
-                            echo '<div class="review-item border-bottom pb-4 mb-4" data-review-index="' . $index . '">';
-                        }
+                        // Show only first 3 reviews initially, hide the rest
+                        $display_class = ($displayed_reviews < $initial_reviews) ? '' : 'd-none';
                         $displayed_reviews++;
                 ?>
-                        <div class="d-flex align-items-start mb-3">
-                            <img src="<?php echo !empty($feedback['avatar']) ? htmlspecialchars($feedback['avatar']) : 'assets/images/default-avatar.png'; ?>"
-                                 class="rounded-circle me-3"
-                                 style="width: 60px; height: 60px; object-fit: cover;"
-                                 alt="<?php echo htmlspecialchars($feedback['username']); ?>">
-                            <div class="flex-grow-1">
-                                <h5 class="mb-1 fw-bold"><?php echo htmlspecialchars($feedback['username']); ?></h5>
-                                <div class="rating mb-2">
-                                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                                        <i class="fas fa-star <?php echo ($i <= $feedback['rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
-                                    <?php endfor; ?>
-                                    <span class="text-muted ms-2 small">
-                                        <?php echo date('d/m/Y H:i', strtotime($feedback['created_at'])); ?>
-                                    </span>
+                        <div class="review-item border-bottom pb-4 mb-4 <?php echo $display_class; ?>" data-review-index="<?php echo $index; ?>">
+                            <div class="d-flex align-items-start mb-3">
+                                <img src="<?php echo !empty($feedback['avatar']) ? htmlspecialchars($feedback['avatar']) : 'assets/images/default-avatar.png'; ?>"
+                                     class="rounded-circle me-3"
+                                     style="width: 60px; height: 60px; object-fit: cover;"
+                                     alt="<?php echo htmlspecialchars($feedback['username']); ?>">
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1 fw-bold"><?php echo htmlspecialchars($feedback['username']); ?></h5>
+                                    <div class="rating mb-2">
+                                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                                            <i class="fas fa-star <?php echo ($i <= $feedback['rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
+                                        <?php endfor; ?>
+                                        <span class="text-muted ms-2 small">
+                                            <?php echo date('d/m/Y H:i', strtotime($feedback['created_at'])); ?>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+                            <p class="mb-3 text-dark"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
+                            <?php if (isset($feedback['media']) && !empty($feedback['media'])): ?>
+                                <div class="review-images d-flex flex-wrap gap-2 mb-3">
+                                    <?php foreach ($feedback['media'] as $media): ?>
+                                        <a href="<?php echo htmlspecialchars($media['file_path']); ?>"
+                                           data-fancybox="review-<?php echo $feedback['id']; ?>"
+                                           class="review-image-link">
+                                            <img src="<?php echo htmlspecialchars($media['file_path']); ?>"
+                                                 class="img-thumbnail rounded"
+                                                 style="width: 120px; height: 120px; object-fit: cover;"
+                                                 alt="Review image">
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                        <p class="mb-3 text-dark"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
-                        <?php if (isset($feedback['media']) && !empty($feedback['media'])): ?>
-                            <div class="review-images d-flex flex-wrap gap-2 mb-3">
-                                <?php foreach ($feedback['media'] as $media): ?>
-                                    <a href="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                       data-fancybox="review-<?php echo $feedback['id']; ?>"
-                                       class="review-image-link">
-                                        <img src="<?php echo htmlspecialchars($media['file_path']); ?>"
-                                             class="img-thumbnail rounded"
-                                             style="width: 120px; height: 120px; object-fit: cover;"
-                                             alt="Review image">
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
                 <?php
                     endforeach;
                     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Rendered $displayed_reviews reviews\n", FILE_APPEND);
@@ -976,7 +977,7 @@ endif; ?>
             height: 100px;
         }
 
-        #load-more personally {
+        #load-more-reviews {
             padding: 0.5rem 2rem;
             font-size: 0.9rem;
         }
@@ -1165,8 +1166,6 @@ endif; ?>
             font-size: 0.85rem;
         }
     }
-
-    
 </style>
 
 <script>
@@ -1189,6 +1188,7 @@ endif; ?>
         const quantityInput = document.getElementById('quantity');
         const variants = <?php echo json_encode($variants ?? []); ?>;
         const totalStock = <?php echo json_encode($total_stock); ?>;
+        const initialReviews = <?php echo json_encode($initial_reviews); ?>;
 
         // Khởi tạo số lượng ban đầu
         if (quantityInput) {
@@ -1529,6 +1529,26 @@ endif; ?>
             console.log('Không có notify-form (sản phẩm còn hàng)');
         }
 
+        // Load More Reviews
+        const loadMoreButton = document.getElementById('load-more-reviews');
+        if (loadMoreButton) {
+            loadMoreButton.addEventListener('click', function() {
+                console.log('Load more reviews clicked');
+                const hiddenReviews = document.querySelectorAll('.review-item.d-none');
+                const reviewsToShow = Array.from(hiddenReviews).slice(0, 3); // Show next 3 reviews
+                reviewsToShow.forEach(review => {
+                    review.classList.remove('d-none');
+                    review.classList.add('animate__animated', 'animate__fadeIn');
+                });
+
+                // Hide button if no more reviews to show
+                if (document.querySelectorAll('.review-item.d-none').length === 0) {
+                    loadMoreButton.style.display = 'none';
+                    console.log('No more reviews to load');
+                }
+            });
+        }
+
         // Notification function with title support
         function showNotification(message, type, title = '') {
             const notification = document.createElement('div');
@@ -1539,10 +1559,10 @@ endif; ?>
             notification.style.zIndex = '2000';
             notification.style.minWidth = '300px';
             notification.innerHTML = `
-            ${title ? `<strong>${title}</strong><br>` : ''}
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+                ${title ? `<strong>${title}</strong><br>` : ''}
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
             document.body.appendChild(notification);
 
             // Auto dismiss after 3 seconds
