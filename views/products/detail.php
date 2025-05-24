@@ -37,6 +37,14 @@ if (!isset($product->images)) {
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$product->images không được định nghĩa\n", FILE_APPEND);
     $product->images = [];
 }
+if (!isset($feedbacks)) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$feedbacks không được định nghĩa\n", FILE_APPEND);
+    $feedbacks = [];
+}
+if (!isset($feedback_stats)) {
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Cảnh báo: Biến \$feedback_stats không được định nghĩa\n", FILE_APPEND);
+    $feedback_stats = ['total_reviews' => 0, 'average_rating' => 0];
+}
 
 // Define initial_reviews to fix undefined variable error
 $initial_reviews = 3; // Display 3 reviews initially
@@ -75,22 +83,63 @@ try {
 
 <!-- Debug information (chỉ hiển thị nếu DEBUG_MODE bật) -->
 <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
-    <div class="debug-info alert alert-info">
-        <strong>Debug Info:</strong><br>
-        Product ID: <?php echo htmlspecialchars($product->id ?? 'N/A'); ?><br>
-        Product Name: <?php echo htmlspecialchars($product->name ?? 'N/A'); ?><br>
-        Main Image: <?php echo htmlspecialchars($product->image ?? 'N/A'); ?><br>
-        Additional Images Count: <?php echo count($product->images); ?><br>
-        Total Stock: <?php echo !empty($product->id) ? $product->getTotalStock() : 0; ?><br>
-        Variants Count: <?php echo count($variants ?? []); ?><br>
-        Variants: <?php echo htmlspecialchars(json_encode($variants ?? [])); ?><br>
-        Category Name: <?php echo htmlspecialchars($category_name ?? 'N/A'); ?><br>
-        Related Products Count: <?php echo count($related_products ?? []); ?><br>
-        Has Multiple Colors: <?php echo $has_multiple_colors ? 'Yes' : 'No'; ?>
+    <div class="debug-info container my-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Debug Information</h5>
+                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#debugCollapse" aria-expanded="true" aria-controls="debugCollapse">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="debugCollapse">
+                <div class="card-body">
+                    <h6>Product Data</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars(json_encode([
+                        'id' => $product->id ?? 'N/A',
+                        'name' => $product->name ?? 'N/A',
+                        'price' => $product->price ?? 'N/A',
+                        'sale_price' => $product->sale_price ?? 'N/A',
+                        'is_sale' => $product->is_sale ?? 'N/A',
+                        'description' => $product->description ?? 'N/A',
+                        'image' => $product->image ?? 'N/A',
+                        'images' => $product->images ?? [],
+                        'category_id' => $product->category_id ?? 'N/A'
+                    ], JSON_PRETTY_PRINT)); ?></pre>
+
+                    <h6>Variants</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars(json_encode($variants, JSON_PRETTY_PRINT)); ?></pre>
+
+                    <h6>Feedbacks</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars(json_encode($feedbacks, JSON_PRETTY_PRINT)); ?></pre>
+
+                    <h6>Feedback Statistics</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars(json_encode($feedback_stats, JSON_PRETTY_PRINT)); ?></pre>
+
+                    <h6>Category Name</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars($category_name ?? 'N/A'); ?></pre>
+
+                    <h6>Related Products</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars(json_encode($related_products, JSON_PRETTY_PRINT)); ?></pre>
+
+                    <h6>Initial Reviews</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars($initial_reviews); ?></pre>
+
+                    <h6>Total Stock</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars($total_stock ?? 'N/A'); ?></pre>
+
+                    <h6>Colors</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars(json_encode($colors, JSON_PRETTY_PRINT)); ?></pre>
+
+                    <h6>Has Multiple Colors</h6>
+                    <pre class="bg-light p-3 rounded"><?php echo htmlspecialchars($has_multiple_colors ? 'true' : 'false'); ?></pre>
+                </div>
+            </div>
+        </div>
     </div>
-<?php
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info\n", FILE_APPEND);
-endif; ?>
+    <?php
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã hiển thị debug info section\n", FILE_APPEND);
+    ?>
+<?php endif; ?>
 
 <!-- Page Header with Breadcrumb -->
 <div class="category-header position-relative mb-5">
@@ -226,12 +275,11 @@ endif; ?>
                                 </div>
                                 <!-- Color Selector (chỉ hiển thị nếu có nhiều màu) -->
                                 <?php if ($has_multiple_colors): ?>
-                                    Nataly: ?>
                                     <div class="col-12 col-md-6">
                                         <label class="fw-bold d-block mb-2">Màu sắc:</label>
-										<select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
-											<option value="" disabled selected>Chọn màu sắc</option>
-										</select>
+                                        <select class="form-select rounded-pill" name="color" id="variant-color" required disabled>
+                                            <option value="" disabled selected>Chọn màu sắc</option>
+                                        </select>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -837,6 +885,25 @@ endif; ?>
         margin-bottom: 1.5rem;
     }
 
+    /* Debug section styles */
+    .debug-info pre {
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+    }
+
+    .debug-info .card-header {
+        cursor: pointer;
+    }
+
+    .debug-info .card-header .btn i {
+        transition: transform 0.3s ease;
+    }
+
+    .debug-info .card-header .btn[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .container {
@@ -995,6 +1062,11 @@ endif; ?>
         #load-more-reviews {
             padding: 0.5rem 2rem;
             font-size: 0.9rem;
+        }
+
+        .debug-info pre {
+            font-size: 0.8rem;
+            max-height: 200px;
         }
     }
 
@@ -1180,6 +1252,11 @@ endif; ?>
             padding: 0.4rem 1.5rem;
             font-size: 0.85rem;
         }
+
+        .debug-info pre {
+            font-size: 0.75rem;
+            max-height: 150px;
+        }
     }
 </style>
 
@@ -1193,6 +1270,8 @@ endif; ?>
     console.log('Has Multiple Colors:', <?php echo json_encode($has_multiple_colors); ?>);
     console.log('Main Image:', <?php echo json_encode($product->image ?? 'N/A'); ?>);
     console.log('Additional Images:', <?php echo json_encode($product->images); ?>);
+    console.log('Feedbacks:', <?php echo json_encode($feedbacks ?? []); ?>);
+    console.log('Feedback Stats:', <?php echo json_encode($feedback_stats ?? []); ?>);
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM loaded');
