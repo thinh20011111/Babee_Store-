@@ -199,7 +199,8 @@ class ProductController
             'category_name' => $category_name,
             'related_products' => $related_products,
             'feedback_stats' => $feedback_stats,
-            'feedbacks' => $feedbacks
+            'feedbacks' => $feedbacks,  // Thêm dòng này
+            'feedback_count' => count($feedbacks)
         ];
 
         // Ghi log dữ liệu truyền vào view
@@ -751,4 +752,3 @@ class ProductController
         }
     }
 }
-?>
