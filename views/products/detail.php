@@ -338,7 +338,7 @@ try {
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="feature-item text-center p-3 rounded shadow-sm">
+                        <div class="feature-item text-centershoe p-3 rounded shadow-sm">
                             <i class="fas fa-undo fs-3 mb-2 text-primary"></i>
                             <p class="mb-0 small">ĐỔI TRẢ TRONG VÒNG 7 NGÀY</p>
                         </div>
@@ -594,743 +594,164 @@ endif; ?>
 <!-- Add JavaScript for Load More functionality -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Bắt đầu script views/products/detail.php');
+        console.log('Product ID:', <?php echo json_encode($product->id ?? 'N/A'); ?>);
+        console.log('Variants:', <?php echo json_encode($variants ?? []); ?>);
+        console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?>);
+        console.log('Related Products Count:', <?php echo json_encode(count($related_products ?? [])); ?>);
+        console.log('Total Stock:', <?php echo json_encode($total_stock); ?>);
+        console.log('Has Multiple Colors:', <?php echo json_encode($has_multiple_colors); ?>);
+        console.log('Main Image:', <?php echo json_encode($product->image ?? 'N/A'); ?>);
+        console.log('Additional Images:', <?php echo json_encode($product->images); ?>);
+        console.log('Feedbacks:', <?php echo json_encode($feedbacks ?? []); ?>);
+        console.log('Feedback Stats:', <?php echo json_encode($feedback_stats ?? []); ?>);
+
         let currentPage = 1;
         const loadMoreBtn = document.getElementById('loadMoreReviews');
         
         if (loadMoreBtn) {
             loadMoreBtn.addEventListener('click', function() {
                 currentPage++;
+                console.log('Load more reviews requested:', { product_id: <?php echo $product->id; ?>, page: currentPage });
                 
                 fetch(`index.php?controller=product&action=loadMoreReviews&product_id=<?php echo $product->id; ?>&page=${currentPage}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('Fetch response received:', { status: response.status, ok: response.ok });
+                        if (!response.ok) {
+                            throw new Error('HTTP error ' + response.status);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        if (data.feedbacks && data.feedbacks.length > 0) {
+                        console.log('Fetch data:', data);
+                        if (data.success && data.feedbacks && data.feedbacks.length > 0) {
                             const reviewList = document.getElementById('reviewList');
                             
                             data.feedbacks.forEach(feedback => {
                                 // Create and append new review HTML
                                 const reviewHtml = createReviewHtml(feedback);
                                 reviewList.insertBefore(reviewHtml, loadMoreBtn.parentElement);
+                                console.log('Added review:', {
+                                    id: feedback.id,
+                                    username: feedback.username,
+                                    rating: feedback.rating,
+                                    media_count: feedback.media ? feedback.media.length : 0
+                                });
                             });
                             
                             // Hide load more button if no more reviews
                             if (data.feedbacks.length < 3) {
                                 loadMoreBtn.style.display = 'none';
+                                console.log('No more reviews to load');
                             }
+                        } else {
+                            console.warn('No feedbacks received or request failed:', data);
+                            loadMoreBtn.style.display = 'none';
                         }
                     })
-                    .catch(error => console.error('Error loading more reviews:', error));
+                    .catch(error => {
+                        console.error('Error loading more reviews:', error);
+                        showNotification('Không thể tải thêm đánh giá: ' + error.message, 'error', 'Lỗi tải đánh giá');
+                    });
             });
+        } else {
+            console.log('No loadMoreReviews button found');
         }
         
         function createReviewHtml(feedback) {
+            console.log('Creating review HTML for feedback:', {
+                id: feedback.id,
+                username: feedback.username || 'Khách ẩn danh',
+                rating: feedback.rating,
+                created_at: feedback.created_at,
+                media_count: feedback.media ? feedback.media.length : 0
+            });
+
             const reviewDiv = document.createElement('div');
-            reviewDiv.className = 'review-item card mb-3';
-            // ... Tạo HTML cho review item tương tự như template PHP ở trên
+            reviewDiv.className = 'review-item card mb-3 animate__animated animate__fadeIn';
+            
+            // Ensure default values
+            const username = feedback.username || 'Khách ẩn danh';
+            const avatar = feedback.avatar || 'assets/images/default-avatar.png';
+            const createdAt = feedback.created_at ? new Date(feedback.created_at).toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }) : 'N/A';
+            
+            // Create review content
+            let reviewHtml = `
+                <div class="card-body">
+                    <div class="d-flex mb-3">
+                        <img src="${encodeURI(avatar)}" 
+                             class="rounded-circle me-3" 
+                             alt="User Avatar"
+                             style="width: 50px; height: 50px; object-fit: cover;">
+                        <div>
+                            <h6 class="mb-1">${escapeHtml(username)}</h6>
+                            <div class="stars mb-1">
+            `;
+            
+            // Add rating stars
+            for (let i = 1; i <= 5; i++) {
+                reviewHtml += `<i class="fas fa-star ${i <= feedback.rating ? 'text-warning' : 'text-muted'} small"></i>`;
+            }
+            
+            reviewHtml += `
+                            </div>
+                            <small class="text-muted">${createdAt}</small>
+                        </div>
+                    </div>
+                    <p class="mb-3">${escapeHtml(feedback.content).replace(/\n/g, '<br>')}</p>
+            `;
+            
+            // Add media if available
+            if (feedback.media && feedback.media.length > 0) {
+                reviewHtml += `
+                    <div class="review-media mb-3">
+                        <div class="row g-2">
+                `;
+                feedback.media.forEach(media => {
+                    reviewHtml += `
+                        <div class="col-4 col-md-2">
+                            <a href="${encodeURI(media.file_path)}" 
+                               data-fancybox="review-${feedback.id}">
+                                <img src="${encodeURI(media.file_path)}" 
+                                     class="img-fluid rounded" 
+                                     alt="Review Image">
+                            </a>
+                        </div>
+                    `;
+                });
+                reviewHtml += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            reviewHtml += `
+                </div>
+            `;
+            
+            reviewDiv.innerHTML = reviewHtml;
             return reviewDiv;
         }
-    });
-</script>
 
-<style>
-    /* Import Google Fonts for related products button */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
-
-    /* General styles */
-    * {
-        box-sizing: border-box;
-    }
-
-    .container {
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-
-    /* Scoped styles for product detail form */
-    .product-detail-form .input-group .btn {
-        background-color: #fff;
-        border-color: #007bff;
-        color: #007bff;
-        transition: all 0.2s ease;
-    }
-
-    .product-detail-form .input-group .btn:hover {
-        background-color: #007bff;
-        color: #fff;
-    }
-
-    .product-detail-form .input-group .form-control {
-        border-color: #007bff;
-    }
-
-    .product-detail-form .btn-primary,
-    .product-detail-form .btn-outline-secondary {
-        transition: all 0.2s ease;
-    }
-
-    .product-detail-form .btn-primary:hover {
-        background-color: #0056b3;
-        border-color: #0056b3;
-    }
-
-    .product-detail-form .btn-outline-secondary:hover {
-        background-color: #6c757d;
-        color: #fff;
-    }
-
-    .product-detail-form .btn-primary {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .product-detail-form .btn-primary::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        transition: width 0.4s ease, height 0.4s ease;
-    }
-
-    .product-detail-form .btn-primary:active::after {
-        width: 200px;
-        height: 200px;
-    }
-
-    /* Styles for related products button */
-    .related-products .btn-primary {
-        font-family: 'Poppins', sans-serif;
-        padding: 10px 25px;
-        font-weight: 500;
-        background-color: #f8f9fa;
-        color: #212529;
-        border: none;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-
-    .related-products .btn-primary:hover {
-        background-color: #dee2e6;
-        transform: scale(1.05);
-    }
-
-    /* Styles for cart badge and notification */
-    .cart-count-badge {
-        display: inline-block;
-        min-width: 20px;
-        padding: 2px 6px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        line-height: 1;
-        text-align: center;
-        white-space: nowrap;
-        vertical-align: baseline;
-        background-color: var(--primary-color, #FF2D55);
-        color: white;
-        border-radius: 10px;
-        position: absolute;
-        top: -5px;
-        right: -10px;
-        transition: transform 0.2s ease;
-    }
-
-    .notification {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        animation: slideInRight 0.3s ease-in-out;
-    }
-
-    /* Customer Reviews Section Styles */
-    .customer-reviews {
-        background-color: #f8f9fa;
-        padding: 3rem 0;
-    }
-
-    .customer-reviews h3 {
-        font-family: 'Poppins', sans-serif;
-        font-size: 1.8rem;
-        color: #212529;
-    }
-
-    .review-stats {
-        background-color: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease;
-    }
-
-    .review-stats:hover {
-        transform: translateY(-5px);
-    }
-
-    .review-stats .progress {
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .review-stats .progress-bar {
-        transition: width 0.3s ease;
-    }
-
-    .review-item {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .review-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .review-item img {
-        border: 2px solid #e9ecef;
-        transition: border-color 0.2s ease;
-    }
-
-    .review-item img:hover {
-        border-color: #007bff;
-    }
-
-    .review-images img {
-        border-radius: 8px;
-        transition: transform 0.2s ease;
-    }
-
-    .review-images img:hover {
-        transform: scale(1.05);
-    }
-
-    #load-more-reviews {
-        font-family: 'Poppins', sans-serif;
-        font-size: 1rem;
-        border-width: 2px;
-        transition: all 0.3s ease;
-    }
-
-    #load-more-reviews:hover {
-        background-color: #007bff;
-        color: #fff;
-        transform: scale(1.05);
-    }
-
-    #load-more-reviews i {
-        transition: transform 0.3s ease;
-    }
-
-    #load-more-reviews:hover i {
-        transform: rotate(360deg);
-    }
-
-    .read-more {
-        transition: color 0.2s ease;
-    }
-
-    .read-more:hover {
-        color: #0056b3;
-        text-decoration: underline;
-    }
-
-    /* Star Filter Styles */
-    .review-filter .btn-group .btn {
-        font-family: 'Poppins', sans-serif;
-        padding: 8px 16px;
-        font-size: 0.9rem;
-        border-radius: 20px;
-        margin-right: 5px;
-        transition: all 0.2s ease;
-    }
-
-    .review-filter .btn-group .btn.active,
-    .review-filter .btn-group .btn:hover {
-        background-color: #007bff;
-        color: #fff;
-        border-color: #007bff;
-    }
-
-    .review-filter .btn-group .btn i {
-        margin-left: 5px;
-    }
-
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    /* General styles for product detail page */
-    .thumbnail-item {
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .thumbnail-item:hover {
-        border-color: #0d6efd;
-        transform: scale(1.05);
-    }
-
-    .thumbnail-item.active {
-        border-color: #0d6efd;
-        border-width: 2px;
-    }
-
-    .product-image-container img,
-    .product-placeholder {
-        transition: opacity 0.3s ease;
-    }
-
-    .product-image-container img:hover {
-        opacity: 0.9;
-    }
-
-    .product-image-container .badge {
-        z-index: 10;
-    }
-
-    .category-header {
-        margin-bottom: 2rem !important;
-    }
-
-    .product-title {
-        font-size: 1.8rem;
-    }
-
-    .product-price {
-        margin-bottom: 1.5rem;
-    }
-
-    .product-availability {
-        margin-bottom: 1.5rem;
-    }
-
-    .product-variants {
-        margin-bottom: 1.5rem;
-    }
-
-    .product-features {
-        margin-bottom: 1.5rem;
-    }
-
-    .product-info {
-        margin-bottom: 1.5rem;
-    }
-
-    .product-share {
-        margin-bottom: 1.5rem;
-    }
-
-    /* Debug section styles */
-    .debug-info pre {
-        max-height: 300px;
-        overflow-y: auto;
-        font-size: 0.9rem;
-    }
-
-    .debug-info .card-header {
-        cursor: pointer;
-    }
-
-    .debug-info .card-header .btn i {
-        transition: transform 0.3s ease;
-    }
-
-    .debug-info .card-header .btn[aria-expanded="true"] i {
-        transform: rotate(180deg);
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .container {
-            padding-left: 10px;
-            padding-right: 10px;
-        }
-
-        .category-header-bg {
-            height: 100px;
-        }
-
-        .breadcrumb {
-            font-size: 0.9rem;
-            flex-wrap: wrap;
-        }
-
-        .product-image-container img,
-        .product-placeholder {
-            max-height: 350px;
-        }
-
-        .product-thumbnails .col-sm-2 {
-            flex: 0 0 20%;
-            max-width: 20%;
-        }
-
-        .thumbnail-item img,
-        .thumbnail-placeholder {
-            height: 60px;
-            object-fit: cover;
-        }
-
-        .product-title {
-            font-size: 1.5rem;
-        }
-
-        .product-price .fs-3 {
-            font-size: 1.4rem !important;
-        }
-
-        .product-price .fs-5 {
-            font-size: 1rem !important;
-        }
-
-        .product-variants .form-select {
-            font-size: 0.9rem;
-            padding: 0.5rem;
-        }
-
-        .product-detail-form .input-group {
-            flex-wrap: nowrap;
-        }
-
-        .product-detail-form .input-group .btn {
-            padding: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .product-detail-form .input-group .form-control {
-            font-size: 0.9rem;
-            padding: 0.5rem;
-        }
-
-        .product-detail-form .btn-primary,
-        .product-detail-form .btn-outline-secondary {
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-        }
-
-        .product-features .feature-item {
-            padding: 1rem;
-        }
-
-        .product-features .fs-3 {
-            font-size: 1.5rem !important;
-        }
-
-        .product-features .small {
-            font-size: 0.8rem;
-        }
-
-        .product-info .nav-tabs .nav-link {
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-        }
-
-        .product-info .tab-content {
-            padding: 1rem;
-        }
-
-        .product-info h5 {
-            font-size: 1.2rem;
-        }
-
-        .product-info p,
-        .product-info ul li {
-            font-size: 0.9rem;
-        }
-
-        .table-responsive table {
-            font-size: 0.85rem;
-        }
-
-        .product-share .social-icon {
-            font-size: 1rem;
-        }
-
-        .related-products .btn-primary {
-            font-size: 1rem;
-            padding: 8px 16px;
-        }
-
-        .related-products .card-img-top,
-        .related-products .card-img-top div {
-            height: 150px;
-        }
-
-        .related-products .card-title {
-            font-size: 1rem;
-        }
-
-        .related-products .price-block {
-            font-size: 0.9rem;
-        }
-
-        .customer-reviews {
-            padding: 2rem 0;
-        }
-
-        .customer-reviews h3 {
-            font-size: 1.5rem;
-        }
-
-        .review-stats {
-            padding: 1.5rem;
-        }
-
-        .review-stats .display-3 {
-            font-size: 2.5rem;
-        }
-
-        .review-item {
-            padding: 1rem;
-        }
-
-        .review-item img {
-            width: 50px;
-            height: 50px;
-        }
-
-        .review-images img {
-            width: 100px;
-            height: 100px;
-        }
-
-        #load-more-reviews {
-            padding: 0.5rem 2rem;
-            font-size: 0.9rem;
-        }
-
-        .debug-info pre {
-            font-size: 0.8rem;
-            max-height: 200px;
-        }
-
-        .review-filter .btn-group .btn {
-            font-size: 0.8rem;
-            padding: 6px 12px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .container {
-            padding-left: 8px;
-            padding-right: 8px;
-        }
-
-        .category-header-bg {
-            height: 80px;
-        }
-
-        .breadcrumb {
-            font-size: 0.8rem;
-        }
-
-        .product-image-container img,
-        .product-placeholder {
-            max-height: 300px;
-        }
-
-        .product-thumbnails .col-3 {
-            flex: 0 0 25%;
-            max-width: 25%;
-        }
-
-        .thumbnail-item img,
-        .thumbnail-placeholder {
-            height: 50px;
-        }
-
-        .product-title {
-            font-size: 1.3rem;
-        }
-
-        .product-price .fs-3 {
-            font-size: 1.2rem !important;
-        }
-
-        .product-price .fs-5 {
-            font-size: 0.9rem !important;
-        }
-
-        .product-variants .form-select {
-            font-size: 0.85rem;
-            padding: 0.4rem;
-        }
-
-        .product-detail-form .row {
-            flex-direction: column;
-        }
-
-        .product-detail-form .col-12 {
-            margin-bottom: 0.5rem;
-        }
-
-        .product-detail-form .input-group .btn {
-            padding: 0.4rem;
-            font-size: 0.85rem;
-        }
-
-        .product-detail-form .input-group .form-control {
-            font-size: 0.85rem;
-            padding: 0.4rem;
-        }
-
-        .product-detail-form .btn-primary,
-        .product-detail-form .btn-outline-secondary {
-            font-size: 0.85rem;
-            padding: 0.4rem 0.8rem;
-        }
-
-        .product-out-of-stock .form-control,
-        .product-out-of-stock .btn {
-            font-size: 0.85rem;
-            padding: 0.4rem;
-        }
-
-        .product-features .col-6 {
-            flex: 0 0 50%;
-            max-width: 50%;
-        }
-
-        .product-features .feature-item {
-            padding: 0.8rem;
-        }
-
-        .product-features .fs-3 {
-            font-size: 1.2rem !important;
-        }
-
-        .product-features .small {
-            font-size: 0.75rem;
-        }
-
-        .product-info .nav-tabs {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-
-        .product-info .nav-tabs .nav-link {
-            font-size: 0.85rem;
-            padding: 0.4rem 0.8rem;
-        }
-
-        .product-info .tab-content {
-            padding: 0.8rem;
-        }
-
-        .product-info h5 {
-            font-size: 1.1rem;
-        }
-
-        .product-info p,
-        .product-info ul li {
-            font-size: 0.85rem;
-        }
-
-        .table-responsive table {
-            font-size: 0.8rem;
-        }
-
-        .product-share .social-icon {
-            font-size: 0.9rem;
-        }
-
-        .related-products .col-sm-6 {
-            flex: 0 0 100%;
-            max-width: 100%;
-        }
-
-        .related-products .btn-primary {
-            font-size: 0.9rem;
-            padding: 6px 12px;
-        }
-
-        .related-products .card-img-top,
-        .related-products .card-img-top div {
-            height: 120px;
-        }
-
-        .related-products .card-title {
-            font-size: 0.9rem;
-        }
-
-        .related-products .price-block {
-            font-size: 0.85rem;
-        }
-
-        .customer-reviews {
-            padding: 1.5rem 0;
-        }
-
-        .customer-reviews h3 {
-            font-size: 1.3rem;
-        }
-
-        .review-stats {
-            padding: 1rem;
-        }
-
-        .review-stats .display-3 {
-            font-size: 2rem;
-        }
-
-        .review-item {
-            padding: 0.8rem;
-        }
-
-        .review-item img {
-            width: 40px;
-            height: 40px;
-        }
-
-        .review-images img {
-            width: 80px;
-            height: 80px;
-        }
-
-        #load-more-reviews {
-            padding: 0.4rem 1.5rem;
-            font-size: 0.85rem;
-        }
-
-        .debug-info pre {
-            font-size: 0.75rem;
-            max-height: 150px;
-        }
-
-        .review-filter .btn-group .btn {
-            font-size: 0.75rem;
-            padding: 5px 10px;
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
         }
-    }
-</style>
 
-<script>
-    console.log('Bắt đầu script views/products/detail.php');
-    console.log('Product ID:', <?php echo json_encode($product->id ?? 'N/A'); ?>);
-    console.log('Variants:', <?php echo json_encode($variants ?? []); ?>);
-    console.log('Category Name:', <?php echo json_encode($category_name ?? 'N/A'); ?>);
-    console.log('Related Products Count:', <?php echo json_encode(count($related_products ?? [])); ?>);
-    console.log('Total Stock:', <?php echo json_encode($total_stock); ?>);
-    console.log('Has Multiple Colors:', <?php echo json_encode($has_multiple_colors); ?>);
-    console.log('Main Image:', <?php echo json_encode($product->image ?? 'N/A'); ?>);
-    console.log('Additional Images:', <?php echo json_encode($product->images); ?>);
-    console.log('Feedbacks:', <?php echo json_encode($feedbacks ?? []); ?>);
-    console.log('Feedback Stats:', <?php echo json_encode($feedback_stats ?? []); ?>);
+        // Initialize existing review items for Fancybox
+        Fancybox.bind("[data-fancybox]", {
+            Thumbs: {
+                autoStart: false
+            }
+        });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded');
+        // Form submission and other existing JavaScript logic
         const form = document.getElementById('add-to-cart-form');
         const sizeSelect = document.getElementById('variant-size');
         const colorSelect = document.getElementById('variant-color');
@@ -1676,89 +1097,6 @@ endif; ?>
             console.log('Không có notify-form (sản phẩm còn hàng)');
         }
 
-        // Star Filter Handling
-        const starFilters = document.querySelectorAll('.star-filter');
-        starFilters.forEach(button => {
-            button.addEventListener('click', function() {
-                const selectedStar = this.dataset.star;
-                console.log('Filter by star:', selectedStar);
-
-                // Update active state
-                starFilters.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-
-                // Filter reviews
-                const reviewItems = document.querySelectorAll('.review-item');
-                let displayedCount = 0;
-                reviewItems.forEach(item => {
-                    const rating = parseInt(item.dataset.rating);
-                    if (selectedStar === 'all' || rating === parseInt(selectedStar)) {
-                        item.classList.remove('d-none');
-                        if (displayedCount < initialReviews) {
-                            item.classList.add('animate__animated', 'animate__fadeIn');
-                            displayedCount++;
-                        } else {
-                            item.classList.add('d-none');
-                        }
-                    } else {
-                        item.classList.add('d-none');
-                    }
-                });
-
-                // Update load more button visibility
-                const loadMoreButton = document.getElementById('load-more-reviews');
-                const hiddenReviews = document.querySelectorAll('.review-item.d-none').length;
-                if (loadMoreButton) {
-                    loadMoreButton.style.display = hiddenReviews > 0 ? 'block' : 'none';
-                }
-            });
-        });
-
-        // Load More Reviews
-        const loadMoreButton = document.getElementById('load-more-reviews');
-        if (loadMoreButton) {
-            loadMoreButton.addEventListener('click', function() {
-                console.log('Load more reviews clicked');
-                const selectedStar = document.querySelector('.star-filter.active').dataset.star;
-                const hiddenReviews = Array.from(document.querySelectorAll('.review-item.d-none')).filter(item => {
-                    const rating = parseInt(item.dataset.rating);
-                    return selectedStar === 'all' || rating === parseInt(selectedStar);
-                });
-                const reviewsToShow = hiddenReviews.slice(0, 3); // Show next 3 reviews
-                reviewsToShow.forEach(review => {
-                    review.classList.remove('d-none');
-                    review.classList.add('animate__animated', 'animate__fadeIn');
-                });
-
-                // Hide button if no more reviews to show
-                const remainingHidden = document.querySelectorAll('.review-item.d-none').length;
-                if (remainingHidden === 0) {
-                    loadMoreButton.style.display = 'none';
-                    console.log('No more reviews to load');
-                }
-            });
-        }
-
-        // Read More for truncated reviews
-        document.querySelectorAll('.read-more').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const content = this.previousElementSibling;
-                content.style.maxHeight = 'none';
-                content.style.webkitLineClamp = 'unset';
-                this.style.display = 'none';
-                console.log('Read more clicked for review');
-            });
-        });
-
-        // Initialize Fancybox
-        Fancybox.bind("[data-fancybox]", {
-            // Fancybox options
-            Thumbs: {
-                autoStart: false
-            }
-        });
-
         // Notification function with title support
         function showNotification(message, type, title = '') {
             const notification = document.createElement('div');
@@ -1784,36 +1122,430 @@ endif; ?>
     });
 </script>
 
+<style>
+    /* Định nghĩa biến CSS */
+    :root {
+        --primary-color: #007bff;
+        --primary-hover: #0056b3;
+        --secondary-color: #6c757d;
+        --danger-color: #FF2D55;
+        --light-bg: #f8f9fa;
+        --white-bg: #ffffff;
+        --text-color: #212529;
+        --muted-color: #6c757d;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --border-radius: 8px;
+        --transition: all 0.3s ease;
+        --font-poppins: 'Poppins', sans-serif;
+    }
+
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
+    /* General styles */
+    * {
+        box-sizing: border-box;
+    }
+
+    .container {
+        padding: 0 15px;
+    }
+
+    /* Product detail form */
+    .product-detail-form .input-group {
+        --btn-bg: var(--white-bg);
+        --btn-border: var(--primary-color);
+        --btn-color: var(--primary-color);
+    }
+
+    .product-detail-form .input-group .btn {
+        background: var(--btn-bg);
+        border-color: var(--btn-border);
+        color: var(--btn-color);
+        transition: var(--transition);
+    }
+
+    .product-detail-form .input-group .btn:hover {
+        background: var(--primary-color);
+        color: var(--white-bg);
+    }
+
+    .product-detail-form .input-group .form-control {
+        border-color: var(--btn-border);
+    }
+
+    .product-detail-form .btn-primary {
+        position: relative;
+        overflow: hidden;
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        transition: var(--transition);
+    }
+
+    .product-detail-form .btn-primary:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+
+    .product-detail-form .btn-primary::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.4s ease, height 0.4s ease;
+    }
+
+    .product-detail-form .btn-primary:active::after {
+        width: 200px;
+        height: 200px;
+    }
+
+    .product-detail-form .btn-outline-secondary {
+        transition: var(--transition);
+    }
+
+    .product-detail-form .btn-outline-secondary:hover {
+        background: var(--secondary-color);
+        color: var(--white-bg);
+    }
+
+    /* Related products */
+    .related-products .btn-primary {
+        font-family: var(--font-poppins);
+        font-weight: 500;
+        padding: 10px 25px;
+        background: var(--light-bg);
+        color: var(--text-color);
+        border: none;
+        transition: var(--transition);
+    }
+
+    .related-products .btn-primary:hover {
+        background: #dee2e6;
+        transform: scale(1.05);
+    }
+
+    /* Cart badge and notification */
+    .cart-count-badge {
+        position: absolute;
+        top: -5px;
+        right: -10px;
+        min-width: 20px;
+        padding: 2px 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        background: var(--danger-color);
+        color: var(--white-bg);
+        border-radius: 10px;
+        transition: transform 0.2s ease;
+    }
+
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        min-width: 300px;
+        max-width: 90%;
+        box-shadow: var(--shadow-md);
+        border-radius: var(--border-radius);
+        animation: slideInRight 0.3s ease-in-out;
+        z-index: 2000;
+    }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Customer reviews */
+    .customer-reviews, .product-reviews {
+        background: var(--light-bg);
+        padding: 3rem 0;
+    }
+
+    .customer-reviews h3, .product-reviews h3 {
+        font-family: var(--font-poppins);
+        font-size: 1.8rem;
+        color: var(--text-color);
+    }
+
+    .review-stats {
+        background: var(--white-bg);
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        transition: transform 0.2s ease;
+    }
+
+    .review-stats:hover {
+        transform: translateY(-5px);
+    }
+
+    .review-stats .progress {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        height: 8px;
+    }
+
+    .review-stats .progress-bar {
+        transition: width 0.3s ease;
+    }
+
+    .review-item {
+        background: var(--white-bg);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .review-item:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .review-item img {
+        border: 2px solid #e9ecef;
+        transition: border-color 0.2s ease;
+    }
+
+    .review-item img:hover {
+        border-color: var(--primary-color);
+    }
+
+    .review-media img {
+        border-radius: var(--border-radius);
+        transition: transform 0.2s ease;
+    }
+
+    .review-media img:hover {
+        transform: scale(1.05);
+    }
+
+    #loadMoreReviews {
+        font-family: var(--font-poppins);
+        font-size: 1rem;
+        border: 2px solid var(--primary-color);
+        transition: var(--transition);
+    }
+
+    #loadMoreReviews:hover {
+        background: var(--primary-color);
+        color: var(--white-bg);
+        transform: scale(1.05);
+    }
+
+    /* Product detail page */
+    .thumbnail-item {
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .thumbnail-item:hover {
+        border-color: var(--primary-color);
+        transform: scale(1.05);
+    }
+
+    .thumbnail-item.active {
+        border-color: var(--primary-color);
+        border-width: 2px;
+    }
+
+    .product-image-container img, .product-placeholder {
+        transition: opacity 0.3s ease;
+    }
+
+    .product-image-container img:hover {
+        opacity: 0.9;
+    }
+
+    .product-image-container .badge {
+        z-index: 10;
+    }
+
+    .category-header {
+        margin-bottom: 2rem !important;
+    }
+
+    .product-title { font-size: 1.8rem; }
+    .product-price, .product-availability, .product-variants,
+    .product-features, .product-info, .product-share {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Debug section */
+    .debug-info pre {
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+    }
+
+    .debug-info .card-header {
+        cursor: pointer;
+    }
+
+    .debug-info .card-header .btn i {
+        transition: transform 0.3s ease;
+    }
+
+    .debug-info .card-header .btn[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+
+    /* Responsive: max-width 768px */
+    @media (max-width: 768px) {
+        .container { padding: 0 10px; }
+        .category-header-bg { height: 100px; }
+        .breadcrumb { font-size: 0.9rem; flex-wrap: wrap; }
+        .product-image-container img, .product-placeholder { max-height: 350px; }
+        .product-thumbnails .col-sm-2 { flex: 0 0 20%; max-width: 20%; }
+        .thumbnail-item img, .thumbnail-placeholder { height: 60px; object-fit: cover; }
+        .product-title { font-size: 1.5rem; }
+        .product-price .fs-3 { font-size: 1.4rem !important; }
+        .product-price .fs-5 { font-size: 1rem !important; }
+        .product-variants .form-select { font-size: 0.9rem; padding: 0.5rem; }
+        .product-detail-form .input-group { flex-wrap: nowrap; }
+        .product-detail-form .input-group .btn,
+        .product-detail-form .input-group .form-control,
+        .product-detail-form .btn-primary,
+        .product-detail-form .btn-outline-secondary {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+        }
+        .product-features .feature-item { padding: 1rem; }
+        .product-features .fs-3 { font-size: 1.5rem !important; }
+        .product-features .small { font-size: 0.8rem; }
+        .product-info .nav-tabs .nav-link { font-size: 0.9rem; padding: 0.5rem 1rem; }
+        .product-info .tab-content { padding: 1rem; }
+        .product-info h5 { font-size: 1.2rem; }
+        .product-info p, .product-info ul li { font-size: 0.9rem; }
+        .table-responsive table { font-size: 0.85rem; }
+        .product-share .social-icon { font-size: 1rem; }
+        .related-products .btn-primary { font-size: 1rem; padding: 8px 16px; }
+        .related-products .card-img-top, .related-products .card-img-top div { height: 150px; }
+        .related-products .card-title { font-size: 1rem; }
+        .related-products .price-block { font-size: 0.9rem; }
+        .customer-reviews, .product-reviews { padding: 2rem 0; }
+        .customer-reviews h3, .product-reviews h3 { font-size: 1.5rem; }
+        .review-stats { padding: 1.5rem; }
+        .review-stats .display-4 { font-size: 2.5rem; }
+        .review-item { padding: 1rem; }
+        .review-item img { width: 50px; height: 50px; }
+        .review-media img { width: 100px; height: 100px; }
+        #loadMoreReviews { padding: 0.5rem 2rem; font-size: 0.9rem; }
+        .debug-info pre { font-size: 0.8rem; max-height: 200px; }
+    }
+
+    /* Responsive: max-width 576px */
+    @media (max-width: 576px) {
+        .container { padding: 0 8px; }
+        .category-header-bg { height: 80px; }
+        .breadcrumb { font-size: 0.8rem; }
+        .product-image-container img, .product-placeholder { max-height: 300px; }
+        .product-thumbnails .col-3 { flex: 0 0 25%; max-width: 25%; }
+        .thumbnail-item img, .thumbnail-placeholder { height: 50px; }
+        .product-title { font-size: 1.3rem; }
+        .product-price .fs-3 { font-size: 1.2rem !important; }
+        .product-price .fs-5 { font-size: 0.9rem !important; }
+        .product-variants .form-select { font-size: 0.85rem; padding: 0.4rem; }
+        .product-detail-form .row { flex-direction: column; }
+        .product-detail-form .col-12 { margin-bottom: 0.5rem; }
+        .product-detail-form .input-group .btn,
+        .product-detail-form .input-group .form-control,
+        .product-detail-form .btn-primary,
+        .product-detail-form .btn-outline-secondary,
+        .product-out-of-stock .form-control,
+        .product-out-of-stock .btn {
+            font-size: 0.85rem;
+            padding: 0.4rem;
+        }
+        .product-features .col-6 { flex: 0 0 50%; max-width: 50%; }
+        .product-features .feature-item { padding: 0.8rem; }
+        .product-features .fs-3 { font-size: 1.2rem !important; }
+        .product-features .small { font-size: 0.75rem; }
+        .product-info .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .product-info .nav-tabs .nav-link { font-size: 0.85rem; padding: 0.4rem 0.8rem; }
+        .product-info .tab-content { padding: 0.8rem; }
+        .product-info h5 { font-size: 1.1rem; }
+        .product-info p, .product-info ul li { font-size: 0.85rem; }
+        .table-responsive table { font-size: 0.8rem; }
+        .product-share .fw-bold, .product-share .social-icon { font-size: 0.9rem; }
+        .product-share .social-icon { width: 30px; height: 30px; line-height: 30px; }
+        .related-products h3 { font-size: 1.3rem; }
+        .related-products .card-img-top, .related-products .card-img-top div { height: 120px; }
+        .related-products .card-title { font-size: 0.9rem; }
+        .related-products .price-block, .related-products .btn-primary { font-size: 0.85rem; }
+        .related-products .btn-primary { padding: 6px 12px; }
+        .customer-reviews, .product-reviews { padding: 1.5rem 0; }
+        .customer-reviews h3, .product-reviews h3 { font-size: 1.3rem; }
+        .review-stats { padding: 1rem; }
+        .review-stats .display-4 { font-size: 2rem; }
+        .review-stats .progress { height: 6px; }
+        .review-item { padding: 0.8rem; }
+        .review-item h6 { font-size: 0.9rem; }
+        .review-item p { font-size: 0.85rem; }
+        .review-item .text-muted { font-size: 0.75rem; }
+        .review-media img { width: 80px; height: 80px; }
+        #loadMoreReviews { padding: 0.4rem 1.5rem; font-size: 0.85rem; }
+        .debug-info .card-header h5 { font-size: 1rem; }
+        .debug-info pre { font-size: 0.75rem; max-height: 150px; }
+    }
+
+    /* Responsive: min-width 992px */
+    @media (min-width: 992px) {
+        .product-title { font-size: 2rem; }
+        .product-price .fs-3 { font-size: 1.8rem !important; }
+        .product-price .fs-5 { font-size: 1.2rem !important; }
+        .product-variants .form-select { font-size: 1rem; padding: 0.75rem; }
+        .product-detail-form .input-group .btn,
+        .product-detail-form .input-group .form-control,
+        .product-detail-form .btn-primary,
+        .product-detail-form .btn-outline-secondary {
+            font-size: 1rem;
+            padding: 0.75rem;
+        }
+        .product-detail-form .btn-primary, .product-detail-form .btn-outline-secondary {
+            padding: 0.75rem 1.5rem;
+        }
+        .product-features .feature-item { padding: 1.5rem; }
+        .product-features .fs-3 { font-size: 1.8rem !important; }
+        .product-info .nav-tabs .nav-link { font-size: 1rem; padding: 0.75rem 1.5rem; }
+        .product-info .tab-content { padding: 1.5rem; }
+        .product-info h5 { font-size: 1.4rem; }
+        .related-products .card-img-top, .related-products .card-img-top div { height: 200px; }
+        .related-products .card-title { font-size: 1.1rem; }
+        .related-products .price-block { font-size: 1rem; }
+        .customer-reviews h3, .product-reviews h3 { font-size: 2rem; }
+        .review-stats .display-4 { font-size: 3rem; }
+        .review-item { padding: 2rem; }
+        .review-media img { width: 120px; height: 120px; }
+    }
+</style>
+
 <?php
 // Include footer
 try {
-    $log_dir = __DIR__ . '/../logs';
-    $log_file = $log_dir . '/error.log';
-    
-    // Create logs directory if it doesn't exist
-    if (!file_exists($log_dir)) {
-        mkdir($log_dir, 0755, true);
-    }
-    
-    $footer_path = realpath(__DIR__ . '/../layouts/footer.php');
-
-    if ($footer_path === false || !file_exists($footer_path)) {
+    $footer_path = __DIR__ . '/../layouts/footer.php';
+    if (!file_exists($footer_path)) {
         file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi: File $footer_path không tồn tại\n", FILE_APPEND);
-        header('Location: /error.php?message=' . urlencode('Footer file not found'));
-        exit;
+        die("Lỗi: File footer.php không tồn tại tại " . htmlspecialchars($footer_path));
     }
-
     include $footer_path;
-
-    $log_message = "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n";
-    $log_message .= "[" . date('Y-m-d H:i:s') . "] Hoàn thành render views/products/detail.php\n";
-    file_put_contents($log_file, $log_message, FILE_APPEND);
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Đã include footer.php\n", FILE_APPEND);
 } catch (Exception $e) {
-    // Create logs directory if it doesn't exist (in case of exception)
-    if (!file_exists($log_dir)) {
-        mkdir($log_dir, 0755, true);
-    }
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi include footer.php: " . $e->getMessage() . "\n", FILE_APPEND);
-    header('Location: /error.php?message=' . urlencode('Error including footer'));
-    exit;
+    die("Lỗi khi load footer: " . htmlspecialchars($e->getMessage()));
 }
+?>
