@@ -167,15 +167,16 @@ class Feedback
     public function getProductFeedbacks($product_id, $page = 1, $limit = 10)
     {
         try {
+            // Bỏ phần kiểm tra product_id vì không cần thiết (đã được kiểm tra ở controller)
             $offset = ($page - 1) * $limit;
 
-            $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at,
-                             u.username, u.avatar
-                      FROM feedback f
-                      LEFT JOIN users u ON f.user_id = u.id
-                      WHERE f.product_id = ?
-                      ORDER BY f.created_at DESC
-                      LIMIT ? OFFSET ?";
+            // Truy vấn feedback
+            $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at, u.username
+                    FROM feedback f
+                    LEFT JOIN users u ON f.user_id = u.id
+                    WHERE f.product_id = ?
+                    ORDER BY f.created_at DESC
+                    LIMIT ? OFFSET ?";
             $stmt = $this->db->prepare($query);
             $stmt->execute([$product_id, $limit, $offset]);
             $feedbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -185,7 +186,7 @@ class Feedback
             foreach ($feedbacks as &$feedback) {
                 $feedback['media'] = $this->getMediaByFeedback($feedback['id']);
                 $feedback['username'] = $feedback['username'] ?? 'Khách ẩn danh';
-                $feedback['avatar'] = $feedback['avatar'] ?? 'assets/images/default-avatar.png';
+                error_log("Feedback ID {$feedback['id']}: username={$feedback['username']}, rating={$feedback['rating']}, media_count=" . count($feedback['media']));
             }
 
             return $feedbacks;
