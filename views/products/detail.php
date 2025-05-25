@@ -491,105 +491,83 @@ try {
 endif; ?>
 
 <!-- Product Reviews Section -->
-<div class="product-reviews mt-5">
-    <h3 class="mb-4">Đánh giá sản phẩm</h3>
-    
-    <?php if (isset($feedback_stats) && $feedback_stats['total_reviews'] > 0): ?>
-        <!-- Review Statistics -->
+<section class="product-reviews mt-5">
+    <h3 class="mb-4">Customer Reviews</h3>
+    <?php if ($feedback_stats['total_reviews'] > 0): ?>
         <div class="review-stats mb-4">
             <div class="row align-items-center">
                 <div class="col-md-4 text-center">
                     <h1 class="display-4 fw-bold mb-0"><?php echo number_format($feedback_stats['average_rating'], 1); ?></h1>
                     <div class="stars mb-2">
-                        <?php for($i = 1; $i <= 5; $i++): ?>
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
                             <i class="fas fa-star <?php echo $i <= round($feedback_stats['average_rating']) ? 'text-warning' : 'text-muted'; ?>"></i>
                         <?php endfor; ?>
                     </div>
-                    <p class="text-muted mb-0"><?php echo $feedback_stats['total_reviews']; ?> đánh giá</p>
+                    <p class="text-muted mb-0"><?php echo $feedback_stats['total_reviews']; ?> reviews</p>
                 </div>
                 <div class="col-md-8">
-                    <?php for($i = 5; $i >= 1; $i--): ?>
-                        <?php 
-                            $percent_key = $i . '_star_percent';
-                            $count_key = $i . '_star';
-                            $percent = isset($feedback_stats[$percent_key]) ? $feedback_stats[$percent_key] : 0;
-                            $count = isset($feedback_stats[$count_key]) ? $feedback_stats[$count_key] : 0;
-                        ?>
+                    <?php for ($i = 5; $i >= 1; $i--): ?>
                         <div class="d-flex align-items-center mb-2">
                             <div class="stars me-2">
-                                <?php for($j = 1; $j <= 5; $j++): ?>
+                                <?php for ($j = 1; $j <= 5; $j++): ?>
                                     <i class="fas fa-star <?php echo $j <= $i ? 'text-warning' : 'text-muted'; ?> small"></i>
                                 <?php endfor; ?>
                             </div>
                             <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo $percent; ?>%"></div>
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo $feedback_stats[$i . '_star_percent'] ?? 0; ?>%"></div>
                             </div>
-                            <span class="text-muted small"><?php echo $count; ?></span>
+                            <span class="text-muted small"><?php echo $feedback_stats[$i . '_star'] ?? 0; ?></span>
                         </div>
                     <?php endfor; ?>
                 </div>
             </div>
         </div>
-
-        <!-- Review List -->
         <div class="review-list" id="reviewList">
-            <?php if (isset($feedbacks) && !empty($feedbacks)): ?>
-                <?php foreach ($feedbacks as $feedback): ?>
-                    <div class="review-item card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex mb-3">
-                                <img src="<?php echo htmlspecialchars($feedback['avatar'] ?? 'assets/images/default-avatar.png'); ?>" 
-                                     class="rounded-circle me-3" 
-                                     alt="User Avatar"
-                                     style="width: 50px; height: 50px; object-fit: cover;">
-                                <div>
-                                    <h6 class="mb-1"><?php echo htmlspecialchars($feedback['username']); ?></h6>
-                                    <div class="stars mb-1">
-                                        <?php for($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star <?php echo $i <= $feedback['rating'] ? 'text-warning' : 'text-muted'; ?> small"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                    <small class="text-muted"><?php echo date('d/m/Y', strtotime($feedback['created_at'])); ?></small>
+            <?php foreach ($feedbacks as $feedback): ?>
+                <div class="review-item card mb-3 animate__animated animate__fadeIn">
+                    <div class="card-body">
+                        <div class="d-flex mb-3">
+                            <img src="<?php echo htmlspecialchars($feedback['avatar'] ?? 'assets/images/default-avatar.png'); ?>" class="rounded-circle me-3" alt="User Avatar" style="width: 50px; height: 50px; object-fit: cover;" loading="lazy">
+                            <div>
+                                <h6 class="mb-1"><?php echo htmlspecialchars($feedback['username'] ?? 'Anonymous'); ?></h6>
+                                <div class="stars mb-1">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fas fa-star <?php echo $i <= $feedback['rating'] ? 'text-warning' : 'text-muted'; ?> small"></i>
+                                    <?php endfor; ?>
+                                </div>
+                                <small class="text-muted"><?php echo date('d/m/Y', strtotime($feedback['created_at'])); ?></small>
+                            </div>
+                        </div>
+                        <p class="mb-3"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
+                        <?php if (!empty($feedback['media'])): ?>
+                            <div class="review-media mb-3">
+                                <div class="row g-2">
+                                    <?php foreach ($feedback['media'] as $media): ?>
+                                        <div class="col-4 col-md-2">
+                                            <a href="<?php echo htmlspecialchars($media['file_path']); ?>" data-fancybox="review-<?php echo $feedback['id']; ?>">
+                                                <img src="<?php echo htmlspecialchars($media['file_path']); ?>" class="img-fluid rounded" alt="Review Image" loading="lazy">
+                                            </a>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
-                            <p class="mb-3"><?php echo nl2br(htmlspecialchars($feedback['content'])); ?></p>
-                            
-                            <?php if (isset($feedback['media']) && !empty($feedback['media'])): ?>
-                                <div class="review-media mb-3">
-                                    <div class="row g-2">
-                                        <?php foreach ($feedback['media'] as $media): ?>
-                                            <div class="col-4 col-md-2">
-                                                <a href="<?php echo htmlspecialchars($media['file_path']); ?>" 
-                                                   data-fancybox="review-<?php echo $feedback['id']; ?>">
-                                                    <img src="<?php echo htmlspecialchars($media['file_path']); ?>" 
-                                                         class="img-fluid rounded" 
-                                                         alt="Review Image">
-                                                </a>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                        </div>
+                        <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
-
-                <?php if ($feedback_stats['total_reviews'] > 3): ?>
-                    <div class="text-center mt-4">
-                        <button id="loadMoreReviews" class="btn btn-outline-primary rounded-pill px-4">
-                            Xem thêm đánh giá
-                        </button>
-                    </div>
-                <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            <?php if ($feedback_stats['total_reviews'] > $initial_reviews): ?>
+                <div class="text-center mt-4">
+                    <button id="loadMoreReviews" class="btn btn-outline-primary rounded-pill px-4">Load More Reviews</button>
+                </div>
             <?php endif; ?>
         </div>
     <?php else: ?>
         <div class="text-center py-5">
             <i class="fas fa-comments text-muted fa-3x mb-3"></i>
-            <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này</p>
+            <p class="text-muted">No reviews for this product yet</p>
         </div>
     <?php endif; ?>
-</div>
+</section>
 
 <!-- Add JavaScript for Load More functionality -->
 <script>
