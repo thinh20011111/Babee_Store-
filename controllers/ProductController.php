@@ -117,9 +117,16 @@ class ProductController
                 header("Location: index.php?controller=product&action=list");
                 exit;
             }
+
             // Lấy thông tin đánh giá sản phẩm
             $feedback_stats = $this->feedback->getProductFeedbackStats($product_id);
             $feedbacks = $this->feedback->getProductFeedbacks($product_id, 1, 3); // Chỉ lấy 3 đánh giá mới nhất
+
+            // Đảm bảo xử lý giá trị mặc định cho feedbacks
+            foreach ($feedbacks as &$feedback) {
+                $feedback['username'] = $feedback['username'] ?? 'Khách ẩn danh';
+                $feedback['avatar'] = $feedback['avatar'] ?? 'assets/images/default-avatar.png';
+            }
 
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Product data: " . json_encode([
                 'id' => $this->product->id,
@@ -130,7 +137,17 @@ class ProductController
                 'image' => $this->product->image,
                 'images' => $this->product->images,
                 'feedback_stats' => $feedback_stats,
-                'feedbacks' => $feedbacks
+                'feedback_count' => count($feedbacks),
+                'feedbacks' => array_map(function ($f) {
+                    return [
+                        'id' => $f['id'],
+                        'user_id' => $f['user_id'],
+                        'username' => $f['username'],
+                        'rating' => $f['rating'],
+                        'content' => substr($f['content'], 0, 50),
+                        'media_count' => count($f['media'])
+                    ];
+                }, $feedbacks)
             ], JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
         } catch (Exception $e) {
             file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Lỗi khi đọc sản phẩm: " . $e->getMessage() . "\n", FILE_APPEND);
@@ -175,8 +192,6 @@ class ProductController
             $related_products = [];
         }
 
-
-
         // Prepare data for view
         $data = [
             'product' => $this->product,
@@ -188,7 +203,14 @@ class ProductController
         ];
 
         // Ghi log dữ liệu truyền vào view
-        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Data for view: " . json_encode($data, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+        file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Data for view: " . json_encode([
+            'product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'category_name' => $category_name,
+            'feedback_stats' => $feedback_stats,
+            'feedback_count' => count($feedbacks),
+            'related_products_count' => count($related_products)
+        ], JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
 
         // Load product detail view
         try {
@@ -692,8 +714,23 @@ class ProductController
             // Lấy thêm 3 đánh giá
             $feedbacks = $this->feedback->getProductFeedbacks($product_id, $page, 3);
 
+            // Đảm bảo xử lý giá trị mặc định cho feedbacks
+            foreach ($feedbacks as &$feedback) {
+                $feedback['username'] = $feedback['username'] ?? 'Khách ẩn danh';
+                $feedback['avatar'] = $feedback['avatar'] ?? 'assets/images/default-avatar.png';
+            }
+
             // Log kết quả
-            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Successfully loaded " . count($feedbacks) . " feedbacks\n", FILE_APPEND);
+            file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Successfully loaded " . count($feedbacks) . " feedbacks: " . json_encode(array_map(function ($f) {
+                return [
+                    'id' => $f['id'],
+                    'user_id' => $f['user_id'],
+                    'username' => $f['username'],
+                    'rating' => $f['rating'],
+                    'content' => substr($f['content'], 0, 50),
+                    'media_count' => count($f['media'])
+                ];
+            }, $feedbacks), JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
 
             // Trả về kết quả dạng JSON
             header('Content-Type: application/json');
@@ -714,3 +751,4 @@ class ProductController
         }
     }
 }
+?>

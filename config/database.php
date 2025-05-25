@@ -9,18 +9,19 @@ function createLocalTables($conn) {
         $conn->exec("PRAGMA foreign_keys = ON;");
 
         // Create users table
+        // Tạo bảng users
         $conn->exec("CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            full_name TEXT,
-            phone TEXT,
-            address TEXT,
-            role TEXT DEFAULT 'customer',
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL UNIQUE,
+            email VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL UNIQUE,
+            password VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            full_name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            phone VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            address TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            role VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'customer',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )");
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         // Create categories table
         $conn->exec("CREATE TABLE IF NOT EXISTS categories (
@@ -44,29 +45,14 @@ function createLocalTables($conn) {
             ");
         }
 
-        // Create products table
-        $conn->exec("CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT,
-            price REAL NOT NULL,
-            sale_price REAL,
-            image TEXT,
-            category_id INTEGER,
-            is_featured INTEGER DEFAULT 0,
-            is_sale INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )");
-
         // Create product_images table
         $conn->exec("CREATE TABLE IF NOT EXISTS product_images (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id INTEGER NOT NULL,
-            image TEXT NOT NULL,
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            product_id INT UNSIGNED NOT NULL,
+            image TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-        )");
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         // Create product_variants table
         $conn->exec("CREATE TABLE IF NOT EXISTS product_variants (
@@ -83,23 +69,22 @@ function createLocalTables($conn) {
 
         // Create orders table with customer_email and shipping_name
         $conn->exec("CREATE TABLE IF NOT EXISTS orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_number TEXT NOT NULL,
-            user_id INTEGER,
-            total_amount REAL NOT NULL,
-            status TEXT DEFAULT 'pending',
-            payment_method TEXT,
-            payment_status TEXT DEFAULT 'pending',
-            shipping_address TEXT NOT NULL,
-            shipping_city TEXT NOT NULL,
-            shipping_phone TEXT NOT NULL,
-            customer_email TEXT NOT NULL,
-            shipping_name TEXT NOT NULL,
-            notes TEXT,
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            order_number VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            user_id INT UNSIGNED,
+            total_amount DECIMAL(10,0) NOT NULL,
+            status VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'pending',
+            payment_method VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+            payment_status VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'pending',
+            shipping_address TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            shipping_city VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            shipping_phone VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            customer_email VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            shipping_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            notes TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )");
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         // Create order_items table
         $conn->exec("CREATE TABLE IF NOT EXISTS order_details (

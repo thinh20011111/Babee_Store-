@@ -36,14 +36,27 @@ class Feedback
     // Lấy danh sách đánh giá theo sản phẩm
     public function getFeedbackByProduct($product_id)
     {
-        $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at, u.username 
-                  FROM feedback f
-                  JOIN users u ON f.user_id = u.id
-                  WHERE f.product_id = ?
-                  ORDER BY f.created_at DESC";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute([$product_id]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at, u.username 
+                      FROM feedback f
+                      LEFT JOIN users u ON f.user_id = u.id
+                      WHERE f.product_id = ?
+                      ORDER BY f.created_at DESC";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$product_id]);
+            $feedbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            error_log("getFeedbackByProduct executed: product_id=$product_id, results=" . count($feedbacks));
+
+            foreach ($feedbacks as &$feedback) {
+                $feedback['username'] = $feedback['username'] ?? 'Khách ẩn danh';
+            }
+
+            return $feedbacks;
+        } catch (Exception $e) {
+            error_log("Error in getFeedbackByProduct: " . $e->getMessage());
+            return [];
+        }
     }
 
     // Lấy ảnh theo feedback_id
@@ -156,11 +169,10 @@ class Feedback
         try {
             $offset = ($page - 1) * $limit;
 
-            // Lấy danh sách đánh giá
             $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at,
                              u.username, u.avatar
                       FROM feedback f
-                      JOIN users u ON f.user_id = u.id
+                      LEFT JOIN users u ON f.user_id = u.id
                       WHERE f.product_id = ?
                       ORDER BY f.created_at DESC
                       LIMIT ? OFFSET ?";
@@ -168,9 +180,12 @@ class Feedback
             $stmt->execute([$product_id, $limit, $offset]);
             $feedbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Lấy ảnh cho mỗi đánh giá
+            error_log("getProductFeedbacks executed: product_id=$product_id, page=$page, limit=$limit, offset=$offset, results=" . count($feedbacks));
+
             foreach ($feedbacks as &$feedback) {
                 $feedback['media'] = $this->getMediaByFeedback($feedback['id']);
+                $feedback['username'] = $feedback['username'] ?? 'Khách ẩn danh';
+                $feedback['avatar'] = $feedback['avatar'] ?? 'assets/images/default-avatar.png';
             }
 
             return $feedbacks;
