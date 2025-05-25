@@ -167,18 +167,17 @@ class Feedback
     public function getProductFeedbacks($product_id, $page = 1, $limit = 10)
     {
         try {
-            // Bỏ phần kiểm tra product_id vì không cần thiết (đã được kiểm tra ở controller)
             $offset = ($page - 1) * $limit;
 
             // Truy vấn feedback
             $query = "SELECT f.id, f.user_id, f.content, f.rating, f.created_at, u.username
-                    FROM feedback f
-                    LEFT JOIN users u ON f.user_id = u.id
-                    WHERE f.product_id = ?
-                    ORDER BY f.created_at DESC
-                    LIMIT ? OFFSET ?";
+                FROM feedback f
+                LEFT JOIN users u ON f.user_id = u.id
+                WHERE f.product_id = ?
+                ORDER BY f.created_at DESC
+                LIMIT $limit OFFSET $offset";
             $stmt = $this->db->prepare($query);
-            $stmt->execute([$product_id, $limit, $offset]);
+            $stmt->execute([$product_id]);
             $feedbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             error_log("getProductFeedbacks executed: product_id=$product_id, page=$page, limit=$limit, offset=$offset, results=" . count($feedbacks));
